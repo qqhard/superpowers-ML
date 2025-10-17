@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: IMMEDIATELY USE THIS SKILL when creating or develop anything and before writing code or implementation plans - refines rough ideas into fully-formed designs through structured Socratic questioning, alternative exploration, and incremental validation
+description: Use when creating or developing anything, before writing code or implementation plans - refines rough ideas into fully-formed designs through structured Socratic questioning, alternative exploration, and incremental validation
 ---
 
 # Brainstorming Ideas Into Designs
@@ -13,7 +13,28 @@ Transform rough ideas into fully-formed designs through structured questioning a
 
 **Announce at start:** "I'm using the brainstorming skill to refine your idea into a design."
 
+## Quick Reference
+
+| Phase | Key Activities | Output |
+|-------|---------------|--------|
+| **1. Understanding** | Ask questions (one at a time) | Purpose, constraints, criteria |
+| **2. Exploration** | Propose 2-3 approaches | Architecture options with trade-offs |
+| **3. Design Presentation** | Present in 200-300 word sections | Complete design with validation |
+| **4. Worktree Setup** | Set up isolated workspace | Ready development environment |
+| **5. Planning Handoff** | Create implementation plan | Detailed task breakdown |
+
 ## The Process
+
+Copy this checklist to track progress:
+
+```
+Brainstorming Progress:
+- [ ] Phase 1: Understanding (purpose, constraints, criteria gathered)
+- [ ] Phase 2: Exploration (2-3 approaches proposed and evaluated)
+- [ ] Phase 3: Design Presentation (design validated in sections)
+- [ ] Phase 4: Worktree Setup (if implementing)
+- [ ] Phase 5: Planning Handoff (if implementing)
+```
 
 ### Phase 1: Understanding
 - Check current project state in working directory
@@ -48,26 +69,40 @@ When your human partner confirms (any affirmative response):
 
 ## When to Revisit Earlier Phases
 
+```dot
+digraph revisit_phases {
+    rankdir=LR;
+    "New constraint revealed?" [shape=diamond];
+    "Partner questions approach?" [shape=diamond];
+    "Requirements unclear?" [shape=diamond];
+    "Return to Phase 1" [shape=box, style=filled, fillcolor="#ffcccc"];
+    "Return to Phase 2" [shape=box, style=filled, fillcolor="#ffffcc"];
+    "Continue forward" [shape=box, style=filled, fillcolor="#ccffcc"];
+
+    "New constraint revealed?" -> "Return to Phase 1" [label="yes"];
+    "New constraint revealed?" -> "Partner questions approach?" [label="no"];
+    "Partner questions approach?" -> "Return to Phase 2" [label="yes"];
+    "Partner questions approach?" -> "Requirements unclear?" [label="no"];
+    "Requirements unclear?" -> "Return to Phase 1" [label="yes"];
+    "Requirements unclear?" -> "Continue forward" [label="no"];
+}
+```
+
 **You can and should go backward when:**
-- Partner reveals new constraint during Phase 2 or 3 → Return to Phase 1 to understand it
+- Partner reveals new constraint during Phase 2 or 3 → Return to Phase 1
 - Validation shows fundamental gap in requirements → Return to Phase 1
-- Partner questions approach during Phase 3 → Return to Phase 2 to explore alternatives
+- Partner questions approach during Phase 3 → Return to Phase 2
 - Something doesn't make sense → Go back and clarify
 
 **Don't force forward linearly** when going backward would give better results.
 
-## Related Skills
+## Key Principles
 
-**During exploration:**
-- When approaches have genuine trade-offs: skills/architecture/preserving-productive-tensions
-
-**Before proposing changes to existing code:**
-- Understand why it exists: skills/research/tracing-knowledge-lineages
-
-## Remember
-- One question per message during Phase 1
-- Apply YAGNI ruthlessly
-- Explore 2-3 alternatives before settling
-- Present incrementally, validate as you go
-- Go backward when needed - flexibility > rigid progression
-- Announce skill usage at start
+| Principle | Application |
+|-----------|-------------|
+| **One question at a time** | Phase 1: Single question per message for clarity |
+| **YAGNI ruthlessly** | Remove unnecessary features from all designs |
+| **Explore alternatives** | Always propose 2-3 approaches before settling |
+| **Incremental validation** | Present design in sections, validate each |
+| **Flexible progression** | Go backward when needed - flexibility > rigidity |
+| **Announce usage** | State skill usage at start of session |
