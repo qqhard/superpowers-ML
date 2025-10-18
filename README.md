@@ -1,29 +1,19 @@
 # Superpowers
 
-Give Claude Code superpowers with a comprehensive skills library of proven techniques, patterns, and tools.
-
-## Architecture
-
-The superpowers plugin is a minimal shim that:
-- Clones/updates the [superpowers-skills](https://github.com/obra/superpowers-skills) repository to `~/.config/superpowers/skills/`
-- Registers hooks that load skills from the local repository
-- Offers users the option to fork the skills repo for contributions
-
-All skills, scripts, and documentation live in the separate [superpowers-skills](https://github.com/obra/superpowers-skills) repository. Edit skills locally, commit changes, and contribute back via pull requests.
-
-**Skills Repository:** https://github.com/obra/superpowers-skills
+Give Claude Code superpowers with a comprehensive skills library of proven techniques, patterns, and workflows.
 
 ## What You Get
 
 - **Testing Skills** - TDD, async testing, anti-patterns
 - **Debugging Skills** - Systematic debugging, root cause tracing, verification
 - **Collaboration Skills** - Brainstorming, planning, code review, parallel agents
-- **Meta Skills** - Creating, testing, and contributing skills
+- **Development Skills** - Git worktrees, finishing branches, subagent workflows
+- **Meta Skills** - Creating, testing, and sharing skills
 
 Plus:
 - **Slash Commands** - `/brainstorm`, `/write-plan`, `/execute-plan`
-- **Skills Search** - Grep-powered discovery of relevant skills
-- **Gap Tracking** - Failed searches logged for skill creation
+- **Automatic Integration** - Skills activate automatically when relevant
+- **Consistent Workflows** - Systematic approaches to common engineering tasks
 
 ## Learn More
 
@@ -39,8 +29,6 @@ Read the introduction: [Superpowers for Claude Code](https://blog.fsck.com/2025/
 /plugin install superpowers@superpowers-marketplace
 ```
 
-The plugin automatically handles skills repository setup on first run.
-
 ### Verify Installation
 
 ```bash
@@ -53,30 +41,7 @@ The plugin automatically handles skills repository setup on first run.
 # /execute-plan - Execute plan in batches
 ```
 
-## Updating Skills
-
-The plugin fetches and fast-forwards your local skills repository on each session start. If your local branch has diverged, Claude notifies you to use the pulling-updates-from-skills-repository skill.
-
-## Contributing Skills
-
-If you forked the skills repository during setup, you can contribute improvements:
-
-1. Edit skills in `~/.config/superpowers/skills/`
-2. Commit your changes
-3. Push to your fork
-4. Open a PR to `obra/superpowers-skills`
-
 ## Quick Start
-
-### Finding Skills
-
-Find skills before starting any task:
-
-```bash
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills              # All skills with descriptions
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills test         # Filter by pattern
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills 'TDD|debug'  # Regex pattern
-```
 
 ### Using Slash Commands
 
@@ -95,63 +60,59 @@ ${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills 'TDD|debug'  # Regex 
 /execute-plan
 ```
 
+### Automatic Skill Activation
+
+Skills activate automatically when relevant. For example:
+- `test-driven-development` activates when implementing features
+- `systematic-debugging` activates when debugging issues
+- `verification-before-completion` activates before claiming work is done
+
 ## What's Inside
 
 ### Skills Library
 
 **Testing** (`skills/testing/`)
-- test-driven-development - RED-GREEN-REFACTOR cycle
-- condition-based-waiting - Async test patterns
-- testing-anti-patterns - Common pitfalls to avoid
+- **test-driven-development** - RED-GREEN-REFACTOR cycle
+- **condition-based-waiting** - Async test patterns
+- **testing-anti-patterns** - Common pitfalls to avoid
 
 **Debugging** (`skills/debugging/`)
-- systematic-debugging - 4-phase root cause process
-- root-cause-tracing - Find the real problem
-- verification-before-completion - Ensure it's actually fixed
-- defense-in-depth - Multiple validation layers
+- **systematic-debugging** - 4-phase root cause process
+- **root-cause-tracing** - Find the real problem
+- **verification-before-completion** - Ensure it's actually fixed
+- **defense-in-depth** - Multiple validation layers
 
 **Collaboration** (`skills/collaboration/`)
-- brainstorming - Socratic design refinement
-- writing-plans - Detailed implementation plans
-- executing-plans - Batch execution with checkpoints
-- dispatching-parallel-agents - Concurrent subagent workflows
-- remembering-conversations - Search past work
-- using-git-worktrees - Parallel development branches
-- requesting-code-review - Pre-review checklist
-- receiving-code-review - Responding to feedback
+- **brainstorming** - Socratic design refinement
+- **writing-plans** - Detailed implementation plans
+- **executing-plans** - Batch execution with checkpoints
+- **dispatching-parallel-agents** - Concurrent subagent workflows
+- **requesting-code-review** - Pre-review checklist
+- **receiving-code-review** - Responding to feedback
+- **using-git-worktrees** - Parallel development branches
+- **finishing-a-development-branch** - Merge/PR decision workflow
+- **subagent-driven-development** - Fast iteration with quality gates
 
 **Meta** (`skills/meta/`)
-- writing-skills - TDD for documentation, create new skills
-- sharing-skills - Contribute skills back via branch and PR
-- testing-skills-with-subagents - Validate skill quality
-- pulling-updates-from-skills-repository - Sync with upstream
-- gardening-skills-wiki - Maintain and improve skills
+- **writing-skills** - Create new skills following best practices
+- **sharing-skills** - Contribute skills back via branch and PR
+- **testing-skills-with-subagents** - Validate skill quality
+- **using-superpowers** - Introduction to the skills system
 
 ### Commands
 
-- **brainstorm.md** - Interactive design refinement using Socratic method
-- **write-plan.md** - Create detailed implementation plans
-- **execute-plan.md** - Execute plans in batches with review checkpoints
+All commands are thin wrappers that activate the corresponding skill:
 
-### Tools
-
-- **find-skills** - Unified skill discovery with descriptions
-- **skill-run** - Generic runner for any skill script
-- **search-conversations** - Semantic search of past Claude sessions (in remembering-conversations skill)
-
-**Using tools:**
-```bash
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills              # Show all skills
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills pattern      # Search skills
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/skill-run <path> [args]  # Run any skill script
-```
+- **brainstorm.md** - Activates the `brainstorming` skill
+- **write-plan.md** - Activates the `writing-plans` skill
+- **execute-plan.md** - Activates the `executing-plans` skill
 
 ## How It Works
 
-1. **SessionStart Hook** - Clone/update skills repo, inject skills context
-2. **Skills Discovery** - `find-skills` shows all available skills with descriptions
-3. **Mandatory Workflow** - Skills become required when they exist for your task
-4. **Gap Tracking** - Failed searches logged for skill development
+1. **SessionStart Hook** - Loads the `using-superpowers` skill at session start
+2. **Skills System** - Uses Claude Code's first-party skills system
+3. **Automatic Discovery** - Claude finds and uses relevant skills for your task
+4. **Mandatory Workflows** - When a skill exists for your task, using it becomes required
 
 ## Philosophy
 
@@ -160,6 +121,26 @@ ${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/skill-run <path> [args]  # Run an
 - **Complexity reduction** - Simplicity as primary goal
 - **Evidence over claims** - Verify before declaring success
 - **Domain over implementation** - Work at problem level, not solution level
+
+## Contributing
+
+Skills live directly in this repository. To contribute:
+
+1. Fork the repository
+2. Create a branch for your skill
+3. Follow the `writing-skills` skill for creating new skills
+4. Use the `testing-skills-with-subagents` skill to validate quality
+5. Submit a PR
+
+See `skills/meta/writing-skills/SKILL.md` for the complete guide.
+
+## Updating
+
+Skills update automatically when you update the plugin:
+
+```bash
+/plugin update superpowers
+```
 
 ## License
 
