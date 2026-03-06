@@ -1,27 +1,18 @@
-# Superpowers
+# Superpowers-ML
 
-Superpowers is a complete software development workflow for your coding agents, built on top of a set of composable "skills" and some initial instructions that make sure your agent uses them.
+Superpowers-ML is a complete ML/RecSys/LLM training development workflow for AI coding agents, built on composable "skills" that guide agents through experiment design, implementation, and validation.
 
 ## How it works
 
-It starts from the moment you fire up your coding agent. As soon as it sees that you're building something, it *doesn't* just jump into trying to write code. Instead, it steps back and asks you what you're really trying to do. 
+It starts from the moment you fire up your coding agent. When it sees you're building something ML-related, it doesn't just jump into writing code. Instead, it steps back and asks what you're really trying to do — what's your hypothesis, what architecture are you using, what's your existing infra.
 
-Once it's teased a spec out of the conversation, it shows it to you in chunks short enough to actually read and digest. 
+Once it's teased an experiment design out of the conversation, it confirms your **Validation Pyramid** scope — which layers of verification you need (engineering efficiency, process metrics, overfitting tests, end-to-end pipeline) and which you can skip.
 
-After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI (You Aren't Gonna Need It), and DRY. 
+After you've signed off on the design, your agent puts together an implementation plan with atomic subtasks. Each subtask goes through the Validation Pyramid to ensure the implementation is correct — because in ML, code running without errors does NOT mean it's correct.
 
-Next up, once you say "go", it launches a *subagent-driven-development* process, having agents work through each engineering task, inspecting and reviewing their work, and continuing forward. It's not uncommon for Claude to be able to work autonomously for a couple hours at a time without deviating from the plan you put together.
+**Core principle:** "Not working" is reasonable in ML, but the process must be correct. If an implementation error causes poor results, you may misjudge your experimental strategy as ineffective, wasting an entire research direction.
 
-There's a bunch more to it, but that's the core of the system. And because the skills trigger automatically, you don't need to do anything special. Your coding agent just has Superpowers.
-
-
-## Sponsorship
-
-If Superpowers has helped you do stuff that makes money and you are so inclined, I'd greatly appreciate it if you'd consider [sponsoring my opensource work](https://github.com/sponsors/obra).
-
-Thanks! 
-
-- Jesse
+Based on [Superpowers](https://github.com/obra/superpowers) by Jesse Vincent.
 
 
 ## Installation
