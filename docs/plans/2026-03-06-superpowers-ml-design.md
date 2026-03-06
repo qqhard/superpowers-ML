@@ -73,15 +73,8 @@ superpowers-ml/
     ml-subagent-dev/               # ML-adapted subagent execution + review
     ml-verification/               # Completion criteria = pyramid passed + valid conclusions
 
-    # Pluggable framework knowledge (async loaded)
-    frameworks/
-      pytorch/
-      huggingface/
-      megatron/
-      deepspeed/
-      sglang/
-      vllm/
-      wandb/
+    # Pluggable framework knowledge (async loaded, created on demand)
+    frameworks/                    # Empty initially; add specific framework skills as needed in practice
 
     # Reused skills (minor adjustments or direct reuse)
     using-superpowers-ml/
@@ -91,17 +84,14 @@ superpowers-ml/
     receiving-code-review/
     requesting-code-review/
 
-  # === Toolkit (reusable Python tools) ===
+  # === Toolkit (only tools agents struggle to write correctly) ===
   toolkit/
     profiling/
       mfu_calculator.py            # Theoretical FLOPS + measurement + MFU/TCA
       layer_profiler.py            # Per-layer forward/backward timing breakdown
       memory_profiler.py           # Memory analysis
-    monitors/
-      gradient_monitor.py          # Gradient distribution hooks
-      activation_monitor.py        # Activation statistics hooks
-      loss_tracker.py              # Loss spike + trend analysis
-      parameter_drift.py           # Parameter drift tracking
+    # monitors/ — not included initially; skills guide agent to write these.
+    # Promote to toolkit only when real usage shows agents consistently get them wrong.
 
   # === Multi-platform support ===
   hooks/
@@ -125,7 +115,7 @@ superpowers-ml/
 ```
 ml-brainstorming
     |
-    Output: experiment design + validation config table
+    Output: experiment design (includes validation scope as natural language)
     |
 ml-experiment-planning
     |
@@ -156,18 +146,11 @@ Human decides: finish / add subtasks / new brainstorm round
 
 **Retained:** One question at a time, multiple choice preferred, propose 2-3 approaches, confirm design section by section.
 
-**New: Task type identification (first step)**
+**New: Validation scope confirmation (first step)**
 
-| Task Type | Validation Approach |
-|-----------|-------------------|
-| Experiment / ablation | Full Validation Pyramid (L0-L4) |
-| Dataset preparation | Data quality checks (distribution, missing values, leakage detection, train/val/test consistency) |
-| Pipeline setup | Engineering efficiency (L0) + end-to-end pass (L4) |
-| Reproduce baseline | Align with paper metrics + Validation Pyramid confirms correct implementation |
-| Inference / deployment | Inference efficiency (latency, throughput, memory) + accuracy alignment |
-| Pure engineering optimization | Before/after performance comparison + correctness unchanged |
+No task type classification. Instead, directly ask the user which validation layers apply to their current task. Different tasks naturally lead to different layers being enabled or skipped — an experiment may need L0-L4, dataset prep may only need data quality checks, pipeline work may only need L0+L4. The pyramid's dynamic selection handles this without an extra categorization layer.
 
-**New: Experiment design**
+**New: Experiment design (when applicable)**
 - Hypothesis: Doing X is expected to cause Y
 - Independent variable: What changes in this experiment
 - Dependent variable: What metrics to observe
@@ -188,53 +171,7 @@ Human decides: finish / add subtasks / new brainstorm round
 - Set reasonable segmentation granularity
 - Which custom functions/operators need unit tests
 
-**Output:** Design document + validation config table (YAML)
-
-Validation config table example:
-
-```yaml
-task_type: experiment
-architecture: transformer-moe
-task_domain: recsys
-distributed: multi-node
-user_infra:
-  data_pipeline: existing    # Don't touch, advise if problems found
-  training_loop: existing
-  checkpoint: existing
-
-validation_scope:
-  L0_engineering:
-    backend_checks: true
-    moe_backend: true
-    nccl_bandwidth: true
-    io_speed: skip           # User has existing infra
-  L1_numerical:
-    gradient: true
-    attention_checks: true
-    moe_entropy: true
-    residual_stream: true
-  L2_overfit: true
-  L3_domain:
-    recsys_metrics: true
-    llm_metrics: skip
-  L4_e2e: true
-
-unit_tests:
-  data_preprocessing: true
-  custom_loss: true
-  custom_layers: [MoERouter, SparseAttention]
-
-structure_decomposition:
-  segments:
-    - name: attention_block
-      layers: [MultiHeadAttention, LayerNorm, Residual]
-    - name: ffn_block
-      layers: [FFN, LayerNorm, Residual]
-    - name: moe_routing
-      layers: [MoERouter, ExpertFFN]
-  mock_data: true
-  check_per_segment: [forward_time, backward_time, memory]
-```
+**Output:** Design document with validation scope described in natural language. No formal YAML schema required — the agent records decisions from the brainstorm conversation naturally in the design doc (e.g., "L0: check MFU and NCCL bandwidth, skip I/O since user has existing pipeline. L1: gradient + attention + MoE entropy. L2: overfit test. L3: recsys metrics. L4: e2e on tiny data.").
 
 ### 3.2 ml-experiment-planning
 
@@ -244,24 +181,7 @@ structure_decomposition:
 
 **Code separation principle:**
 
-Agent-generated user project code must follow this structure:
-```
-user_project/
-  src/                  # Core code — production-deployable, zero test dependency
-    model/
-    data/
-    training/
-  tests/                # Unit tests (function/operator level)
-  validation/           # Validation Pyramid scripts (L0-L4 checks)
-    run_l0_efficiency.py
-    run_l1_numerical.py
-    run_l2_overfit.py
-    ...
-```
-
-- `src/` is the deliverable. It never imports from `tests/`, `validation/`, or `toolkit/`.
-- `validation/` scripts import from `toolkit/` and observe `src/` externally via hooks/wrappers.
-- After development, `src/` can be extracted and deployed to production as-is.
+Core code (model, training, data) must never import from test/validation code or toolkit. Validation scripts observe core code externally via hooks/wrappers. After development, core code can be extracted and deployed to production as-is. The specific directory layout adapts to the user's existing project structure — the agent determines where to place test and validation code during brainstorm based on what the user already has.
 
 **Output structure:**
 
@@ -272,7 +192,7 @@ user_project/
 
 **Goal:** [one sentence]
 **Hypothesis:** [doing X is expected to cause Y]
-**Validation config:** [reference brainstorm output YAML]
+**Validation scope:** [reference validation scope from brainstorm design doc]
 
 ---
 
@@ -303,7 +223,7 @@ user_project/
 
 **Replaces:** test-driven-development
 
-**Orchestration logic:** Read validation config table, execute enabled checks in L0->L4 order, pass each layer before entering next, failure triggers ml-diagnostics.
+**Orchestration logic:** Based on validation scope from brainstorm design doc, execute enabled checks in L0->L4 order, pass each layer before entering next, failure triggers ml-diagnostics.
 
 **Three granularity levels:**
 
@@ -429,7 +349,7 @@ Overall not meeting target
 
 **Principle:** Only codify tools that agents struggle to write correctly from scratch and are highly reusable. Toolkit itself tested with traditional TDD.
 
-### 4.1 Tool Responsibilities
+### 4.1 Tool Responsibilities (Phase 2 scope: profiling only)
 
 **profiling/mfu_calculator.py**
 - Input: model, input shape, training step time
@@ -449,25 +369,7 @@ Overall not meeting target
 - Difficulty: distinguishing PyTorch allocated vs CUDA reserved, before/after checkpoint comparison
 - Output: memory breakdown, whether obvious waste exists
 
-**monitors/gradient_monitor.py**
-- Function: register backward hooks, collect per-layer gradient mean / std / max / min / distribution
-- Difficulty: correct hook registration and removal (avoid memory leaks), aggregation under distributed training
-- Output: per-layer gradient stats, anomaly detection (automatic vanishing/exploding judgment)
-
-**monitors/activation_monitor.py**
-- Function: register forward hooks, collect activation distribution
-- Difficulty: same hook management as gradient_monitor + special handling for attention scores, softmax outputs
-- Output: per-layer activation stats, distribution anomaly detection
-
-**monitors/loss_tracker.py**
-- Function: record per-step loss, detect spikes, trend analysis
-- Difficulty: spike threshold judgment (absolute vs relative change vs sliding window), distinguishing normal fluctuation from anomaly
-- Output: loss curve summary, spike list, trend judgment (decreasing / stagnating / diverging)
-
-**monitors/parameter_drift.py**
-- Function: record initial parameter snapshot, periodically compute drift percentage
-- Difficulty: memory efficiency for large models (can't copy all parameters), which layers to monitor
-- Output: per-layer parameter drift, anomaly detection
+**monitors/ — deferred.** Gradient monitoring, activation tracking, loss spike detection, and parameter drift are guided by skills. Agent writes these per-project. If real usage shows agents consistently get them wrong, promote to toolkit.
 
 ### 4.2 Design Principles
 
@@ -478,14 +380,10 @@ Overall not meeting target
 
 ```python
 # Usage example
-from toolkit.monitors import gradient_monitor
+from toolkit.profiling.mfu_calculator import calculate_mfu
 
-with gradient_monitor(model) as gm:
-    loss = model(x).sum()
-    loss.backward()
-
-report = gm.report()
-# {'layers': {'attn.weight': {'mean': 0.01, 'std': 0.003, 'status': 'healthy'}, ...}}
+result = calculate_mfu(model, input_shape=(8, 512), step_time_ms=150.0)
+# {'mfu': 0.42, 'tca': 0.51, 'theoretical_tflops': 312.5, 'status': 'below_target'}
 ```
 
 5. **Non-invasive** — hook registration/removal auto-managed, clean up after use. Toolkit attaches externally to models (via PyTorch hooks, wrappers, profiler context managers) — core code never imports or depends on toolkit. After validation, remove all toolkit references and core code is production-ready as-is.
@@ -508,7 +406,7 @@ Skill responsible for:              Toolkit responsible for:
 **Example flow (MFU check):**
 
 ```
-1. validation-pyramid skill reads validation config table
+1. validation-pyramid skill reads validation scope from design doc
    -> L0 engineering efficiency enabled
    -> load vp-engineering-efficiency skill
 
@@ -581,7 +479,7 @@ frameworks/deepspeed/SKILL.md guides:
 - Rename commands: `ml-brainstorm`, `ml-plan`, `ml-execute`
 - Adapt plugin.json / hooks / multi-platform configs for new naming
 - `using-superpowers-ml` skill (entry skill, replaces using-superpowers)
-- `ml-brainstorming` skill v1 (task type identification, context collection, validation scope confirmation)
+- `ml-brainstorming` skill v1 (context collection, validation scope confirmation)
 - `ml-experiment-planning` skill v1 (subtask decomposition + shared infra annotation)
 
 **Delivery criteria:** Can complete a full brainstorm -> plan flow.
@@ -592,7 +490,7 @@ frameworks/deepspeed/SKILL.md guides:
 
 - `validation-pyramid` skill (orchestration layer + dynamic routing + decision tree)
 - `vp-engineering-efficiency` skill + toolkit (mfu_calculator, layer_profiler, memory_profiler)
-- `vp-numerical-health` skill + toolkit (gradient_monitor, activation_monitor, loss_tracker, parameter_drift)
+- `vp-numerical-health` skill (guides agent to write monitors per-project; no toolkit yet)
 - `vp-overfitting-test` skill
 - Traditional TDD tests for toolkit
 
@@ -612,19 +510,13 @@ frameworks/deepspeed/SKILL.md guides:
 
 ### Phase 4: Framework Knowledge + Extensions
 
-**Goal:** Cover mainstream frameworks, support more task types.
+**Goal:** Add framework skills and expand coverage based on real usage.
 
-- `frameworks/pytorch` skill
-- `frameworks/huggingface` skill
-- `frameworks/megatron` skill
-- `frameworks/deepspeed` skill
-- `frameworks/sglang` skill
-- `frameworks/vllm` skill
-- `frameworks/wandb` skill
-- Validation check sets for dataset preparation, baseline reproduction, inference deployment, etc.
+- Create framework skills on demand (e.g., `frameworks/deepspeed` when a user first needs DeepSpeed guidance)
+- Promote monitors to toolkit if agents consistently write them incorrectly
 - Community documentation, installation guide
 
-**Delivery criteria:** Different frameworks and task types all have corresponding skill support.
+**Delivery criteria:** Most common workflows in the team's daily practice have skill coverage.
 
 ### Phase 5: Continuous Iteration
 
@@ -634,3 +526,17 @@ frameworks/deepspeed/SKILL.md guides:
 - Discover new kernel metrics from real experiments -> add to pyramid
 - Discover skill loopholes from actual agent behavior -> plug them
 - Codify new toolkit tools (only when meeting "agent can't write correctly" criteria)
+
+---
+
+## 7. Simplification Decisions
+
+Things we deliberately chose NOT to build upfront, to avoid over-engineering:
+
+| Decision | Rationale |
+|----------|-----------|
+| No formal YAML schema for validation config | Agent records brainstorm decisions in natural language in the design doc. A rigid schema adds complexity and format errors without real benefit. |
+| Toolkit starts with profiling only (3 files), no monitors | loss_tracker, parameter_drift, gradient/activation monitors are simple enough for agents to write. Promote to toolkit only if real usage shows agents consistently get them wrong. |
+| No prescribed user project directory structure | Users have existing project layouts. We enforce the principle (core code never imports test/validation code) not a specific directory template. Agent adapts to user's structure. |
+| No pre-planned framework skill list | frameworks/ starts empty. Create specific framework skills on demand when actually needed, not 7 placeholder directories. |
+| No task type classification table | The pyramid's "skip layers that don't apply" mechanism already handles different task types. An explicit 6-category taxonomy is a redundant abstraction layer. |
