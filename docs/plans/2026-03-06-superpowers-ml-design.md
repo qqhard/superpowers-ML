@@ -52,19 +52,18 @@ superpowers-ml/
       backend-checks.md            # FA/MoE/NCCL/HBM/PCIE
       gpu-utilization.md           # MFU/TCA/memory
       distributed-training.md      # Multi-node specific
-    vp-numerical-health/
+    vp-process-metrics/            # All process/kernel metrics (universal + architecture-specific)
       SKILL.md
-      gradient-checks.md
-      attention-checks.md          # Transformer specific
-      moe-checks.md                # MoE specific
-      residual-stream.md           # Residual connection specific
+      gradient-checks.md           # Universal
+      activation-checks.md         # Transformer: attention; general: activations
       parameter-drift.md           # Parameter drift, loss spike
+      residual-stream.md           # Residual connection architectures
+      moe-checks.md                # MoE: entropy, load balance
+      embedding-checks.md          # RecSys: norm stability, popularity bias, negative sampling
+      token-loss-checks.md         # LLM: per-token loss, generation diversity
+      kv-cache-checks.md           # LLM: KV cache memory growth
     vp-overfitting-test/
       SKILL.md
-    vp-domain-metrics/
-      SKILL.md
-      recsys-metrics.md
-      llm-metrics.md
     vp-e2e-pipeline/
       SKILL.md
 
@@ -127,7 +126,7 @@ ml-subagent-dev (execute subtasks one by one)
     +-- 1. Function/operator-level unit test (deterministic code)
     +-- 2. Implementation code
     +-- 3. validation-pyramid (dynamically orchestrated per config)
-    |       L0 -> L1 -> L2 -> L3 -> L4
+    |       L0 -> L1 -> L2 -> L3
     |       Any layer fails -> ml-diagnostics
     |       Diagnostics support hierarchical decomposition (whole -> substructure -> operator)
     +-- 4. Spec review (does implementation match experiment design?)
@@ -148,7 +147,7 @@ Human decides: finish / add subtasks / new brainstorm round
 
 **New: Validation scope confirmation (first step)**
 
-No task type classification. Instead, directly ask the user which validation layers apply to their current task. Different tasks naturally lead to different layers being enabled or skipped — an experiment may need L0-L4, dataset prep may only need data quality checks, pipeline work may only need L0+L4. The pyramid's dynamic selection handles this without an extra categorization layer.
+No task type classification. Instead, directly ask the user which validation layers apply to their current task. Different tasks naturally lead to different layers being enabled or skipped — an experiment may need L0-L3, dataset prep may only need data quality checks, pipeline work may only need L0+L4. The pyramid's dynamic selection handles this without an extra categorization layer.
 
 **New: Experiment design (when applicable)**
 - Hypothesis: Doing X is expected to cause Y
@@ -231,7 +230,7 @@ Core code (model, training, data) must never import from test/validation code or
 |-------------|-------------------|--------|
 | Function/operator | Custom loss, custom layer, single operator efficiency | Traditional unit test, deterministic assertions |
 | Module/layer | Network substructure efficiency, segmented validation | Mock data, segments defined in brainstorm |
-| Experiment | L0-L4 full pyramid | Training process metrics |
+| Experiment | L0-L3 full pyramid | Training process metrics |
 
 **Dynamic selection:**
 - Transformer -> load attention-checks, residual-stream
@@ -260,14 +259,27 @@ Overall not meeting target
 | Infrastructure | Checkpoint load success, W&B log connected, sample consumption speed, memory utilization |
 | GPU efficiency | MFU, TCA vs target |
 
-#### L1: Numerical Health
+#### L1: Process Metrics (universal + architecture-specific, loaded on demand)
+
+**Universal (always applicable):**
 
 | Category | Metrics |
 |----------|---------|
 | Gradient | No NaN/Inf, gradient distribution normal, no vanishing/exploding |
-| Activation | Softmax/Attention distribution reasonable, activation range normal |
 | Parameters | Parameter drift from initialization percentage, initialization sanity check |
-| Training dynamics | Loss spike detection, residual stream write ratio, MoE entropy |
+| Training dynamics | Loss spike detection |
+
+**Architecture-specific (loaded based on brainstorm context):**
+
+| Architecture/Domain | Metrics |
+|-------------------|---------|
+| Transformer | Attention distribution, attention entropy |
+| Residual networks | Residual stream write ratio |
+| MoE | MoE entropy, load balance |
+| RecSys | Embedding norm stability, popularity bias, negative sampling quality |
+| LLM | Per-token loss distribution, generation diversity, KV cache memory growth |
+
+Additional architecture-specific checks can be added as new sub-files over time.
 
 #### L2: Overfitting Test
 
@@ -277,20 +289,7 @@ Overall not meeting target
 - Assertion: training loss must monotonically decrease to near 0
 - ~10 minutes to complete
 
-#### L3: Domain Metrics
-
-**RecSys specific:**
-- Embedding norm stability (user/item embedding L2 norm doesn't explode)
-- Popularity bias internal metrics (hot item embedding similarity not too high)
-- Negative sampling quality (sampled negatives average score < positive)
-
-**LLM specific:**
-- Per-token loss distribution (not concentrated on few tokens)
-- Attention entropy (attention not overly concentrated)
-- KV cache memory growth linear
-- Generation diversity (top-k / nucleus sampling entropy > threshold)
-
-#### L4: End-to-End Pipeline
+#### L3: End-to-End Pipeline
 
 - Full flow (data -> training -> inference -> evaluation) passes on tiny data
 
@@ -490,17 +489,16 @@ frameworks/deepspeed/SKILL.md guides:
 
 - `validation-pyramid` skill (orchestration layer + dynamic routing + decision tree)
 - `vp-engineering-efficiency` skill + toolkit (mfu_calculator, layer_profiler, memory_profiler)
-- `vp-numerical-health` skill (guides agent to write monitors per-project; no toolkit yet)
+- `vp-process-metrics` skill (universal + architecture-specific sub-files; guides agent to write monitors per-project)
 - `vp-overfitting-test` skill
 - Traditional TDD tests for toolkit
 
-**Delivery criteria:** A PyTorch training task can pass L0 + L1 + L2 validation.
+**Delivery criteria:** A PyTorch training task can pass L0 (engineering) + L1 (process metrics) + L2 (overfit test) validation.
 
 ### Phase 3: Complete Workflow
 
 **Goal:** End-to-end workflow closed loop.
 
-- `vp-domain-metrics` skill (recsys + llm)
 - `vp-e2e-pipeline` skill
 - `ml-diagnostics` skill (three core questions + hierarchical decomposition)
 - `ml-subagent-dev` skill (ML-adapted review criteria)
