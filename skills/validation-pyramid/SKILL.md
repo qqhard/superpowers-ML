@@ -55,17 +55,17 @@ digraph validation_pyramid {
 1. Execute layers in order: L0 -> L1 -> L2 -> L3
 2. Skip layers marked as "skip" in design doc
 3. Each layer must pass before proceeding to next
-4. Failure at any layer -> trigger **superpowers-ml:ml-diagnostics**
+4. Failure at any layer -> trigger **mlsp:ml-diagnostics**
 5. After diagnostics fix -> re-run from the failed layer, not from L0
 
 ## How to Use
 
 1. Read the validation scope from the brainstorm design doc
 2. For each enabled layer, invoke the corresponding vp-* skill:
-   - L0: **superpowers-ml:vp-engineering-efficiency**
-   - L1: **superpowers-ml:vp-process-metrics**
-   - L2: **superpowers-ml:vp-overfitting-test**
-   - L3: **superpowers-ml:vp-e2e-pipeline**
+   - L0: **mlsp:vp-engineering-efficiency**
+   - L1: **mlsp:vp-process-metrics**
+   - L2: **mlsp:vp-overfitting-test**
+   - L3: **mlsp:vp-e2e-pipeline**
 3. The vp-* skill tells you what to check, what tools to use, how to interpret results
 4. Record pass/fail for each layer
 
@@ -106,6 +106,6 @@ See `layer-overview.md` for a compact table of all layers, metrics, and threshol
 
 ## Integration
 
-- **superpowers-ml:ml-brainstorming** — Defines validation scope
-- **superpowers-ml:ml-diagnostics** — Triggered on failure
-- **superpowers-ml:ml-experiment-planning** — Each subtask specifies which layers apply
+- **mlsp:ml-brainstorming** — Defines validation scope
+- **mlsp:ml-diagnostics** — Triggered on failure
+- **mlsp:ml-experiment-planning** — Each subtask specifies which layers apply

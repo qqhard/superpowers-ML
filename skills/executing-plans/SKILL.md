@@ -80,5 +80,5 @@ After all tasks complete and verified:
 
 **Required workflow skills:**
 - **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
-- **superpowers-ml:ml-experiment-planning** - Creates the plan this skill executes
+- **mlsp:ml-experiment-planning** - Creates the plan this skill executes
 - **superpowers:finishing-a-development-branch** - Complete development after all tasks

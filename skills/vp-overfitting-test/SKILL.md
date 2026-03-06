@@ -90,7 +90,7 @@ def run_overfit_test(model, train_fn, data_subset, n_epochs=10, loss_threshold=0
 ## When This Test Fails
 
 1. Do NOT proceed to L3 or full training
-2. Trigger **superpowers-ml:ml-diagnostics**
+2. Trigger **mlsp:ml-diagnostics**
 3. Common first steps: check learning rate, check loss function, check data labels
 4. Re-run overfit test after fixing
 

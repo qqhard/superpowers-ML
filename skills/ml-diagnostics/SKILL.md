@@ -193,7 +193,7 @@ Validation Pyramid check fails
 
 ## Related Skills
 
-- **superpowers-ml:vp-engineering-efficiency** — L0 checks that trigger Q3 diagnostics
-- **superpowers-ml:vp-process-metrics** — L1 checks that trigger Q1/Q2 diagnostics
-- **superpowers-ml:vp-overfitting-test** — L2 check that triggers Q1 diagnostics
-- **superpowers-ml:systematic-debugging** — For non-ML bugs (integration, pipeline, data format)
+- **mlsp:vp-engineering-efficiency** — L0 checks that trigger Q3 diagnostics
+- **mlsp:vp-process-metrics** — L1 checks that trigger Q1/Q2 diagnostics
+- **mlsp:vp-overfitting-test** — L2 check that triggers Q1 diagnostics
+- **mlsp:systematic-debugging** — For non-ML bugs (integration, pipeline, data format)

@@ -1,8 +1,8 @@
-# Superpowers-ML Design Document
+# MLSP Design Document
 
 > **For Claude:** This is a design document for a new project. Use superpowers:writing-plans to create the implementation plan.
 
-**Project:** superpowers-ml
+**Project:** mlsp
 
 **Source:** Fork from [obra/superpowers](https://github.com/obra/superpowers), independent development
 
@@ -12,7 +12,7 @@
 
 ## 1. Project Positioning
 
-**Name:** superpowers-ml
+**Name:** mlsp
 
 **Positioning:** ML/RecSys/LLM training development workflow framework for AI agents. Fork from Superpowers, restructuring all core workflows for ML development.
 
@@ -36,7 +36,7 @@
 ## 2. Project Structure
 
 ```
-superpowers-ml/
+mlsp/
   # === Core Skills ===
   skills/
     ml-brainstorming/              # Experiment design + context collection + validation scope confirmation
@@ -76,7 +76,7 @@ superpowers-ml/
     frameworks/                    # Empty initially; add specific framework skills as needed in practice
 
     # Reused skills (minor adjustments or direct reuse)
-    using-superpowers-ml/
+    using-mlsp/
     writing-skills/
     dispatching-parallel-agents/
     finishing-a-development-branch/
@@ -187,7 +187,7 @@ Core code (model, training, data) must never import from test/validation code or
 ```markdown
 # [Experiment Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers-ml:ml-subagent-dev
+> **For Claude:** REQUIRED SUB-SKILL: Use mlsp:ml-subagent-dev
 
 **Goal:** [one sentence]
 **Hypothesis:** [doing X is expected to cause Y]
@@ -474,10 +474,10 @@ frameworks/deepspeed/SKILL.md guides:
 
 **Goal:** Fork complete, namespace switched, core workflow skeleton usable.
 
-- Fork superpowers, rename to superpowers-ml
+- Fork superpowers, rename to mlsp
 - Rename commands: `ml-brainstorm`, `ml-plan`, `ml-execute`
 - Adapt plugin.json / hooks / multi-platform configs for new naming
-- `using-superpowers-ml` skill (entry skill, replaces using-superpowers)
+- `using-mlsp` skill (entry skill, replaces using-superpowers)
 - `ml-brainstorming` skill v1 (context collection, validation scope confirmation)
 - `ml-experiment-planning` skill v1 (subtask decomposition + shared infra annotation)
 

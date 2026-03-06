@@ -63,7 +63,7 @@ If toolkit is not yet available, write equivalent checks following the guidance 
 
 ## Pass Criteria
 
-All enabled checks pass. Any failure -> trigger **superpowers-ml:ml-diagnostics** with the specific failure data.
+All enabled checks pass. Any failure -> trigger **mlsp:ml-diagnostics** with the specific failure data.
 
 ## Failure Decomposition
 

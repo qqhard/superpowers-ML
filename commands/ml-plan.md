@@ -3,4 +3,4 @@ description: Create detailed ML experiment plan with atomic subtasks and validat
 disable-model-invocation: true
 ---
 
-Invoke the superpowers-ml:ml-experiment-planning skill and follow it exactly as presented to you
+Invoke the mlsp:ml-experiment-planning skill and follow it exactly as presented to you

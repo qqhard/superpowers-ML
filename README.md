@@ -1,6 +1,6 @@
-# Superpowers-ML
+# MLSP — ML SuperPowers
 
-Superpowers-ML is a complete ML/RecSys/LLM training development workflow for AI coding agents, built on composable "skills" that guide agents through experiment design, implementation, and validation.
+MLSP is a complete ML/RecSys/LLM training development workflow for AI coding agents, built on composable "skills" that guide agents through experiment design, implementation, and validation.
 
 ## How it works
 

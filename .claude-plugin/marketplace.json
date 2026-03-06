@@ -1,12 +1,12 @@
 {
-  "name": "superpowers-ml-dev",
-  "description": "Development marketplace for Superpowers-ML skills library",
+  "name": "mlsp-dev",
+  "description": "Development marketplace for MLSP skills library",
   "owner": {
-    "name": "superpowers-ml contributors"
+    "name": "mlsp contributors"
   },
   "plugins": [
     {
-      "name": "superpowers-ml",
+      "name": "mlsp",
       "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics",
       "version": "0.1.0",
       "source": "./"

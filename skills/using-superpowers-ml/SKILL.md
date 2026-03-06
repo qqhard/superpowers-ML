@@ -1,5 +1,5 @@
 ---
-name: using-superpowers-ml
+name: using-mlsp
 description: Use when starting any conversation - establishes how to find and use ML skills, requiring Skill tool invocation before ANY response including clarifying questions
 ---
 

@@ -229,7 +229,7 @@ Record this in the plan document or a separate experiment log.
 
 ## Integration
 
-- **superpowers-ml:ml-experiment-planning** — Creates the plan this skill executes
-- **superpowers-ml:validation-pyramid** — Orchestrates VP execution within subtasks
-- **superpowers-ml:ml-diagnostics** — Called when VP check fails
-- **superpowers-ml:ml-verification** — Called after all subtasks complete
+- **mlsp:ml-experiment-planning** — Creates the plan this skill executes
+- **mlsp:validation-pyramid** — Orchestrates VP execution within subtasks
+- **mlsp:ml-diagnostics** — Called when VP check fails
+- **mlsp:ml-verification** — Called after all subtasks complete

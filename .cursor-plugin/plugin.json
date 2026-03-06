@@ -1,10 +1,10 @@
 {
-  "name": "superpowers-ml",
-  "displayName": "Superpowers-ML",
+  "name": "mlsp",
+  "displayName": "MLSP",
   "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics",
   "version": "0.1.0",
   "author": {
-    "name": "superpowers-ml contributors"
+    "name": "mlsp contributors"
   },
   "license": "MIT",
   "keywords": ["ml", "machine-learning", "recsys", "llm", "validation-pyramid", "experiment", "training"],

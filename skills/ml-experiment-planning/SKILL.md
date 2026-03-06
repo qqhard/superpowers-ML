@@ -28,7 +28,7 @@ The agent determines where to place test and validation code based on the user's
 ```markdown
 # [Experiment Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers-ml:ml-subagent-dev to implement this plan task-by-task. (If ml-subagent-dev is not yet available, use superpowers-ml:executing-plans.)
+> **For Claude:** REQUIRED SUB-SKILL: Use mlsp:ml-subagent-dev to implement this plan task-by-task. (If ml-subagent-dev is not yet available, use mlsp:executing-plans.)
 
 **Goal:** [One sentence]
 
@@ -161,9 +161,9 @@ After saving the plan, offer execution choice:
 **Which approach?"**
 
 **If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers-ml:ml-subagent-dev (or superpowers-ml:subagent-driven-development if ml-subagent-dev not yet available)
+- **REQUIRED SUB-SKILL:** Use mlsp:ml-subagent-dev (or mlsp:subagent-driven-development if ml-subagent-dev not yet available)
 - Stay in this session
 
 **If Parallel Session chosen:**
 - Guide them to open new session
-- **REQUIRED SUB-SKILL:** New session uses superpowers-ml:executing-plans
+- **REQUIRED SUB-SKILL:** New session uses mlsp:executing-plans

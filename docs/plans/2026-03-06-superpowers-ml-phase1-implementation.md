@@ -1,10 +1,10 @@
-# Superpowers-ML Phase 1 Implementation Plan
+# MLSP Phase 1 Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers-ml:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use mlsp:executing-plans to implement this plan task-by-task.
 
-**Goal:** Fork superpowers into superpowers-ml with renamed namespace, ML-adapted brainstorming and experiment planning skills, ready for a complete brainstorm -> plan flow.
+**Goal:** Fork superpowers into mlsp with renamed namespace, ML-adapted brainstorming and experiment planning skills, ready for a complete brainstorm -> plan flow.
 
-**Architecture:** Rename all references from "superpowers" to "superpowers-ml" in plugin configs, hooks, and entry skill. Create two new ML-specific skills (ml-brainstorming, ml-experiment-planning) adapted from their original counterparts. Keep all other skills as-is for now.
+**Architecture:** Rename all references from "superpowers" to "mlsp" in plugin configs, hooks, and entry skill. Create two new ML-specific skills (ml-brainstorming, ml-experiment-planning) adapted from their original counterparts. Keep all other skills as-is for now.
 
 **Tech Stack:** Markdown skills, JSON configs, bash hooks
 
@@ -23,11 +23,11 @@ Replace entire content with:
 
 ```json
 {
-  "name": "superpowers-ml",
+  "name": "mlsp",
   "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics, and proven ML development patterns",
   "version": "0.1.0",
   "author": {
-    "name": "superpowers-ml contributors"
+    "name": "mlsp contributors"
   },
   "license": "MIT",
   "keywords": ["ml", "machine-learning", "recsys", "llm", "validation-pyramid", "experiment", "training", "skills", "workflows"],
@@ -44,14 +44,14 @@ Replace entire content with:
 
 ```json
 {
-  "name": "superpowers-ml-dev",
-  "description": "Development marketplace for Superpowers-ML skills library",
+  "name": "mlsp-dev",
+  "description": "Development marketplace for MLSP skills library",
   "owner": {
-    "name": "superpowers-ml contributors"
+    "name": "mlsp contributors"
   },
   "plugins": [
     {
-      "name": "superpowers-ml",
+      "name": "mlsp",
       "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics",
       "version": "0.1.0",
       "source": "./"
@@ -66,12 +66,12 @@ Replace entire content with:
 
 ```json
 {
-  "name": "superpowers-ml",
-  "displayName": "Superpowers-ML",
+  "name": "mlsp",
+  "displayName": "MLSP",
   "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics",
   "version": "0.1.0",
   "author": {
-    "name": "superpowers-ml contributors"
+    "name": "mlsp contributors"
   },
   "license": "MIT",
   "keywords": ["ml", "machine-learning", "recsys", "llm", "validation-pyramid", "experiment", "training"],
@@ -91,7 +91,7 @@ Expected: `All JSON valid`
 
 ```bash
 git add .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json
-git commit -m "chore: rename plugin metadata from superpowers to superpowers-ml"
+git commit -m "chore: rename plugin metadata from superpowers to mlsp"
 ```
 
 ---
@@ -111,7 +111,7 @@ description: "You MUST use this before any ML work - designing experiments, buil
 disable-model-invocation: true
 ---
 
-Invoke the superpowers-ml:ml-brainstorming skill and follow it exactly as presented to you
+Invoke the mlsp:ml-brainstorming skill and follow it exactly as presented to you
 ```
 
 **Step 2: Create `commands/ml-plan.md`**
@@ -122,7 +122,7 @@ description: Create detailed ML experiment plan with atomic subtasks and validat
 disable-model-invocation: true
 ---
 
-Invoke the superpowers-ml:ml-experiment-planning skill and follow it exactly as presented to you
+Invoke the mlsp:ml-experiment-planning skill and follow it exactly as presented to you
 ```
 
 **Step 3: Create `commands/ml-execute.md`**
@@ -133,7 +133,7 @@ description: Execute ML experiment plan in batches with validation pyramid check
 disable-model-invocation: true
 ---
 
-Invoke the superpowers-ml:executing-plans skill and follow it exactly as presented to you
+Invoke the mlsp:executing-plans skill and follow it exactly as presented to you
 ```
 
 **Step 4: Remove old command files**
@@ -156,7 +156,7 @@ git commit -m "chore: rename commands to ml-brainstorm, ml-plan, ml-execute"
 
 ---
 
-### Task 3: Update hooks to reference superpowers-ml
+### Task 3: Update hooks to reference mlsp
 
 **Files:**
 - Modify: `hooks/session-start`
@@ -165,7 +165,7 @@ git commit -m "chore: rename commands to ml-brainstorm, ml-plan, ml-execute"
 
 In the `session-start` file, make two changes:
 
-1. Change the skill path from `using-superpowers` to `using-superpowers-ml`:
+1. Change the skill path from `using-superpowers` to `using-mlsp`:
 
 Replace:
 ```bash
@@ -174,10 +174,10 @@ using_superpowers_content=$(cat "${PLUGIN_ROOT}/skills/using-superpowers/SKILL.m
 
 With:
 ```bash
-using_superpowers_content=$(cat "${PLUGIN_ROOT}/skills/using-superpowers-ml/SKILL.md" 2>&1 || echo "Error reading using-superpowers-ml skill")
+using_superpowers_content=$(cat "${PLUGIN_ROOT}/skills/using-mlsp/SKILL.md" 2>&1 || echo "Error reading using-mlsp skill")
 ```
 
-2. Change the context message from `superpowers:using-superpowers` to `superpowers-ml:using-superpowers-ml`:
+2. Change the context message from `superpowers:using-superpowers` to `mlsp:using-mlsp`:
 
 Replace:
 ```bash
@@ -186,7 +186,7 @@ session_context="<EXTREMELY_IMPORTANT>\nYou have superpowers.\n\n**Below is the 
 
 With:
 ```bash
-session_context="<EXTREMELY_IMPORTANT>\nYou have superpowers-ml.\n\n**Below is the full content of your 'superpowers-ml:using-superpowers-ml' skill - your introduction to ML skills. For all other skills, use the 'Skill' tool:**\n\n${using_superpowers_escaped}\n\n${warning_escaped}\n</EXTREMELY_IMPORTANT>"
+session_context="<EXTREMELY_IMPORTANT>\nYou have mlsp.\n\n**Below is the full content of your 'mlsp:using-mlsp' skill - your introduction to ML skills. For all other skills, use the 'Skill' tool:**\n\n${using_superpowers_escaped}\n\n${warning_escaped}\n</EXTREMELY_IMPORTANT>"
 ```
 
 **Step 2: Verify hook syntax**
@@ -198,23 +198,23 @@ Expected: `Syntax OK`
 
 ```bash
 git add hooks/session-start
-git commit -m "chore: update session-start hook to reference superpowers-ml"
+git commit -m "chore: update session-start hook to reference mlsp"
 ```
 
 ---
 
-### Task 4: Create using-superpowers-ml skill
+### Task 4: Create using-mlsp skill
 
 **Files:**
-- Create: `skills/using-superpowers-ml/SKILL.md`
+- Create: `skills/using-mlsp/SKILL.md`
 
 This is the entry skill that loads on every session start. It replaces `using-superpowers` with ML-specific skill routing.
 
-**Step 1: Create `skills/using-superpowers-ml/SKILL.md`**
+**Step 1: Create `skills/using-mlsp/SKILL.md`**
 
 ```markdown
 ---
-name: using-superpowers-ml
+name: using-mlsp
 description: Use when starting any conversation - establishes how to find and use ML skills, requiring Skill tool invocation before ANY response including clarifying questions
 ---
 
@@ -319,11 +319,11 @@ Instructions say WHAT, not HOW. "Train X" or "Fix convergence" doesn't mean skip
 
 **Step 2: Verify file exists and frontmatter is parseable**
 
-Run: `head -4 skills/using-superpowers-ml/SKILL.md`
+Run: `head -4 skills/using-mlsp/SKILL.md`
 Expected:
 ```
 ---
-name: using-superpowers-ml
+name: using-mlsp
 description: Use when starting any conversation - establishes how to find and use ML skills, requiring Skill tool invocation before ANY response including clarifying questions
 ---
 ```
@@ -331,8 +331,8 @@ description: Use when starting any conversation - establishes how to find and us
 **Step 3: Commit**
 
 ```bash
-git add skills/using-superpowers-ml/SKILL.md
-git commit -m "feat: add using-superpowers-ml entry skill"
+git add skills/using-mlsp/SKILL.md
+git commit -m "feat: add using-mlsp entry skill"
 ```
 
 ---
@@ -559,7 +559,7 @@ The agent determines where to place test and validation code based on the user's
 ```markdown
 # [Experiment Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers-ml:ml-subagent-dev to implement this plan task-by-task. (If ml-subagent-dev is not yet available, use superpowers-ml:executing-plans.)
+> **For Claude:** REQUIRED SUB-SKILL: Use mlsp:ml-subagent-dev to implement this plan task-by-task. (If ml-subagent-dev is not yet available, use mlsp:executing-plans.)
 
 **Goal:** [One sentence]
 
@@ -692,12 +692,12 @@ After saving the plan, offer execution choice:
 **Which approach?"**
 
 **If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers-ml:ml-subagent-dev (or superpowers-ml:subagent-driven-development if ml-subagent-dev not yet available)
+- **REQUIRED SUB-SKILL:** Use mlsp:ml-subagent-dev (or mlsp:subagent-driven-development if ml-subagent-dev not yet available)
 - Stay in this session
 
 **If Parallel Session chosen:**
 - Guide them to open new session
-- **REQUIRED SUB-SKILL:** New session uses superpowers-ml:executing-plans
+- **REQUIRED SUB-SKILL:** New session uses mlsp:executing-plans
 ```
 
 **Step 2: Verify frontmatter**
@@ -729,7 +729,7 @@ git commit -m "feat: add ml-experiment-planning skill v1"
 
 **Step 1: Remove superseded skills**
 
-The old `using-superpowers` and `brainstorming` skills are replaced by `using-superpowers-ml` and `ml-brainstorming`. Remove them to avoid confusion.
+The old `using-superpowers` and `brainstorming` skills are replaced by `using-mlsp` and `ml-brainstorming`. Remove them to avoid confusion.
 
 ```bash
 rm -rf skills/using-superpowers skills/brainstorming
@@ -740,9 +740,9 @@ rm -rf skills/using-superpowers skills/brainstorming
 Replace the first section of README.md (up to and including the sponsorship section) with:
 
 ```markdown
-# Superpowers-ML
+# MLSP
 
-Superpowers-ML is a complete ML/RecSys/LLM training development workflow for AI coding agents, built on composable "skills" that guide agents through experiment design, implementation, and validation.
+MLSP is a complete ML/RecSys/LLM training development workflow for AI coding agents, built on composable "skills" that guide agents through experiment design, implementation, and validation.
 
 ## How it works
 
@@ -760,13 +760,13 @@ Based on [Superpowers](https://github.com/obra/superpowers) by Jesse Vincent.
 **Step 3: Verify**
 
 Run: `head -5 README.md`
-Expected: `# Superpowers-ML`
+Expected: `# MLSP`
 
 **Step 4: Commit**
 
 ```bash
 git add skills/ README.md
-git commit -m "feat: replace superpowers entry skills with superpowers-ml, update README"
+git commit -m "feat: replace superpowers entry skills with mlsp, update README"
 ```
 
 ---
@@ -810,25 +810,25 @@ git commit -m "chore: create directory structure for Phase 2-3 skills and toolki
 
 **Step 1: Verify all skill frontmatter is parseable**
 
-Run: `node -e "const {findSkillsInDir} = require('./lib/skills-core.js'); console.log(JSON.stringify(findSkillsInDir('./skills', 'superpowers-ml'), null, 2))"`
+Run: `node -e "const {findSkillsInDir} = require('./lib/skills-core.js'); console.log(JSON.stringify(findSkillsInDir('./skills', 'mlsp'), null, 2))"`
 
-Expected: Output should include entries for `using-superpowers-ml`, `ml-brainstorming`, `ml-experiment-planning`, and all existing reused skills (writing-skills, dispatching-parallel-agents, etc.). Should NOT include `using-superpowers` or `brainstorming`.
+Expected: Output should include entries for `using-mlsp`, `ml-brainstorming`, `ml-experiment-planning`, and all existing reused skills (writing-skills, dispatching-parallel-agents, etc.). Should NOT include `using-superpowers` or `brainstorming`.
 
 **Step 2: Verify no broken references to old skill names in remaining files**
 
 Run: `grep -r "superpowers:brainstorming\|superpowers:using-superpowers\b" skills/ commands/ hooks/ --include="*.md" --include="*.sh" -l`
 
-Expected: No output (no files reference old skill names). If files are found, update them to use `superpowers-ml:ml-brainstorming` and `superpowers-ml:using-superpowers-ml`.
+Expected: No output (no files reference old skill names). If files are found, update them to use `mlsp:ml-brainstorming` and `mlsp:using-mlsp`.
 
 **Step 3: Verify command files reference correct skills**
 
 Run: `cat commands/ml-brainstorm.md commands/ml-plan.md commands/ml-execute.md`
 
-Expected: Each file references `superpowers-ml:` prefixed skills.
+Expected: Each file references `mlsp:` prefixed skills.
 
 **Step 4: Verify hook references correct skill path**
 
-Run: `grep "using-superpowers-ml" hooks/session-start`
+Run: `grep "using-mlsp" hooks/session-start`
 
 Expected: Two matches (the cat command and the context message).
 
@@ -842,9 +842,9 @@ If grep found files with old references, update them. Common ones to check:
 For cross-references to skills we're keeping as-is (like `test-driven-development`), leave the `superpowers:` prefix since those skills haven't been renamed yet — they'll be addressed in later phases.
 
 Only update references to skills we've renamed in this phase:
-- `superpowers:brainstorming` -> `superpowers-ml:ml-brainstorming`
-- `superpowers:using-superpowers` -> `superpowers-ml:using-superpowers-ml`
-- `superpowers:writing-plans` -> `superpowers-ml:ml-experiment-planning`
+- `superpowers:brainstorming` -> `mlsp:ml-brainstorming`
+- `superpowers:using-superpowers` -> `mlsp:using-mlsp`
+- `superpowers:writing-plans` -> `mlsp:ml-experiment-planning`
 - `superpowers:executing-plans` -> keep as-is (executing-plans skill not renamed yet)
 
 **Step 6: Commit any fixes**
