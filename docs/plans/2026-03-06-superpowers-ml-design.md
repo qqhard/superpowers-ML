@@ -29,6 +29,7 @@
 5. Users can skip any validation layer — scope confirmed during brainstorm phase.
 6. Validation Pyramid dynamically orchestrates based on architecture type, task type, and user context.
 7. Only codify toolkit code that agents struggle to write correctly from scratch and is highly reusable; everything else is guided by skills for agents to write on the spot.
+8. **Test/validation code and core code are strictly separated.** Core code (model, training, data pipeline) must be zero-test-dependency, production-deployable. All Validation Pyramid checks, monitors, and profiling are external — they observe but never invade core code. After Agentic Engineering completes, core code can be extracted and deployed to production as-is, clean and executable.
 
 ---
 
@@ -240,6 +241,27 @@ structure_decomposition:
 **Adapted from:** writing-plans
 
 **Retained:** Bite-sized steps, exact file paths, complete code, executable commands.
+
+**Code separation principle:**
+
+Agent-generated user project code must follow this structure:
+```
+user_project/
+  src/                  # Core code — production-deployable, zero test dependency
+    model/
+    data/
+    training/
+  tests/                # Unit tests (function/operator level)
+  validation/           # Validation Pyramid scripts (L0-L4 checks)
+    run_l0_efficiency.py
+    run_l1_numerical.py
+    run_l2_overfit.py
+    ...
+```
+
+- `src/` is the deliverable. It never imports from `tests/`, `validation/`, or `toolkit/`.
+- `validation/` scripts import from `toolkit/` and observe `src/` externally via hooks/wrappers.
+- After development, `src/` can be extracted and deployed to production as-is.
 
 **Output structure:**
 
@@ -466,7 +488,7 @@ report = gm.report()
 # {'layers': {'attn.weight': {'mean': 0.01, 'std': 0.003, 'status': 'healthy'}, ...}}
 ```
 
-5. **Non-invasive** — hook registration/removal auto-managed, clean up after use
+5. **Non-invasive** — hook registration/removal auto-managed, clean up after use. Toolkit attaches externally to models (via PyTorch hooks, wrappers, profiler context managers) — core code never imports or depends on toolkit. After validation, remove all toolkit references and core code is production-ready as-is.
 6. **Toolkit itself uses traditional TDD** — deterministic code, standard pytest tests
 
 ---
