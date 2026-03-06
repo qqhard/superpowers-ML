@@ -49,7 +49,7 @@ Load sub-files based on the decision tree in `validation-pyramid/decision-tree.m
 
 ## Pass Criteria
 
-All enabled universal + architecture-specific checks pass. Any failure -> trigger **mlsp:ml-diagnostics**.
+All enabled universal + architecture-specific checks pass. Any failure -> trigger **spml:ml-diagnostics**.
 
 ## Writing Monitors
 

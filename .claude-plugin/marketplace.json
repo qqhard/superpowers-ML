@@ -1,12 +1,12 @@
 {
-  "name": "mlsp-dev",
+  "name": "spml-dev",
   "description": "Development marketplace for MLSP skills library",
   "owner": {
-    "name": "mlsp contributors"
+    "name": "spml contributors"
   },
   "plugins": [
     {
-      "name": "mlsp",
+      "name": "spml",
       "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics",
       "version": "0.1.0",
       "source": "./"

@@ -3,4 +3,4 @@ description: "You MUST use this before any ML work - designing experiments, buil
 disable-model-invocation: true
 ---
 
-Invoke the mlsp:ml-brainstorming skill and follow it exactly as presented to you
+Invoke the spml:ml-brainstorming skill and follow it exactly as presented to you

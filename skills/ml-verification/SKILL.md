@@ -126,11 +126,11 @@ After presenting the summary, ask the user:
 
 **"Experiment complete. Three options:**
 
-**1. Finish** — Effective subtasks are ready. Invoke `mlsp:finishing-a-development-branch` to wrap up.
+**1. Finish** — Effective subtasks are ready. Invoke `spml:finishing-a-development-branch` to wrap up.
 
 **2. Add subtasks** — Continue this experiment with additional subtasks. I'll add them to the existing plan.
 
-**3. New brainstorm** — Start a new experiment direction. Invoke `mlsp:ml-brainstorming`."
+**3. New brainstorm** — Start a new experiment direction. Invoke `spml:ml-brainstorming`."
 
 ## Red Flags
 
@@ -149,7 +149,7 @@ After presenting the summary, ask the user:
 
 ## Integration
 
-- **mlsp:ml-subagent-dev** — Produces the subtask results this skill verifies
-- **mlsp:validation-pyramid** — VP checks referenced in verification
-- **mlsp:ml-brainstorming** — Next step if new experiment needed
-- **mlsp:finishing-a-development-branch** — Next step if experiment is done
+- **spml:ml-subagent-dev** — Produces the subtask results this skill verifies
+- **spml:validation-pyramid** — VP checks referenced in verification
+- **spml:ml-brainstorming** — Next step if new experiment needed
+- **spml:finishing-a-development-branch** — Next step if experiment is done
