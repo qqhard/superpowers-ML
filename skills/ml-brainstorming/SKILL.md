@@ -117,6 +117,12 @@ Walk through the Validation Pyramid layers. For each, ask: needed / skip / alrea
 
 **User can skip any layer entirely.** Record decisions in natural language in the design doc.
 
+### Dataset preparation (when applicable)
+If the task involves constructing or transforming datasets:
+- Invoke **spml:ml-data-preparation** for TDD-first dataset processing
+- Dataset preparation runs independently from the training Validation Pyramid
+- Complete data preparation before starting training subtasks
+
 ### Exploring approaches
 - Propose 2-3 different approaches with trade-offs
 - Present options conversationally with your recommendation and reasoning
