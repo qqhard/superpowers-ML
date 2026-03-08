@@ -22,11 +22,16 @@ SPML addresses this with:
 ### Claude Code
 
 ```bash
-# Clone the repo
+# 1. Clone the repo
 git clone https://github.com/qqhard/superpowers-ML.git ~/.claude/plugins/spml
+```
 
-# Register as local plugin
-claude plugin add -- ~/.claude/plugins/spml
+Then in Claude Code:
+
+```
+# 2. Register as local marketplace and install
+/plugin marketplace add ~/.claude/plugins/spml
+/plugin install spml@spml-dev
 ```
 
 ### Cursor
