@@ -11,6 +11,16 @@ The cheapest, fastest layer. Run this FIRST before any training. Catches configu
 
 **If L0 fails, don't waste time on L1-L3.** Fix infrastructure first.
 
+## TDD Flow
+
+Follow RED → GREEN → REFACTOR for each check:
+
+1. **RED:** Write the assertion (e.g., `assert mfu >= target`). Run it. Confirm it fails.
+2. **GREEN:** Optimize configuration/code until the assertion passes.
+3. **REFACTOR:** Clean up.
+
+If an assertion passes immediately, verify the threshold is meaningful — not too lenient.
+
 ## What to Check
 
 All checks run on a few forward/backward steps with mock data. No real training needed.
