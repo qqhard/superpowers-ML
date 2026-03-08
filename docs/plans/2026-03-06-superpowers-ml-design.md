@@ -41,6 +41,7 @@ mlsp/
   skills/
     ml-brainstorming/              # Experiment design + context collection + validation scope confirmation
     ml-experiment-planning/        # Experiment decomposition: shared infra + atomic subtasks
+    ml-data-preparation/             # TDD-first dataset processing: small-scale validate then full-scale
     validation-pyramid/            # Layered validation orchestration (dynamic routing)
       SKILL.md
       decision-tree.md             # Architecture -> check item selection logic
@@ -119,7 +120,7 @@ mlsp/
 ```
 ml-brainstorming
     |
-    Output: experiment design (includes validation scope + long-running confirmation)
+    Output: experiment design (includes validation scope as natural language)
     |
 ml-experiment-planning
     |
@@ -137,29 +138,25 @@ ml-subagent-dev (execute subtasks one by one)
     +-- 4. Spec review (does implementation match experiment design?)
     +-- 5. Record conclusion (metric data + effective/ineffective/needs further study)
     |
-    Task needs long-running phase?
+ml-training-handoff (all subtasks complete)
     |
-    +-- No -> ml-verification (all subtasks complete)
+    Output: training script + logs + experiment-context.md + watchdog-prompt.md
     |
-    +-- Yes -> ml-training-handoff
-                |
-                Output: training script + logs + experiment-context.md + watchdog-prompt.md
-                |
-                User chooses: separated execution or combined execution
-                |
-                [User starts training + Watchdog session]
-                |
-              ml-watchdog (independent session, read-only monitoring)
-                |
-                +-- Normal completion -> completion-prompt.md
-                +-- Anomaly detected -> recovery-prompt.md
-                |
-              ml-training-resume (independent session)
-                |
-                +-- From completion -> ml-verification
-                +-- From recovery -> back to appropriate stage
-                    (code fix / replan / rebrainstorm)
-                |
+    User chooses: separated execution or combined execution
+    |
+    [User starts training + Watchdog session]
+    |
+ml-watchdog (independent session, read-only monitoring)
+    |
+    +-- Normal completion -> completion-prompt.md
+    +-- Anomaly detected -> recovery-prompt.md
+    |
+ml-training-resume (independent session)
+    |
+    +-- From completion -> ml-verification
+    +-- From recovery -> back to appropriate stage
+        (code fix / replan / rebrainstorm)
+    |
 ml-verification (all subtasks complete)
     |
     Output: conclusion summary + recommendations
@@ -175,7 +172,7 @@ Human decides: finish / add subtasks / new brainstorm round
 
 **New: Validation scope confirmation (first step)**
 
-No task type classification. Instead, directly ask the user which validation layers apply to their current task. Different tasks naturally lead to different layers being enabled or skipped — an experiment may need L0-L3, dataset prep may only need data quality checks, pipeline work may only need L0+L4. The pyramid's dynamic selection handles this without an extra categorization layer.
+No task type classification. Instead, directly ask the user which validation layers apply to their current task. Different tasks naturally lead to different layers being enabled or skipped — an experiment may need L0-L3, dataset prep may only need data quality checks, pipeline work may only need L0+L3. The pyramid's dynamic selection handles this without an extra categorization layer.
 
 **New: Experiment design (when applicable)**
 - Hypothesis: Doing X is expected to cause Y
@@ -198,7 +195,7 @@ No task type classification. Instead, directly ask the user which validation lay
 - Set reasonable segmentation granularity
 - Which custom functions/operators need unit tests
 
-**Output:** Design document with validation scope described in natural language. No formal YAML schema required — the agent records decisions from the brainstorm conversation naturally in the design doc (e.g., "L0: check MFU and NCCL bandwidth, skip I/O since user has existing pipeline. L1: gradient + attention + MoE entropy. L2: overfit test. L3: recsys metrics. L4: e2e on tiny data.").
+**Output:** Design document with validation scope described in natural language. No formal YAML schema required — the agent records decisions from the brainstorm conversation naturally in the design doc (e.g., "L0: check MFU and NCCL bandwidth, skip I/O since user has existing pipeline. L1: gradient + attention + MoE entropy. L2: overfit test. L3: e2e on tiny data.").
 
 ### 3.2 ml-experiment-planning
 
@@ -250,7 +247,7 @@ Core code (model, training, data) must never import from test/validation code or
 
 **Extends:** test-driven-development
 
-**Orchestration logic:** Based on validation scope from brainstorm design doc, execute enabled checks in L0->L4 order, pass each layer before entering next, failure triggers ml-diagnostics.
+**Orchestration logic:** Based on validation scope from brainstorm design doc, execute enabled checks in L0->L3 order, pass each layer before entering next, failure triggers ml-diagnostics.
 
 **Three granularity levels:**
 
@@ -550,6 +547,7 @@ frameworks/deepspeed/SKILL.md guides:
 - `using-mlsp` skill (entry skill, replaces using-superpowers)
 - `ml-brainstorming` skill v1 (context collection, validation scope confirmation)
 - `ml-experiment-planning` skill v1 (subtask decomposition + shared infra annotation)
+- `ml-data-preparation` skill (TDD-first dataset processing)
 
 **Delivery criteria:** Can complete a full brainstorm -> plan flow.
 

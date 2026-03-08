@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add three new skills (ml-training-handoff, ml-watchdog, ml-training-resume) and update existing skills/docs to support long-running ML task monitoring through a session chain architecture.
+**Goal:** Add three new skills (ml-training-handoff, ml-watchdog, ml-training-resume) and update design docs to support long-running ML task monitoring through a session chain architecture.
 
 **Architecture:** Independent agent sessions connected through prompt files + a shared experiment-context.md file. Training scripts are production-deployable core code. Watchdog is read-only. All prompts are framework-agnostic.
 
@@ -47,7 +47,7 @@ Replace the existing full pipeline diagram with:
 ```
 ml-brainstorming
     |
-    Output: experiment design (includes validation scope + long-running confirmation)
+    Output: experiment design (includes validation scope as natural language)
     |
 ml-experiment-planning
     |
@@ -65,29 +65,25 @@ ml-subagent-dev (execute subtasks one by one)
     +-- 4. Spec review (does implementation match experiment design?)
     +-- 5. Record conclusion (metric data + effective/ineffective/needs further study)
     |
-    Task needs long-running phase?
+ml-training-handoff (all subtasks complete)
     |
-    +-- No -> ml-verification (all subtasks complete)
+    Output: training script + logs + experiment-context.md + watchdog-prompt.md
     |
-    +-- Yes -> ml-training-handoff
-                |
-                Output: training script + logs + experiment-context.md + watchdog-prompt.md
-                |
-                User chooses: separated execution or combined execution
-                |
-                [User starts training + Watchdog session]
-                |
-              ml-watchdog (independent session, read-only monitoring)
-                |
-                +-- Normal completion -> completion-prompt.md
-                +-- Anomaly detected -> recovery-prompt.md
-                |
-              ml-training-resume (independent session)
-                |
-                +-- From completion -> ml-verification
-                +-- From recovery -> back to appropriate stage
-                    (code fix / replan / rebrainstorm)
-                |
+    User chooses: separated execution or combined execution
+    |
+    [User starts training + Watchdog session]
+    |
+ml-watchdog (independent session, read-only monitoring)
+    |
+    +-- Normal completion -> completion-prompt.md
+    +-- Anomaly detected -> recovery-prompt.md
+    |
+ml-training-resume (independent session)
+    |
+    +-- From completion -> ml-verification
+    +-- From recovery -> back to appropriate stage
+        (code fix / replan / rebrainstorm)
+    |
 ml-verification (all subtasks complete)
     |
     Output: conclusion summary + recommendations
@@ -838,7 +834,7 @@ git commit -m "feat: add ml-training-resume skill"
 
 ---
 
-### Task 7: Final review
+### Task 11: Final review
 
 **Step 1: Verify all new skill files exist**
 
@@ -865,10 +861,3 @@ grep -c "ml-training-handoff\|ml-watchdog\|ml-training-resume" docs/plans/2026-0
 
 Expected: multiple matches (project structure + workflow + Phase 3).
 
-**Step 4: Verify existing skills are NOT modified**
-
-```bash
-git diff d41b29c -- skills/ml-subagent-dev/ skills/ml-verification/ skills/ml-brainstorming/ skills/ml-data-preparation/
-```
-
-Expected: no diff (these skills remain untouched).
