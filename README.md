@@ -17,33 +17,56 @@ SPML addresses this with:
 
 ## Installation
 
+> **Note:** SPML is in early development. Installation is manual clone + configuration. Marketplace publishing is planned for later.
+
 ### Claude Code
 
 ```bash
-claude plugin add -- qqhard/superpowers-ML
+# Clone the repo
+git clone https://github.com/qqhard/superpowers-ML.git ~/.claude/plugins/spml
+
+# Register as local plugin
+claude plugin add -- ~/.claude/plugins/spml
 ```
 
 ### Cursor
 
-```text
-/plugin-add qqhard/superpowers-ML
+```bash
+# Clone the repo
+git clone https://github.com/qqhard/superpowers-ML.git ~/.cursor/plugins/spml
 ```
+
+Then in Cursor settings, add the plugin path.
 
 ### Codex
 
+```bash
+git clone https://github.com/qqhard/superpowers-ML.git ~/.codex/spml
+mkdir -p ~/.agents/skills
+ln -s ~/.codex/spml/skills ~/.agents/skills/spml
 ```
-Fetch and follow instructions from https://raw.githubusercontent.com/qqhard/superpowers-ML/refs/heads/main/.codex/INSTALL.md
-```
+
+Restart Codex to discover the skills.
 
 ### OpenCode
 
+```bash
+git clone https://github.com/qqhard/superpowers-ML.git ~/.config/opencode/spml
+mkdir -p ~/.config/opencode/skills
+ln -s ~/.config/opencode/spml/skills ~/.config/opencode/skills/spml
 ```
-Fetch and follow instructions from https://raw.githubusercontent.com/qqhard/superpowers-ML/refs/heads/main/.opencode/INSTALL.md
-```
+
+Restart OpenCode to discover the skills.
 
 ### Verify Installation
 
 Start a new session and describe an ML task (e.g., "help me design a training experiment" or "let's optimize this model's MFU"). The agent should invoke the relevant SPML skill.
+
+### Updating
+
+```bash
+cd <install-path> && git pull
+```
 
 ## The ML Workflow
 
