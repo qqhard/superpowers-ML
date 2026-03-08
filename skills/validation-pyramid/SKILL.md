@@ -1,13 +1,13 @@
 ---
 name: validation-pyramid
-description: Use when validating ML training code correctness - orchestrates layered checks from engineering efficiency through end-to-end pipeline, replacing traditional TDD for ML workflows
+description: Use when validating ML training code correctness - orchestrates layered checks from engineering efficiency through end-to-end pipeline, extending TDD for ML workflows
 ---
 
 # Validation Pyramid
 
 ## Overview
 
-The Validation Pyramid replaces traditional TDD for ML workflows. Instead of "write test, watch fail, write code, watch pass," it runs layered checks from cheap/fast (L0) to expensive/slow (L3), catching implementation errors before they waste GPU hours.
+The Validation Pyramid extends TDD to ML workflows. Each layer follows the same RED-GREEN-REFACTOR rhythm: write the validation script first, watch it fail, implement until it passes. Since every layer runs in minutes on small data, TDD's fast feedback loop applies naturally. The Pyramid runs layered checks from cheap/fast (L0) to expensive/slow (L3), catching implementation errors before they waste GPU hours.
 
 **Core principle:** In ML, code running without errors does NOT mean it's correct. The Validation Pyramid ensures the process is correct, so you can trust that "not working" means the strategy is ineffective — not that the implementation is wrong.
 
@@ -57,6 +57,48 @@ digraph validation_pyramid {
 3. Each layer must pass before proceeding to next
 4. Failure at any layer -> trigger **spml:ml-diagnostics**
 5. After diagnostics fix -> re-run from the failed layer, not from L0
+
+## TDD Rhythm: RED → GREEN → REFACTOR
+
+Every Pyramid layer follows TDD's core cycle:
+
+### RED — Write validation script, watch it fail
+
+Write the validation assertion BEFORE writing or optimizing implementation code. Run it. It must fail. Failure proves the validation script has discriminating power.
+
+```python
+# Example: L0 MFU check
+def test_mfu_meets_target():
+    result = calculate_mfu(model, input_shape, step_time)
+    assert result['mfu'] >= 0.4, f"MFU {result['mfu']} below target 0.4"
+# Run -> FAIL (MFU is 0.15, code not optimized yet)
+```
+
+### GREEN — Implement/optimize until validation passes
+
+Write or optimize implementation code. Re-run validation each iteration. Multiple iterations are expected.
+
+### REFACTOR — Clean up, keep validation passing
+
+Clean up implementation code. Validation must stay green.
+
+### Per-layer RED examples
+
+| Layer | RED (write first) | GREEN (make it pass) |
+|---|---|---|
+| L0 Engineering Efficiency | `assert mfu >= target`, `assert fa_backend_enabled` | Optimize kernel selection, enable FA, adjust batch size |
+| L1 Process Metrics | `assert no_gradient_nan()`, `assert attention_entropy > threshold` | Fix initialization, adjust lr, fix attention mask |
+| L2 Overfitting Test | `assert loss_monotonically_decreasing(losses)` | Fix model/loss implementation bugs |
+| L3 E2E Pipeline | `assert pipeline_completes_without_error()` | Fix data flow, shape mismatches |
+
+### Validation passes immediately?
+
+If the validation script passes on the first run, investigate:
+- Is the threshold too lenient?
+- Is the implementation already correct?
+- Is the validation script actually testing what you intend?
+
+Just like in TDD: a test passing immediately means you may not be testing the right thing. Verify the validation has discriminating power before proceeding.
 
 ## How to Use
 
