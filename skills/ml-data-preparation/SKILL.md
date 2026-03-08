@@ -172,19 +172,20 @@ def analyze_processed_data(dataset):
 
 After user approves small-scale results:
 
-**If estimated processing time is short (< 15 minutes):**
+1. **Provide progress viewing guide to user:**
 
-1. Launch the full-scale processing
-2. Wait for completion, verify output
+```
+Running full-scale data processing.
 
-**If estimated processing time is long (> 15 minutes):**
+Estimated time: [X hours/minutes]
+Monitor progress: tail -f logs/processing.log
+Progress bar: visible in terminal via tqdm
+Output location: [path]
+Resume if interrupted: re-run the same command, it will skip completed chunks
+```
 
-1. Invoke **spml:ml-training-handoff** to generate:
-   - Processing script (with tqdm progress bar + JSONL logging)
-   - experiment-context.md (with data processing context instead of training context)
-   - watchdog-prompt.md (for monitoring the processing)
-2. Present user with separated/combined execution options
-3. User monitors with Watchdog, resumes with ml-training-resume when complete
+2. Launch the full-scale processing
+3. **Agent does NOT poll or monitor** — user watches progress themselves
 
 ## Common Failure Patterns
 
