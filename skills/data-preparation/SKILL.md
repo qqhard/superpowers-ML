@@ -1,5 +1,5 @@
 ---
-name: ml-data-preparation
+name: data-preparation
 description: Use when constructing or transforming datasets for training - guides TDD-first workflow to validate data processing logic on small-scale data before running full-scale
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: ml-training-resume
+name: training-resume
 description: Use when resuming from a Watchdog session — reads experiment context and diagnosis, autonomously decides which workflow stage to return to (fix code, adjust hyperparams, replan, or rebrainstorm)
 ---
 
@@ -49,9 +49,9 @@ Based on evidence, decide which workflow stage to return to:
 |-----------------|-------------|--------|
 | NaN/Inf, shape error, crash | Code fix | Fix bug → re-run VP → re-handoff |
 | Loss not converging, gradients healthy, code correct | Hyperparameter adjustment | Adjust LR/batch/optimizer → possibly re-run VP L2 → re-handoff |
-| Training works but wrong metrics tracked, wrong evaluation | Task spec fix | Back to ml-experiment-planning to adjust subtask spec |
-| Fundamental approach doesn't work despite correct implementation | Hypothesis revision | Back to ml-brainstorming |
-| Data quality issues (corrupted batches, distribution shift) | Data fix | Back to ml-data-preparation |
+| Training works but wrong metrics tracked, wrong evaluation | Task spec fix | Back to experiment-planning to adjust subtask spec |
+| Fundamental approach doesn't work despite correct implementation | Hypothesis revision | Back to brainstorming |
+| Data quality issues (corrupted batches, distribution shift) | Data fix | Back to data-preparation |
 
 ### Step 4: Execute
 
@@ -61,28 +61,28 @@ Based on the determined rollback level:
 1. Checkout the git commit from experiment-context.md
 2. Fix the identified issue
 3. Re-run the failed VP checks to verify the fix
-4. Invoke ml-training-handoff to generate new artifacts
+4. Invoke training-handoff to generate new artifacts
 5. New handoff appends Round N to experiment-context.md (preserving history)
 
 **Hyperparameter adjustment:**
 1. Identify which hyperparameters to change and why
 2. If the change is significant, re-run VP L2 (overfit test) to verify
-3. Invoke ml-training-handoff with updated training config
+3. Invoke training-handoff with updated training config
 4. Optionally resume from the last known good checkpoint
 
 **Task spec fix:**
 1. Explain the issue to the user
-2. Invoke ml-experiment-planning to revise the subtask
-3. Re-execute the revised subtask through ml-subagent-dev
+2. Invoke experiment-planning to revise the subtask
+3. Re-execute the revised subtask through subagent-dev
 
 **Hypothesis revision:**
 1. Explain why the current hypothesis appears invalid
 2. Present evidence from the training run
-3. Invoke ml-brainstorming for a new experiment design
+3. Invoke brainstorming for a new experiment design
 
 **Data fix:**
 1. Identify the data quality issue from training metrics
-2. Invoke ml-data-preparation to fix and re-validate data
+2. Invoke data-preparation to fix and re-validate data
 3. After data is fixed, re-handoff for training
 
 ### Step 5: Communicate
@@ -110,9 +110,9 @@ Read metrics.jsonl for:
 - Metric stability in final phase
 - Any concerning trends even if training "completed"
 
-### Step 3: Enter ml-verification
+### Step 3: Enter verification
 
-Invoke the ml-verification flow:
+Invoke the verification flow:
 - Validate all VP layers were originally passed
 - Check that long-training results support the conclusion
 - Compare hypothesis prediction vs actual outcome
@@ -142,10 +142,10 @@ experiment-context.md may contain multiple rounds (Round 1, Round 2, ...) from p
 
 ## Integration
 
-- **spml:ml-watchdog** — Produces the prompts and context this skill consumes
-- **spml:ml-training-handoff** — Re-invoked when fix requires another training run
-- **spml:ml-verification** — Invoked on the completion path
-- **spml:ml-brainstorming** — Invoked when hypothesis needs revision
-- **spml:ml-experiment-planning** — Invoked when task decomposition needs revision
-- **spml:ml-data-preparation** — Invoked when data quality is the issue
-- **spml:ml-diagnostics** — May be invoked for deeper code-level diagnosis
+- **spml:watchdog** — Produces the prompts and context this skill consumes
+- **spml:training-handoff** — Re-invoked when fix requires another training run
+- **spml:verification** — Invoked on the completion path
+- **spml:brainstorming** — Invoked when hypothesis needs revision
+- **spml:experiment-planning** — Invoked when task decomposition needs revision
+- **spml:data-preparation** — Invoked when data quality is the issue
+- **spml:diagnostics** — May be invoked for deeper code-level diagnosis

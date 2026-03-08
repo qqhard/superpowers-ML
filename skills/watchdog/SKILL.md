@@ -1,5 +1,5 @@
 ---
-name: ml-watchdog
+name: watchdog
 description: Use when monitoring a long-running ML task — read-only observation of training/data processing/evaluation with adaptive frequency, anomaly detection, and diagnosis reporting
 ---
 
@@ -20,7 +20,7 @@ The ONLY files you write are: experiment-context.md (updates), recovery-prompt.m
 
 ## When to Use
 
-- User has pasted a Watchdog prompt from ml-training-handoff
+- User has pasted a Watchdog prompt from training-handoff
 - A long-running ML task is running or about to start (training, data processing, evaluation)
 
 ## Startup
@@ -187,7 +187,7 @@ Read `[path]/experiment-context.md` for the full context including:
 - Watchdog monitoring summary
 - Final training metrics
 
-Your job: compare results against the hypothesis, run ml-verification, and present conclusions to the user.
+Your job: compare results against the hypothesis, run verification, and present conclusions to the user.
 ```
 
 ### Step 5: Notify User
@@ -228,6 +228,6 @@ To analyze results: open a new agent session and paste the contents of completio
 
 ## Integration
 
-- **spml:ml-training-handoff** — Produces the context and prompt that starts this skill
-- **spml:ml-training-resume** — Consumes the recovery/completion prompts this skill produces
-- **spml:ml-diagnostics** — This skill's diagnosis mode uses similar evidence-gathering patterns, but from logs rather than live execution
+- **spml:training-handoff** — Produces the context and prompt that starts this skill
+- **spml:training-resume** — Consumes the recovery/completion prompts this skill produces
+- **spml:diagnostics** — This skill's diagnosis mode uses similar evidence-gathering patterns, but from logs rather than live execution

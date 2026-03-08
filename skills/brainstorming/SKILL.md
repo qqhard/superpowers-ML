@@ -1,5 +1,5 @@
 ---
-name: ml-brainstorming
+name: brainstorming
 description: Use before any ML work - designing experiments, building models, preparing datasets, or optimizing training. Explores experiment design, collects context, and confirms validation scope before implementation.
 ---
 
@@ -32,7 +32,7 @@ You MUST create a task for each of these items and complete them in order:
 5. **Propose 2-3 approaches** — with trade-offs and your recommendation
 6. **Present design** — in sections scaled to their complexity, get user approval after each section
 7. **Write design doc** — save to `docs/plans/YYYY-MM-DD-<topic>-design.md` and commit
-8. **Transition to implementation** — invoke ml-experiment-planning skill to create implementation plan
+8. **Transition to implementation** — invoke experiment-planning skill to create implementation plan
 
 ## Process Flow
 
@@ -46,7 +46,7 @@ digraph ml_brainstorming {
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
     "Write design doc" [shape=box];
-    "Invoke ml-experiment-planning skill" [shape=doublecircle];
+    "Invoke experiment-planning skill" [shape=doublecircle];
 
     "Explore project context" -> "Collect ML context";
     "Collect ML context" -> "Ask clarifying questions";
@@ -56,11 +56,11 @@ digraph ml_brainstorming {
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
     "User approves design?" -> "Write design doc" [label="yes"];
-    "Write design doc" -> "Invoke ml-experiment-planning skill";
+    "Write design doc" -> "Invoke experiment-planning skill";
 }
 ```
 
-**The terminal state is invoking ml-experiment-planning.** Do NOT invoke any other implementation skill.
+**The terminal state is invoking experiment-planning.** Do NOT invoke any other implementation skill.
 
 ## The Process
 
@@ -119,7 +119,7 @@ Walk through the Validation Pyramid layers. For each, ask: needed / skip / alrea
 
 ### Dataset preparation (when applicable)
 If the task involves constructing or transforming datasets:
-- Invoke **spml:ml-data-preparation** for TDD-first dataset processing
+- Invoke **spml:data-preparation** for TDD-first dataset processing
 - Dataset preparation runs independently from the training Validation Pyramid
 - Complete data preparation before starting training subtasks
 
@@ -142,8 +142,8 @@ If the task involves constructing or transforming datasets:
 - Commit the design document to git
 
 **Implementation:**
-- Invoke the ml-experiment-planning skill to create a detailed implementation plan
-- Do NOT invoke any other skill. ml-experiment-planning is the next step.
+- Invoke the experiment-planning skill to create a detailed implementation plan
+- Do NOT invoke any other skill. experiment-planning is the next step.
 
 ## Key Principles
 

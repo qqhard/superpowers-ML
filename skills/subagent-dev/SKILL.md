@@ -1,5 +1,5 @@
 ---
-name: ml-subagent-dev
+name: subagent-dev
 description: Use when executing ML experiment plans with subagents - adapts subagent-driven-development with Validation Pyramid integration, experiment-aware reviews, and conclusion recording
 ---
 
@@ -17,7 +17,7 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 
 ## When to Use
 
-- You have an ML experiment plan (from ml-experiment-planning)
+- You have an ML experiment plan (from experiment-planning)
 - Subtasks are mostly independent
 - You want to stay in this session (vs. executing-plans in parallel session)
 
@@ -32,7 +32,7 @@ digraph process {
         "Dispatch ML implementer subagent" [shape=box];
         "Implementer: unit tests + implement + Validation Pyramid" [shape=box];
         "Validation Pyramid passed?" [shape=diamond];
-        "Trigger ml-diagnostics" [shape=box style=filled fillcolor=lightyellow];
+        "Trigger diagnostics" [shape=box style=filled fillcolor=lightyellow];
         "Dispatch ML spec reviewer" [shape=box];
         "Spec reviewer: experiment design compliance?" [shape=diamond];
         "Implementer fixes spec gaps" [shape=box];
@@ -44,14 +44,14 @@ digraph process {
 
     "Read plan, extract subtasks, create TodoWrite" [shape=box];
     "More subtasks?" [shape=diamond];
-    "Invoke ml-verification" [shape=box style=filled fillcolor=lightblue];
+    "Invoke verification" [shape=box style=filled fillcolor=lightblue];
 
     "Read plan, extract subtasks, create TodoWrite" -> "Dispatch ML implementer subagent";
     "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement + Validation Pyramid";
     "Implementer: unit tests + implement + Validation Pyramid" -> "Validation Pyramid passed?";
     "Validation Pyramid passed?" -> "Dispatch ML spec reviewer" [label="yes"];
-    "Validation Pyramid passed?" -> "Trigger ml-diagnostics" [label="no"];
-    "Trigger ml-diagnostics" -> "Implementer: unit tests + implement + Validation Pyramid" [label="fix and retry"];
+    "Validation Pyramid passed?" -> "Trigger diagnostics" [label="no"];
+    "Trigger diagnostics" -> "Implementer: unit tests + implement + Validation Pyramid" [label="fix and retry"];
     "Dispatch ML spec reviewer" -> "Spec reviewer: experiment design compliance?";
     "Spec reviewer: experiment design compliance?" -> "Implementer fixes spec gaps" [label="no"];
     "Implementer fixes spec gaps" -> "Dispatch ML spec reviewer" [label="re-review"];
@@ -62,7 +62,7 @@ digraph process {
     "Quality reviewer: VP results + code quality?" -> "Record conclusion" [label="yes"];
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
-    "More subtasks?" -> "Invoke ml-verification" [label="no"];
+    "More subtasks?" -> "Invoke verification" [label="no"];
 }
 ```
 
@@ -217,7 +217,7 @@ Record this in the plan document or a separate experiment log.
 - Skip Validation Pyramid execution
 - Accept VP "pass" without checking actual numbers
 - Let implementer skip unit tests for custom code
-- Proceed when VP layer fails (trigger ml-diagnostics instead)
+- Proceed when VP layer fails (trigger diagnostics instead)
 - Change control variables in a subtask (confounds the experiment)
 - Record "effective" without VP evidence
 
@@ -229,7 +229,7 @@ Record this in the plan document or a separate experiment log.
 
 ## Integration
 
-- **spml:ml-experiment-planning** — Creates the plan this skill executes
+- **spml:experiment-planning** — Creates the plan this skill executes
 - **spml:validation-pyramid** — Orchestrates VP execution within subtasks
-- **spml:ml-diagnostics** — Called when VP check fails
-- **spml:ml-verification** — Called after all subtasks complete
+- **spml:diagnostics** — Called when VP check fails
+- **spml:verification** — Called after all subtasks complete

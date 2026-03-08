@@ -59,7 +59,7 @@ General software development:
   All skills from Superpowers, SPML not involved.
 
 ML experiments:
-  /spml:brainstorm → spml:ml-experiment-planning → spml:ml-subagent-dev
+  /spml:brainstorm → spml:experiment-planning → spml:subagent-dev
   ML workflow from SPML, general discipline (TDD, code review) from Superpowers.
 ```
 
@@ -68,25 +68,25 @@ SPML skills reference Superpowers skills where needed (e.g., `superpowers:finish
 ## The ML Workflow
 
 ```
-ml-brainstorming
+brainstorming
     Refine hypothesis, collect context, confirm validation scope
     |
-ml-experiment-planning
+experiment-planning
     Break into atomic subtasks with validation criteria
     |
-ml-subagent-dev
+subagent-dev
     Execute each subtask: unit test → implement → Validation Pyramid
     |
-ml-training-handoff
+training-handoff
     Generate training script + Watchdog prompt + experiment context
     |
-ml-watchdog (independent session)
+watchdog (independent session)
     Read-only monitoring, anomaly detection, diagnosis reporting
     |
-ml-training-resume (independent session)
+training-resume (independent session)
     Analyze results or diagnose issues, decide next step
     |
-ml-verification
+verification
     Evidence-based conclusion: effective / ineffective / inconclusive
 ```
 
@@ -117,15 +117,15 @@ Long-running training is monitored by an independent agent session:
 
 | Skill | Purpose |
 |-------|---------|
-| **ml-brainstorming** | Experiment design, context collection, validation scope confirmation |
-| **ml-experiment-planning** | Subtask decomposition with validation criteria |
-| **ml-data-preparation** | TDD-first dataset processing: validate on small-scale, then full-scale |
-| **ml-subagent-dev** | Execute subtasks with VP integration and experiment-aware review |
-| **ml-diagnostics** | Systematic diagnosis: why not converging, early anomalies, efficiency bottlenecks |
-| **ml-verification** | Evidence-based conclusion with experiment summary |
-| **ml-training-handoff** | Generate training script + Watchdog prompt + experiment context |
-| **ml-watchdog** | Read-only monitoring of long-running tasks |
-| **ml-training-resume** | Recovery or completion entry point after long-running tasks |
+| **brainstorming** | Experiment design, context collection, validation scope confirmation |
+| **experiment-planning** | Subtask decomposition with validation criteria |
+| **data-preparation** | TDD-first dataset processing: validate on small-scale, then full-scale |
+| **subagent-dev** | Execute subtasks with VP integration and experiment-aware review |
+| **diagnostics** | Systematic diagnosis: why not converging, early anomalies, efficiency bottlenecks |
+| **verification** | Evidence-based conclusion with experiment summary |
+| **training-handoff** | Generate training script + Watchdog prompt + experiment context |
+| **watchdog** | Read-only monitoring of long-running tasks |
+| **training-resume** | Recovery or completion entry point after long-running tasks |
 
 ### Validation Pyramid
 
@@ -141,8 +141,8 @@ Long-running training is monitored by an independent agent session:
 
 | Skill | Why modified |
 |-------|-------------|
-| **executing-plans** | Routes to `spml:ml-experiment-planning` instead of `superpowers:writing-plans` |
-| **subagent-driven-development** | Routes to `spml:ml-experiment-planning` instead of `superpowers:writing-plans` |
+| **executing-plans** | Routes to `spml:experiment-planning` instead of `superpowers:writing-plans` |
+| **subagent-driven-development** | Routes to `spml:experiment-planning` instead of `superpowers:writing-plans` |
 
 ### From Superpowers (not included, used via cross-plugin reference)
 

@@ -51,7 +51,7 @@ Load sub-files based on the decision tree in `validation-pyramid/decision-tree.m
 
 ## Pass Criteria
 
-All enabled universal + architecture-specific checks pass. Any failure -> trigger **spml:ml-diagnostics**.
+All enabled universal + architecture-specific checks pass. Any failure -> trigger **spml:diagnostics**.
 
 ## Writing Monitors
 

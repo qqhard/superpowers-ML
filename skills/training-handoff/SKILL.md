@@ -1,5 +1,5 @@
 ---
-name: ml-training-handoff
+name: training-handoff
 description: Use after VP passes when the task includes a long-running phase — generates production-ready training script, structured logging, experiment context file, and Watchdog prompt for monitoring
 ---
 
@@ -23,7 +23,7 @@ Do NOT hand off without:
 
 - All VP checks passed for a subtask or experiment
 - The task requires a long-running execution phase (training, full-scale data processing, large-scale evaluation)
-- The task is NOT something that completes in minutes (those go directly to ml-verification)
+- The task is NOT something that completes in minutes (those go directly to verification)
 
 ## Checklist
 
@@ -163,7 +163,7 @@ When training finishes normally:
 1. Summarize final metrics
 2. Compare against VP baseline and experiment hypothesis
 3. Update experiment-context.md
-4. Create completion-prompt.md with a short prompt that tells the next agent to read experiment-context.md and run ml-verification
+4. Create completion-prompt.md with a short prompt that tells the next agent to read experiment-context.md and run verification
 
 ## Boundaries
 - DO: read logs, analyze trends, write reports, produce prompts, notify user
@@ -192,6 +192,6 @@ Option B: Combined execution
 
 ## Integration
 
-- **spml:ml-subagent-dev** — Triggers handoff after VP passes (when long-running phase needed)
-- **spml:ml-watchdog** — The Watchdog prompt references this skill's behavior
-- **spml:ml-verification** — Skipped at handoff; entered later via resume
+- **spml:subagent-dev** — Triggers handoff after VP passes (when long-running phase needed)
+- **spml:watchdog** — The Watchdog prompt references this skill's behavior
+- **spml:verification** — Skipped at handoff; entered later via resume

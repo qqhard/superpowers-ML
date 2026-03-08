@@ -3,4 +3,4 @@ description: Create detailed ML experiment plan with atomic subtasks and validat
 disable-model-invocation: true
 ---
 
-Invoke the spml:ml-experiment-planning skill and follow it exactly as presented to you
+Invoke the spml:experiment-planning skill and follow it exactly as presented to you

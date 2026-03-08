@@ -28,7 +28,7 @@ digraph skill_flow {
     "User message received" [shape=doublecircle];
     "About to EnterPlanMode?" [shape=doublecircle];
     "Already brainstormed?" [shape=diamond];
-    "Invoke ml-brainstorming skill" [shape=box];
+    "Invoke brainstorming skill" [shape=box];
     "Might any skill apply?" [shape=diamond];
     "Invoke Skill tool" [shape=box];
     "Announce: 'Using [skill] to [purpose]'" [shape=box];
@@ -38,9 +38,9 @@ digraph skill_flow {
     "Respond (including clarifications)" [shape=doublecircle];
 
     "About to EnterPlanMode?" -> "Already brainstormed?";
-    "Already brainstormed?" -> "Invoke ml-brainstorming skill" [label="no"];
+    "Already brainstormed?" -> "Invoke brainstorming skill" [label="no"];
     "Already brainstormed?" -> "Might any skill apply?" [label="yes"];
-    "Invoke ml-brainstorming skill" -> "Might any skill apply?";
+    "Invoke brainstorming skill" -> "Might any skill apply?";
 
     "User message received" -> "Might any skill apply?";
     "Might any skill apply?" -> "Invoke Skill tool" [label="yes, even 1%"];
@@ -77,17 +77,17 @@ These thoughts mean STOP—you're rationalizing:
 
 When multiple skills could apply, use this order:
 
-1. **Process skills first** (ml-brainstorming, ml-diagnostics) - these determine HOW to approach the task
+1. **Process skills first** (brainstorming, diagnostics) - these determine HOW to approach the task
 2. **Validation skills second** (validation-pyramid, vp-*) - these verify correctness
-3. **Implementation skills third** (ml-experiment-planning, ml-subagent-dev) - these guide execution
+3. **Implementation skills third** (experiment-planning, subagent-dev) - these guide execution
 
-"Let's train X" -> ml-brainstorming first, then planning skills.
-"Training isn't converging" -> ml-diagnostics first, then validation skills.
-"MFU is too low" -> ml-diagnostics first, then vp-engineering-efficiency.
+"Let's train X" -> brainstorming first, then planning skills.
+"Training isn't converging" -> diagnostics first, then validation skills.
+"MFU is too low" -> diagnostics first, then vp-engineering-efficiency.
 
 ## Skill Types
 
-**Rigid** (validation-pyramid, ml-diagnostics): Follow exactly. Don't adapt away discipline.
+**Rigid** (validation-pyramid, diagnostics): Follow exactly. Don't adapt away discipline.
 
 **Flexible** (framework knowledge): Adapt principles to context.
 

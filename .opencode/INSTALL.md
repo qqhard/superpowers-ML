@@ -54,7 +54,7 @@ use skill tool to list skills
 Use OpenCode's native `skill` tool to load a specific skill:
 
 ```
-use skill tool to load spml/ml-brainstorming
+use skill tool to load spml/brainstorming
 ```
 
 ### Personal Skills
