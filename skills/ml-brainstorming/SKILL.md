@@ -115,11 +115,6 @@ Walk through the Validation Pyramid layers. For each, ask: needed / skip / alrea
 **L3: End-to-End Pipeline**
 - Full flow (data -> training -> inference -> evaluation) on tiny data
 
-**Long-running phase:**
-- Does this task include a long-running execution phase? (training, full-scale data processing, evaluation)
-- If yes: estimated duration? This determines whether ml-training-handoff + ml-watchdog will be used after VP.
-- If no: workflow goes directly from VP to ml-verification.
-
 **User can skip any layer entirely.** Record decisions in natural language in the design doc.
 
 ### Dataset preparation (when applicable)
