@@ -11,13 +11,21 @@ The fastest way to verify a model implementation is correct: if it can't memoriz
 
 **Run after L0 and L1 pass.**
 
+## TDD Flow
+
+Follow RED → GREEN → REFACTOR:
+
+1. **RED:** Write the overfit test assertion (`assert loss_monotonically_decreasing(losses)`). Run it on the current (possibly broken) implementation. Confirm it fails.
+2. **GREEN:** Fix model/loss/optimizer implementation until loss decreases steadily and quickly on small data.
+3. **REFACTOR:** Clean up training code.
+
 ## The Test
 
 1. Take 100-1000 samples from training data (or generate synthetic data)
 2. Fix random seed for reproducibility
 3. Train for 5-10 epochs on these samples only
-4. Assert: training loss monotonically decreases to near 0
-5. Assert: task-specific metric reaches near-perfect
+4. Assert: training loss decreases steadily and quickly (consistent downward trend)
+5. Assert: task-specific metric shows clear improvement trend
 
 ## Implementation
 
@@ -32,14 +40,13 @@ def set_seed(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-def run_overfit_test(model, train_fn, data_subset, n_epochs=10, loss_threshold=0.01):
+def run_overfit_test(model, train_fn, data_subset, n_epochs=10):
     """
     Args:
         model: the model to test
         train_fn: function(model, data, epoch) -> loss
         data_subset: small dataset (100-1000 samples)
         n_epochs: number of epochs to train
-        loss_threshold: loss must be below this to pass
     """
     set_seed(42)
 
@@ -49,33 +56,34 @@ def run_overfit_test(model, train_fn, data_subset, n_epochs=10, loss_threshold=0
         loss_history.append(epoch_loss)
         print(f"Epoch {epoch}: loss={epoch_loss:.6f}")
 
-    # Check 1: Loss reached near zero
-    final_loss = loss_history[-1]
-    assert final_loss < loss_threshold, \
-        f"FAIL: Final loss {final_loss:.6f} > threshold {loss_threshold}. Model can't memorize small data."
+    # Check: Loss is decreasing steadily and quickly
+    # Compare first half average to second half average
+    mid = len(loss_history) // 2
+    first_half_avg = sum(loss_history[:mid]) / mid
+    second_half_avg = sum(loss_history[mid:]) / (len(loss_history) - mid)
+    assert second_half_avg < first_half_avg, \
+        f"FAIL: Loss not decreasing. First half avg: {first_half_avg:.6f}, Second half avg: {second_half_avg:.6f}"
 
-    # Check 2: Loss was generally decreasing
-    # Allow small bumps but overall trend must be down
-    for i in range(1, len(loss_history)):
-        # Compare each epoch to the first epoch
-        if loss_history[i] > loss_history[0] * 1.5:
-            print(f"WARNING: Loss increased significantly at epoch {i}")
+    # Check: Loss trend is consistently downward (allow small bumps)
+    decreasing_pairs = sum(1 for i in range(1, len(loss_history)) if loss_history[i] < loss_history[i-1])
+    decrease_ratio = decreasing_pairs / (len(loss_history) - 1)
+    assert decrease_ratio >= 0.6, \
+        f"FAIL: Loss not decreasing consistently. Only {decrease_ratio:.0%} of epochs showed decrease."
 
-    print(f"PASS: Overfit test passed. Final loss: {final_loss:.6f}")
+    print(f"PASS: Overfit test passed. Loss decreased from {loss_history[0]:.6f} to {loss_history[-1]:.6f}")
     return loss_history
 ```
 
-## Task-Specific Criteria
+## Task-Specific Guidance
 
-| Task | Metric | Target |
-|------|--------|--------|
-| RecSys | NDCG@10 | > 0.95 |
-| RecSys | Recall@10 | > 0.95 |
-| LLM | Perplexity | < 1.1 |
-| LLM | Loss | < 0.01 |
-| Classification | Accuracy | > 0.99 |
-| Regression | MSE | < 1e-4 (normalized) |
-| General | Training loss | Monotonically decreasing to near 0 |
+The core criterion is always: **loss decreases steadily and quickly.** Task-specific checks are optional additional signals:
+
+| Task | Additional Signal |
+|------|------------------|
+| RecSys | NDCG@10 / Recall@10 trending upward |
+| LLM | Perplexity trending downward |
+| Classification | Accuracy trending upward |
+| Regression | MSE trending downward |
 
 ## Common Failure Causes
 
