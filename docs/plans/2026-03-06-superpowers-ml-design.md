@@ -29,6 +29,7 @@
 6. Validation Pyramid dynamically orchestrates based on architecture type, task type, and user context.
 7. Only codify toolkit code that agents struggle to write correctly from scratch and is highly reusable; everything else is guided by skills for agents to write on the spot.
 8. **Test/validation code and core code are strictly separated.** Core code (model, training, data pipeline) must be zero-test-dependency, production-deployable. All Validation Pyramid checks, monitors, and profiling are external — they observe but never invade core code. After Agentic Engineering completes, core code can be extracted and deployed to production as-is, clean and executable.
+9. **Training scripts are core code.** Like model and training loop code, generated training scripts are independently deployable to production with zero agent dependency. The Watchdog monitoring protocol (prompt + experiment-context.md + JSONL logs) is framework-agnostic — any LLM agent can execute it.
 
 ---
 
@@ -70,6 +71,11 @@ mlsp/
     ml-diagnostics/                # Non-convergence / early anomaly / efficiency bottleneck
     ml-subagent-dev/               # ML-adapted subagent execution + review
     ml-verification/               # Completion criteria = pyramid passed + valid conclusions
+
+    # Long-running task monitoring (session chain)
+    ml-training-handoff/             # Main Agent → Watchdog: generates training script + context + prompts
+    ml-watchdog/                     # Watchdog Agent: read-only monitoring of long-running tasks
+    ml-training-resume/              # Recovery/Completion Agent: reads context, decides next workflow step
 
     # Pluggable framework knowledge (async loaded, created on demand)
     frameworks/                    # Empty initially; add specific framework skills as needed in practice
@@ -113,7 +119,7 @@ mlsp/
 ```
 ml-brainstorming
     |
-    Output: experiment design (includes validation scope as natural language)
+    Output: experiment design (includes validation scope + long-running confirmation)
     |
 ml-experiment-planning
     |
@@ -131,6 +137,29 @@ ml-subagent-dev (execute subtasks one by one)
     +-- 4. Spec review (does implementation match experiment design?)
     +-- 5. Record conclusion (metric data + effective/ineffective/needs further study)
     |
+    Task needs long-running phase?
+    |
+    +-- No -> ml-verification (all subtasks complete)
+    |
+    +-- Yes -> ml-training-handoff
+                |
+                Output: training script + logs + experiment-context.md + watchdog-prompt.md
+                |
+                User chooses: separated execution or combined execution
+                |
+                [User starts training + Watchdog session]
+                |
+              ml-watchdog (independent session, read-only monitoring)
+                |
+                +-- Normal completion -> completion-prompt.md
+                +-- Anomaly detected -> recovery-prompt.md
+                |
+              ml-training-resume (independent session)
+                |
+                +-- From completion -> ml-verification
+                +-- From recovery -> back to appropriate stage
+                    (code fix / replan / rebrainstorm)
+                |
 ml-verification (all subtasks complete)
     |
     Output: conclusion summary + recommendations
@@ -341,6 +370,48 @@ Additional architecture-specific checks can be added as new sub-files over time.
 3. Summary report: all subtask conclusions + overall judgment + follow-up recommendations
 4. Human decides: finish / add subtasks / new brainstorm round
 
+### 3.8 ml-training-handoff
+
+**New skill.** Bridges VP validation (minute-level) and long-running execution (hours/days).
+
+**Trigger:** After ml-subagent-dev completes subtasks and VP passes, when task includes long-running phase.
+
+**Produces:**
+1. Training script — core code, zero agent dependency, production-deployable. Includes dual output logging: tqdm progress bar (terminal, for humans) + JSONL metrics file (for Watchdog).
+2. experiment-context.md — full experiment context: design, VP baseline, training config, code state.
+3. watchdog-prompt.md — short, framework-agnostic prompt for starting a Watchdog session.
+
+**User options:**
+- Separated execution: user runs training independently, starts Watchdog in a separate session
+- Combined execution: user starts Watchdog session which launches training and monitors
+
+### 3.9 ml-watchdog
+
+**New skill.** Watchdog Agent behavior definition — read-only monitoring of long-running tasks.
+
+**Mechanism:** Periodically reads JSONL metrics log, compares against VP baseline from experiment-context.md, detects anomalies through trend analysis and pattern recognition (not just threshold alerts).
+
+**Adaptive frequency:** High at start (catch startup issues), normal during steady state, higher near completion. User can override anytime.
+
+**Output depends on execution mode:**
+- Separated: silent when normal, speaks only on anomaly
+- Combined: periodic progress reports + anomaly diagnostics
+
+**On anomaly:** Writes diagnosis to experiment-context.md, produces recovery-prompt.md.
+**On completion:** Writes summary to experiment-context.md, produces completion-prompt.md.
+
+**Boundary:** Observes only. Never stops training, modifies code, or adjusts hyperparameters.
+
+### 3.10 ml-training-resume
+
+**New skill.** Recovery or Completion Agent entry point.
+
+**From recovery:** Agent reads experiment-context.md (including Watchdog diagnosis), autonomously judges which workflow stage to return to: code fix, hyperparameter adjustment, replan, or rebrainstorm.
+
+**From completion:** Agent analyzes final results vs hypothesis, enters ml-verification flow.
+
+**Key:** Agent decides rollback level from evidence, not from Watchdog suggestion.
+
 ---
 
 ## 4. Toolkit Design
@@ -502,8 +573,11 @@ frameworks/deepspeed/SKILL.md guides:
 - `ml-diagnostics` skill (three core questions + hierarchical decomposition)
 - `ml-subagent-dev` skill (ML-adapted review criteria)
 - `ml-verification` skill (conclusion summary + recommendations)
+- `ml-training-handoff` skill (generates training script + context + Watchdog prompt)
+- `ml-watchdog` skill (read-only long-running task monitoring)
+- `ml-training-resume` skill (recovery/completion entry point, rollback decision)
 
-**Delivery criteria:** A complete ML experiment can go through the full pipeline: brainstorm -> plan -> execute -> validate -> conclude.
+**Delivery criteria:** A complete ML experiment can go through the full pipeline: brainstorm -> plan -> execute -> validate -> long-running training with monitoring -> conclude.
 
 ### Phase 4: Framework Knowledge + Extensions
 
