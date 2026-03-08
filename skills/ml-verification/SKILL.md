@@ -126,7 +126,7 @@ After presenting the summary, ask the user:
 
 **"Experiment complete. Three options:**
 
-**1. Finish** — Effective subtasks are ready. Invoke `spml:finishing-a-development-branch` to wrap up.
+**1. Finish** — Effective subtasks are ready. Invoke `superpowers:finishing-a-development-branch` to wrap up.
 
 **2. Add subtasks** — Continue this experiment with additional subtasks. I'll add them to the existing plan.
 
@@ -152,4 +152,4 @@ After presenting the summary, ask the user:
 - **spml:ml-subagent-dev** — Produces the subtask results this skill verifies
 - **spml:validation-pyramid** — VP checks referenced in verification
 - **spml:ml-brainstorming** — Next step if new experiment needed
-- **spml:finishing-a-development-branch** — Next step if experiment is done
+- **superpowers:finishing-a-development-branch** — Next step if experiment is done
