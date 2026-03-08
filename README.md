@@ -1,148 +1,183 @@
 # SPML — ML SuperPowers
 
-SPML is a complete ML/RecSys/LLM training development workflow for AI coding agents, built on composable "skills" that guide agents through experiment design, implementation, and validation.
+SPML is a complete ML/RecSys/LLM training development workflow for AI coding agents. Built on composable "skills" that guide agents through experiment design, validation, long-running training monitoring, and conclusion analysis.
 
-## How it works
+Forked from [Superpowers](https://github.com/obra/superpowers) by [Jesse Vincent](https://github.com/obra). Superpowers provides a battle-tested skill system for AI coding agents — SPML extends it with ML-specific workflows: the Validation Pyramid, experiment-driven development, and Watchdog-based training monitoring. Thank you Jesse for building the foundation that made this possible.
 
-It starts from the moment you fire up your coding agent. When it sees you're building something ML-related, it doesn't just jump into writing code. Instead, it steps back and asks what you're really trying to do — what's your hypothesis, what architecture are you using, what's your existing infra.
+## What makes ML different
 
-Once it's teased an experiment design out of the conversation, it confirms your **Validation Pyramid** scope — which layers of verification you need (engineering efficiency, process metrics, overfitting tests, end-to-end pipeline) and which you can skip.
+In traditional software, code runs = result correct. In ML, code runs without errors does NOT mean the result is correct.
 
-After you've signed off on the design, your agent puts together an implementation plan with atomic subtasks. Each subtask goes through the Validation Pyramid to ensure the implementation is correct — because in ML, code running without errors does NOT mean it's correct.
+**"Not working" is reasonable in ML, but the process must be correct.** If an implementation error causes poor results, you may misjudge your experimental strategy as ineffective, wasting an entire research direction.
 
-**Core principle:** "Not working" is reasonable in ML, but the process must be correct. If an implementation error causes poor results, you may misjudge your experimental strategy as ineffective, wasting an entire research direction.
-
-Based on [Superpowers](https://github.com/obra/superpowers) by Jesse Vincent.
-
+SPML addresses this with:
+- **Validation Pyramid** — layered verification (engineering efficiency, process metrics, overfitting test, e2e pipeline) that separates "implementation bug" from "strategy doesn't work"
+- **Watchdog Agent** — read-only monitoring of long-running training through independent agent sessions, replacing the human who sits watching W&B dashboards
+- **Experiment-driven workflow** — hypothesis, independent/dependent/control variables, conclusion recording with metric evidence
 
 ## Installation
 
-**Note:** Installation differs by platform. Claude Code or Cursor have built-in plugin marketplaces. Codex and OpenCode require manual setup.
-
-
-### Claude Code (via Plugin Marketplace)
-
-In Claude Code, register the marketplace first:
+### Claude Code
 
 ```bash
-/plugin marketplace add obra/superpowers-marketplace
+claude plugin add -- qqhard/superpowers-ML
 ```
 
-Then install the plugin from this marketplace:
-
-```bash
-/plugin install superpowers@superpowers-marketplace
-```
-
-### Cursor (via Plugin Marketplace)
-
-In Cursor Agent chat, install from marketplace:
+### Cursor
 
 ```text
-/plugin-add superpowers
+/plugin-add qqhard/superpowers-ML
 ```
 
 ### Codex
 
-Tell Codex:
-
 ```
-Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.codex/INSTALL.md
+Fetch and follow instructions from https://raw.githubusercontent.com/qqhard/superpowers-ML/refs/heads/main/.codex/INSTALL.md
 ```
-
-**Detailed docs:** [docs/README.codex.md](docs/README.codex.md)
 
 ### OpenCode
 
-Tell OpenCode:
-
 ```
-Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.opencode/INSTALL.md
+Fetch and follow instructions from https://raw.githubusercontent.com/qqhard/superpowers-ML/refs/heads/main/.opencode/INSTALL.md
 ```
-
-**Detailed docs:** [docs/README.opencode.md](docs/README.opencode.md)
 
 ### Verify Installation
 
-Start a new session in your chosen platform and ask for something that should trigger a skill (for example, "help me plan this feature" or "let's debug this issue"). The agent should automatically invoke the relevant superpowers skill.
+Start a new session and describe an ML task (e.g., "help me design a training experiment" or "let's optimize this model's MFU"). The agent should invoke the relevant SPML skill.
 
-## The Basic Workflow
+## The ML Workflow
 
-1. **brainstorming** - Activates before writing code. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves design document.
+```
+ml-brainstorming
+    Refine hypothesis, collect context, confirm validation scope
+    |
+ml-experiment-planning
+    Break into atomic subtasks with validation criteria
+    |
+ml-subagent-dev
+    Execute each subtask: unit test → implement → Validation Pyramid
+    |
+ml-training-handoff
+    Generate training script + Watchdog prompt + experiment context
+    |
+ml-watchdog (independent session)
+    Read-only monitoring, anomaly detection, diagnosis reporting
+    |
+ml-training-resume (independent session)
+    Analyze results or diagnose issues, decide next step
+    |
+ml-verification
+    Evidence-based conclusion: effective / ineffective / inconclusive
+```
 
-2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
+### Validation Pyramid
 
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
+Each subtask passes through layered validation before claiming correctness:
 
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
+| Layer | What it checks | Time |
+|-------|---------------|------|
+| **L0: Engineering Efficiency** | MFU, GPU utilization, backend verification, I/O bandwidth | Minutes |
+| **L1: Process Metrics** | Gradient health, activation patterns, architecture-specific signals | Minutes |
+| **L2: Overfitting Test** | Loss decreases on 100-1000 samples, fixed seed | ~10 min |
+| **L3: E2E Pipeline** | Full flow on tiny data: data → train → infer → evaluate | Minutes |
 
-5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
+Users can skip any layer. The pyramid dynamically loads checks based on architecture (Transformer, MoE, CNN) and task type (RecSys, LLM, CV).
 
-6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
+### Watchdog Agent
 
-7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
+Long-running training is monitored by an independent agent session:
 
-**The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
+- **Read-only** — observes JSONL metrics log, never intervenes
+- **Adaptive frequency** — checks often at start, less in steady state, more near completion
+- **Framework-agnostic** — the Watchdog prompt works with any LLM agent (Claude Code, Codex, Cursor, etc.)
+- **Session chain** — on anomaly, produces a recovery prompt; on completion, produces a completion prompt. Each prompt starts a fresh session with full context via `experiment-context.md`
 
-## What's Inside
+Training scripts are core code — independently deployable to production, zero agent dependency.
 
-### Skills Library
+## Skills Library
 
-**Testing**
-- **test-driven-development** - RED-GREEN-REFACTOR cycle (includes testing anti-patterns reference)
+### ML-Specific Skills
 
-**Debugging**
-- **systematic-debugging** - 4-phase root cause process (includes root-cause-tracing, defense-in-depth, condition-based-waiting techniques)
-- **verification-before-completion** - Ensure it's actually fixed
+| Skill | Purpose |
+|-------|---------|
+| **ml-brainstorming** | Experiment design, context collection, validation scope confirmation |
+| **ml-experiment-planning** | Subtask decomposition with validation criteria |
+| **ml-data-preparation** | TDD-first dataset processing: validate on small-scale, then full-scale |
+| **ml-subagent-dev** | Execute subtasks with VP integration and experiment-aware review |
+| **ml-diagnostics** | Systematic diagnosis: why not converging, early anomalies, efficiency bottlenecks |
+| **ml-verification** | Evidence-based conclusion with experiment summary |
+| **ml-training-handoff** | Generate training script + Watchdog prompt + experiment context |
+| **ml-watchdog** | Read-only monitoring of long-running tasks |
+| **ml-training-resume** | Recovery or completion entry point after long-running tasks |
+| **validation-pyramid** | Layered validation orchestration with dynamic routing |
 
-**Collaboration** 
-- **brainstorming** - Socratic design refinement
-- **writing-plans** - Detailed implementation plans
-- **executing-plans** - Batch execution with checkpoints
-- **dispatching-parallel-agents** - Concurrent subagent workflows
-- **requesting-code-review** - Pre-review checklist
-- **receiving-code-review** - Responding to feedback
-- **using-git-worktrees** - Parallel development branches
-- **finishing-a-development-branch** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
+### VP Layer Skills
 
-**Meta**
-- **writing-skills** - Create new skills following best practices (includes testing methodology)
-- **using-superpowers** - Introduction to the skills system
+| Skill | Checks |
+|-------|--------|
+| **vp-engineering-efficiency** | MFU, GPU utilization, backend, bandwidth, memory |
+| **vp-process-metrics** | Gradients, activations, parameter drift, architecture-specific signals |
+| **vp-overfitting-test** | Small-scale overfit with trend-based criteria |
+| **vp-e2e-pipeline** | End-to-end data → train → infer → evaluate |
 
-## Philosophy
+### Inherited from Superpowers
 
-- **Test-Driven Development** - Write tests first, always
-- **Systematic over ad-hoc** - Process over guessing
-- **Complexity reduction** - Simplicity as primary goal
-- **Evidence over claims** - Verify before declaring success
+| Skill | Purpose |
+|-------|---------|
+| **test-driven-development** | RED-GREEN-REFACTOR cycle |
+| **systematic-debugging** | 4-phase root cause process |
+| **brainstorming** | Socratic design refinement |
+| **writing-plans** | Detailed implementation plans |
+| **executing-plans** | Batch execution with checkpoints |
+| **subagent-driven-development** | Fast iteration with two-stage review |
+| **dispatching-parallel-agents** | Concurrent subagent workflows |
+| **using-git-worktrees** | Parallel development branches |
+| **requesting-code-review** / **receiving-code-review** | Code review workflows |
+| **finishing-a-development-branch** | Merge/PR decision workflow |
+| **verification-before-completion** | Evidence before claims |
+| **writing-skills** | Create and test new skills |
 
-Read more: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
+## Toolkit
+
+Profiling tools that agents struggle to write correctly from scratch:
+
+| Tool | Purpose |
+|------|---------|
+| `toolkit/profiling/mfu_calculator.py` | Theoretical FLOPS + MFU/TCA calculation |
+| `toolkit/profiling/layer_profiler.py` | Per-layer forward/backward timing |
+| `toolkit/profiling/memory_profiler.py` | Memory analysis and fragmentation |
+
+Pure PyTorch, plug and play, non-invasive. Monitors (gradient, activation, loss tracking) are guided by skills — agents write these per-project.
+
+## Design
+
+For the full design document, see [docs/plans/2026-03-06-superpowers-ml-design.md](docs/plans/2026-03-06-superpowers-ml-design.md).
+
+Key design principles:
+1. Code runs ≠ result correct in ML
+2. Process must be correct — separate implementation bugs from strategy failures
+3. Validation Pyramid extends TDD to ML's non-deterministic domain
+4. Test/validation code and core code are strictly separated
+5. Training scripts are core code — zero agent dependency, production-deployable
+6. Only codify toolkit code agents struggle to write correctly
+7. Watchdog protocol is framework-agnostic — any LLM agent can execute it
+
+## Acknowledgments
+
+SPML is a fork of [Superpowers](https://github.com/obra/superpowers) by [Jesse Vincent](https://github.com/obra). The skill system architecture, workflow patterns (brainstorming, TDD, subagent-driven development, git worktrees), and multi-platform support are all inherited from Superpowers. Read more about the original project: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/).
+
+## License
+
+MIT License — see [LICENSE](LICENSE) file for details. Original copyright (c) 2025 Jesse Vincent.
 
 ## Contributing
-
-Skills live directly in this repository. To contribute:
 
 1. Fork the repository
 2. Create a branch for your skill
 3. Follow the `writing-skills` skill for creating and testing new skills
 4. Submit a PR
 
-See `skills/writing-skills/SKILL.md` for the complete guide.
-
-## Updating
-
-Skills update automatically when you update the plugin:
-
-```bash
-/plugin update superpowers
-```
-
-## License
-
-MIT License - see LICENSE file for details
-
 ## Support
 
-- **Issues**: https://github.com/obra/superpowers/issues
-- **Marketplace**: https://github.com/obra/superpowers-marketplace
+- **Issues**: https://github.com/qqhard/superpowers-ML/issues
+- **Upstream**: https://github.com/obra/superpowers
