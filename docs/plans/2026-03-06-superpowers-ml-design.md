@@ -24,8 +24,8 @@
 
 1. In traditional software, code runs = result correct. In ML, code runs ≠ result correct.
 2. **"Not working" is reasonable in ML, but the process must be correct.** If an implementation error causes poor results, you may misjudge the experimental strategy itself as ineffective, wasting an entire research direction.
-3. Replace traditional TDD with a **Validation Pyramid** — multi-layer process metrics to separate "implementation error" from "strategy ineffective."
-4. Retain function/operator-level traditional testing for deterministic code; the Validation Pyramid manages the training process.
+3. Extend TDD with a **Validation Pyramid** — TDD's RED-GREEN-REFACTOR rhythm applies to every Pyramid layer. Each layer's validation is minute-level, satisfying fast feedback loops. Multi-layer process metrics separate "implementation error" from "strategy ineffective."
+4. TDD applies at all levels: traditional unit tests for deterministic code (functions, operators), Validation Pyramid layers for non-deterministic process validation (training efficiency, convergence). The Pyramid is TDD extended to ML's non-deterministic domain.
 5. Users can skip any validation layer — scope confirmed during brainstorm phase.
 6. Validation Pyramid dynamically orchestrates based on architecture type, task type, and user context.
 7. Only codify toolkit code that agents struggle to write correctly from scratch and is highly reusable; everything else is guided by skills for agents to write on the spot.
@@ -220,7 +220,7 @@ Core code (model, training, data) must never import from test/validation code or
 
 ### 3.3 validation-pyramid
 
-**Replaces:** test-driven-development
+**Extends:** test-driven-development
 
 **Orchestration logic:** Based on validation scope from brainstorm design doc, execute enabled checks in L0->L4 order, pass each layer before entering next, failure triggers ml-diagnostics.
 
@@ -284,9 +284,9 @@ Additional architecture-specific checks can be added as new sub-files over time.
 #### L2: Overfitting Test
 
 - 100-1000 samples, fixed seed, 5-10 epochs
-- RecSys: NDCG@10 / Recall@10 -> near 1.0
-- LLM: perplexity < 1.1 or loss < 0.01
-- Assertion: training loss must monotonically decrease to near 0
+- Assertion: training loss decreases steadily and quickly (consistent downward trend)
+- Task-specific metrics show clear improvement trend
+- No absolute threshold required — the test validates the trend, not the final value
 - ~10 minutes to complete
 
 #### L3: End-to-End Pipeline
