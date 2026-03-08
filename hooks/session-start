@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SessionStart hook for superpowers plugin
+# SessionStart hook for SPML plugin
 
 set -euo pipefail
 
