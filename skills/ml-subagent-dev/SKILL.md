@@ -62,11 +62,7 @@ digraph process {
     "Quality reviewer: VP results + code quality?" -> "Record conclusion" [label="yes"];
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
-    "More subtasks?" -> "Needs long-running phase?" [label="no"];
-    "Needs long-running phase?" [shape=diamond];
-    "Invoke ml-training-handoff" [shape=box style=filled fillcolor=lightorange];
-    "Needs long-running phase?" -> "Invoke ml-training-handoff" [label="yes"];
-    "Needs long-running phase?" -> "Invoke ml-verification" [label="no"];
+    "More subtasks?" -> "Invoke ml-verification" [label="no"];
 }
 ```
 
@@ -231,24 +227,9 @@ Record this in the plan document or a separate experiment log.
 - Keep core code free of test/validation imports
 - Fixed random seeds for reproducibility
 
-## Long-Running Task Handoff
-
-After all subtasks complete, determine if the experiment needs a long-running phase:
-
-**Needs handoff (invoke ml-training-handoff):**
-- Training run that will take more than ~15 minutes
-- Full-scale data processing
-- Large-scale inference or evaluation
-
-**Skip handoff (proceed to ml-verification):**
-- All validation was completed within VP checks
-- No long-running execution needed
-- Quick experiments that already ran during VP L2/L3
-
 ## Integration
 
 - **spml:ml-experiment-planning** — Creates the plan this skill executes
 - **spml:validation-pyramid** — Orchestrates VP execution within subtasks
 - **spml:ml-diagnostics** — Called when VP check fails
-- **spml:ml-training-handoff** — Called when experiment needs long-running phase before verification
 - **spml:ml-verification** — Called after all subtasks complete
