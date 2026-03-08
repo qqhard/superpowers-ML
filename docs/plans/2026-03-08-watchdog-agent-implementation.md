@@ -832,174 +832,13 @@ git commit -m "feat: add ml-training-resume skill"
 
 ---
 
-### Task 7: Update ml-subagent-dev — add handoff decision
+### ~~Task 7-10: REMOVED~~
 
-**Files:**
-- Modify: `skills/ml-subagent-dev/SKILL.md`
-
-**Step 1: Add handoff decision after conclusion recording**
-
-In the process flow (the dot graph), after "Record conclusion" → "More subtasks?", change the "no" path:
-
-Replace:
-```
-    "More subtasks?" -> "Invoke ml-verification" [label="no"];
-```
-
-With:
-```
-    "More subtasks?" -> "Needs long-running phase?" [label="no"];
-    "Needs long-running phase?" [shape=diamond];
-    "Invoke ml-training-handoff" [shape=box style=filled fillcolor=lightorange];
-    "Needs long-running phase?" -> "Invoke ml-training-handoff" [label="yes"];
-    "Needs long-running phase?" -> "Invoke ml-verification" [label="no"];
-```
-
-**Step 2: Add handoff guidance after the Red Flags section**
-
-Before the Integration section, add:
-
-```markdown
-## Long-Running Task Handoff
-
-After all subtasks complete, determine if the experiment needs a long-running phase:
-
-**Needs handoff (invoke ml-training-handoff):**
-- Training run that will take more than ~15 minutes
-- Full-scale data processing
-- Large-scale inference or evaluation
-
-**Skip handoff (proceed to ml-verification):**
-- All validation was completed within VP checks
-- No long-running execution needed
-- Quick experiments that already ran during VP L2/L3
-```
-
-**Step 3: Update Integration section**
-
-Add to the Integration list:
-```markdown
-- **spml:ml-training-handoff** — Called when experiment needs long-running phase before verification
-```
-
-**Step 4: Commit**
-
-```bash
-git add skills/ml-subagent-dev/SKILL.md
-git commit -m "feat: add long-running handoff decision to ml-subagent-dev"
-```
+> Tasks 7-10 originally modified existing skills (ml-subagent-dev, ml-verification, ml-brainstorming, ml-data-preparation) to "sense" the long-running phase. This was over-engineering — ML tasks are almost always long-running, so existing skills don't need explicit awareness. The handoff/watchdog/resume skills exist as independent workflow steps; routing is determined at the plan level, not embedded in each skill.
 
 ---
 
-### Task 8: Update ml-verification — handle completion entry
-
-**Files:**
-- Modify: `skills/ml-verification/SKILL.md`
-
-**Step 1: Add long-training verification section**
-
-After the "5. Anomaly Review" checklist section and before "## Summary Report Template", add:
-
-```markdown
-### 6. Long-Training Results (when entering from completion-prompt)
-
-If this verification was reached via ml-training-resume from a completion-prompt:
-
-- [ ] Watchdog monitoring completed without unresolved severe anomalies
-- [ ] Final training metrics are consistent with VP baseline expectations
-- [ ] Training curve shows expected convergence behavior
-- [ ] Final metrics support the experiment hypothesis (or clearly refute it)
-- [ ] Any anomalies that occurred during training are documented and resolved
-- [ ] experiment-context.md is complete with Watchdog summary
-
-```
-Subtask 1: [name]
-  VP (pre-training):  L0 ✅ L1 ✅ L2 ✅
-  Long training:      ✅ 10000 steps, final loss=0.12
-  Watchdog:           ✅ No severe anomalies (1 mild spike at step 3200, self-resolved)
-```
-```
-
-**Step 2: Update Integration section**
-
-Add:
-```markdown
-- **spml:ml-training-resume** — Invokes this skill after long-running task completes
-```
-
-**Step 3: Commit**
-
-```bash
-git add skills/ml-verification/SKILL.md
-git commit -m "feat: add long-training verification to ml-verification"
-```
-
----
-
-### Task 9: Update ml-brainstorming — add long-running confirmation
-
-**Files:**
-- Modify: `skills/ml-brainstorming/SKILL.md`
-
-**Step 1: Add long-running phase confirmation**
-
-In the "Confirming validation scope" section, after the L3 block and before "User can skip any layer entirely", add:
-
-```markdown
-**Long-running phase:**
-- Does this task include a long-running execution phase? (training, full-scale data processing, evaluation)
-- If yes: estimated duration? This determines whether ml-training-handoff + ml-watchdog will be used after VP.
-- If no: workflow goes directly from VP to ml-verification.
-```
-
-**Step 2: Commit**
-
-```bash
-git add skills/ml-brainstorming/SKILL.md
-git commit -m "feat: add long-running phase confirmation to ml-brainstorming"
-```
-
----
-
-### Task 10: Update ml-data-preparation — connect to handoff
-
-**Files:**
-- Modify: `skills/ml-data-preparation/SKILL.md`
-
-**Step 1: Update Step 6 to connect with handoff**
-
-Replace the current Step 6 content (lines 171-189) with:
-
-```markdown
-## Step 6: Run Full-Scale
-
-After user approves small-scale results:
-
-**If estimated processing time is short (< 15 minutes):**
-
-1. Launch the full-scale processing
-2. Wait for completion, verify output
-
-**If estimated processing time is long (> 15 minutes):**
-
-1. Invoke **spml:ml-training-handoff** to generate:
-   - Processing script (with tqdm progress bar + JSONL logging)
-   - experiment-context.md (with data processing context instead of training context)
-   - watchdog-prompt.md (for monitoring the processing)
-2. Present user with separated/combined execution options
-3. User monitors with Watchdog, resumes with ml-training-resume when complete
-```
-
-**Step 2: Commit**
-
-```bash
-git add skills/ml-data-preparation/SKILL.md
-git commit -m "feat: connect ml-data-preparation full-scale to handoff"
-```
-
----
-
-### Task 11: Final review and commit
+### Task 7: Final review
 
 **Step 1: Verify all new skill files exist**
 
@@ -1011,17 +850,25 @@ ls skills/ml-training-resume/SKILL.md
 
 Expected: all three files exist.
 
-**Step 2: Verify all integration references are consistent**
+**Step 2: Verify cross-references are consistent**
 
-Check that skill cross-references are correct:
+Check that the three new skills reference each other correctly:
 - ml-training-handoff references: ml-subagent-dev, ml-watchdog, ml-verification
 - ml-watchdog references: ml-training-handoff, ml-training-resume, ml-diagnostics
 - ml-training-resume references: ml-watchdog, ml-training-handoff, ml-verification, ml-brainstorming, ml-experiment-planning, ml-data-preparation, ml-diagnostics
 
-**Step 3: Verify design doc is updated**
+**Step 3: Verify design doc references**
 
 ```bash
 grep -c "ml-training-handoff\|ml-watchdog\|ml-training-resume" docs/plans/2026-03-06-superpowers-ml-design.md
 ```
 
 Expected: multiple matches (project structure + workflow + Phase 3).
+
+**Step 4: Verify existing skills are NOT modified**
+
+```bash
+git diff d41b29c -- skills/ml-subagent-dev/ skills/ml-verification/ skills/ml-brainstorming/ skills/ml-data-preparation/
+```
+
+Expected: no diff (these skills remain untouched).

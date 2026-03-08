@@ -297,14 +297,9 @@ brainstorm → plan → execute + VP → handoff → [long-running] → watchdog
                                                          resume may return to brainstorm/plan/execute
 ```
 
-### Existing Skills to Modify
+### Existing Skills: No Modifications Needed
 
-| Skill | Change |
-|-------|--------|
-| ml-subagent-dev | After VP passes, judge: does task need long-running phase? Yes → invoke handoff; No → proceed to ml-verification |
-| ml-verification | Extend: verify long-training results (when entered from completion-prompt), not just VP results |
-| ml-brainstorming | Add confirmation: does task include long-running phase? Estimated duration? |
-| ml-data-preparation | Step 6 (full-scale) connects to handoff instead of "Agent doesn't poll, user watches" |
+The three new skills (handoff, watchdog, resume) exist as independent workflow steps. Existing skills (ml-subagent-dev, ml-verification, ml-brainstorming, ml-data-preparation) do NOT need to "sense" the long-running phase — ML tasks are almost always long-running, so this is the default assumption. Routing to handoff is determined at the plan level, not embedded in each skill.
 
 ### Phase Delivery
 
@@ -342,3 +337,4 @@ The monitoring logic adapts based on the task type recorded in experiment-contex
 | No daemon/script-level watchdog | Using an LLM agent for monitoring provides understanding, not just threshold detection. Framework-agnostic. |
 | Watchdog doesn't suggest rollback level | Resume Agent has full context and can judge better. Avoids Watchdog overstepping its role. |
 | No auto-start of sessions | User manually starts each session with a prompt. Keeps the system independent of any specific agentic framework. |
+| No modifications to existing skills | Existing skills don't need to "sense" the long-running phase. ML tasks are almost always long-running — handoff is the default next step after VP, determined at the plan level. |
