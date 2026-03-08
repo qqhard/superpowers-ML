@@ -31,7 +31,9 @@ description: Use when validating ML training code correctness - orchestrates lay
 
 ## Overview
 
-The Validation Pyramid extends TDD to ML workflows. Each layer follows the same RED-GREEN-REFACTOR rhythm: write the validation script first, watch it fail, implement until it passes. Since every layer runs in minutes on small data, TDD's fast feedback loop applies naturally. The Pyramid runs layered checks from cheap/fast (L0) to expensive/slow (L3), catching implementation errors before they waste GPU hours.
+~~The Validation Pyramid replaces traditional TDD for ML workflows. Instead of "write test, watch fail, write code, watch pass," it runs layered checks from cheap/fast (L0) to expensive/slow (L3), catching implementation errors before they waste GPU hours.~~
+
+> **Superseded (2026-03-08):** The relationship has been redefined from "replace" to "extend." TDD's RED-GREEN-REFACTOR rhythm now applies to every Pyramid layer. See `2026-03-08-tdd-validation-pyramid-integration-design.md`.
 
 **Core principle:** In ML, code running without errors does NOT mean it's correct. The Validation Pyramid ensures the process is correct, so you can trust that "not working" means the strategy is ineffective — not that the implementation is wrong.
 

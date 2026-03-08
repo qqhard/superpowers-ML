@@ -11,13 +11,7 @@ The fastest way to verify a model implementation is correct: if it can't memoriz
 
 **Run after L0 and L1 pass.**
 
-## TDD Flow
-
-Follow RED → GREEN → REFACTOR:
-
-1. **RED:** Write the overfit test assertion (`assert loss_monotonically_decreasing(losses)`). Run it on the current (possibly broken) implementation. Confirm it fails.
-2. **GREEN:** Fix model/loss/optimizer implementation until loss decreases steadily and quickly on small data.
-3. **REFACTOR:** Clean up training code.
+**TDD reminder:** Follow the RED → GREEN → REFACTOR rhythm defined in `validation-pyramid/SKILL.md`.
 
 ## The Test
 

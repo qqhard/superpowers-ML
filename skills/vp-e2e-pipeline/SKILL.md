@@ -11,13 +11,7 @@ Verify the complete flow works end-to-end on tiny data: data loading -> preproce
 
 **Run after L0, L1, and L2 pass.**
 
-## TDD Flow
-
-Follow RED → GREEN → REFACTOR:
-
-1. **RED:** Write the e2e pipeline test (data -> train -> checkpoint -> inference -> eval). Run it. Confirm it fails (pipeline not yet wired up, or integration bugs exist).
-2. **GREEN:** Fix integration issues at each stage boundary until the full pipeline completes.
-3. **REFACTOR:** Clean up pipeline code.
+**TDD reminder:** Follow the RED → GREEN → REFACTOR rhythm defined in `validation-pyramid/SKILL.md`.
 
 ## The Test
 

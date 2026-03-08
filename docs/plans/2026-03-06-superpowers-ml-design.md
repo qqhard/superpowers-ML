@@ -24,8 +24,7 @@
 
 1. In traditional software, code runs = result correct. In ML, code runs ≠ result correct.
 2. **"Not working" is reasonable in ML, but the process must be correct.** If an implementation error causes poor results, you may misjudge the experimental strategy itself as ineffective, wasting an entire research direction.
-3. Extend TDD with a **Validation Pyramid** — TDD's RED-GREEN-REFACTOR rhythm applies to every Pyramid layer. Each layer's validation is minute-level, satisfying fast feedback loops. Multi-layer process metrics separate "implementation error" from "strategy ineffective."
-4. TDD applies at all levels: traditional unit tests for deterministic code (functions, operators), Validation Pyramid layers for non-deterministic process validation (training efficiency, convergence). The Pyramid is TDD extended to ML's non-deterministic domain.
+3. Extend TDD with a **Validation Pyramid** — TDD's RED-GREEN-REFACTOR rhythm applies at all levels: traditional unit tests for deterministic code (functions, operators), Pyramid layers for non-deterministic process validation (training efficiency, convergence). Each layer's validation is minute-level, satisfying fast feedback loops. Multi-layer process metrics separate "implementation error" from "strategy ineffective."
 5. Users can skip any validation layer — scope confirmed during brainstorm phase.
 6. Validation Pyramid dynamically orchestrates based on architecture type, task type, and user context.
 7. Only codify toolkit code that agents struggle to write correctly from scratch and is highly reusable; everything else is guided by skills for agents to write on the spot.

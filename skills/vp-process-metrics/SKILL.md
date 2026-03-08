@@ -11,15 +11,7 @@ Check training process health after a few steps of actual training. This catches
 
 **Run after L0 passes.** Typically check after the first 10-100 training steps.
 
-## TDD Flow
-
-Follow RED → GREEN → REFACTOR for each check:
-
-1. **RED:** Write gradient/activation/parameter assertions and monitoring hooks. Run a few training steps. Confirm the checks catch problems (or confirm a known-broken state fails).
-2. **GREEN:** Fix implementation issues (initialization, learning rate, architecture bugs) until all checks pass.
-3. **REFACTOR:** Clean up monitoring code.
-
-If all checks pass immediately on first run, verify: is the model actually training correctly, or are thresholds too lenient?
+**TDD reminder:** Follow the RED → GREEN → REFACTOR rhythm defined in `validation-pyramid/SKILL.md`.
 
 ## Universal Checks (always run)
 
