@@ -80,6 +80,24 @@ grep -r "from toolkit\|import toolkit\|from test\|from validation" src/ model/ -
 - [ ] No unresolved anomalies that could invalidate conclusions
 - [ ] Anomalies that were resolved have documented fixes
 
+### 6. Long-Training Results (when entering from completion-prompt)
+
+If this verification was reached via ml-training-resume from a completion-prompt:
+
+- [ ] Watchdog monitoring completed without unresolved severe anomalies
+- [ ] Final training metrics are consistent with VP baseline expectations
+- [ ] Training curve shows expected convergence behavior
+- [ ] Final metrics support the experiment hypothesis (or clearly refute it)
+- [ ] Any anomalies that occurred during training are documented and resolved
+- [ ] experiment-context.md is complete with Watchdog summary
+
+```
+Subtask 1: [name]
+  VP (pre-training):  L0 ✅ L1 ✅ L2 ✅
+  Long training:      ✅ 10000 steps, final loss=0.12
+  Watchdog:           ✅ No severe anomalies (1 mild spike at step 3200, self-resolved)
+```
+
 ## Summary Report Template
 
 After completing the checklist, present this summary to the user:
@@ -153,3 +171,4 @@ After presenting the summary, ask the user:
 - **spml:validation-pyramid** — VP checks referenced in verification
 - **spml:ml-brainstorming** — Next step if new experiment needed
 - **spml:finishing-a-development-branch** — Next step if experiment is done
+- **spml:ml-training-resume** — Invokes this skill after long-running task completes
