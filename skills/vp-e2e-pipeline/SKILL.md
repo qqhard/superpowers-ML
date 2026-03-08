@@ -124,7 +124,7 @@ def run_e2e_pipeline_test(
 1. Identify which stage failed (data / model / train / checkpoint / inference / eval)
 2. Fix the integration issue at that stage boundary
 3. Re-run the full pipeline test
-4. Do NOT trigger ml-diagnostics for integration bugs — this is traditional debugging
+4. Do NOT trigger diagnostics for integration bugs — this is traditional debugging
 
 ## Important Notes
 

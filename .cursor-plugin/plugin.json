@@ -7,9 +7,5 @@
     "name": "spml contributors"
   },
   "license": "MIT",
-  "keywords": ["ml", "machine-learning", "recsys", "llm", "validation-pyramid", "experiment", "training"],
-  "skills": "./skills/",
-  "agents": "./agents/",
-  "commands": "./commands/",
-  "hooks": "./hooks/hooks.json"
+  "keywords": ["ml", "machine-learning", "recsys", "llm", "validation-pyramid", "experiment", "training"]
 }

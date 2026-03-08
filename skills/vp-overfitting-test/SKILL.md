@@ -92,7 +92,7 @@ The core criterion is always: **loss decreases steadily and quickly.** Task-spec
 ## When This Test Fails
 
 1. Do NOT proceed to L3 or full training
-2. Trigger **spml:ml-diagnostics**
+2. Trigger **spml:diagnostics**
 3. Common first steps: check learning rate, check loss function, check data labels
 4. Re-run overfit test after fixing
 

@@ -17,7 +17,7 @@ The Validation Pyramid extends TDD to ML workflows. Each layer follows the same 
 
 - After implementing any ML code (model, training loop, data pipeline, custom layer)
 - During each subtask in an experiment plan
-- When ml-diagnostics identifies an issue and you need to re-validate after fixing
+- When diagnostics identifies an issue and you need to re-validate after fixing
 
 ## Orchestration Logic
 
@@ -33,21 +33,21 @@ digraph validation_pyramid {
     "L3: End-to-End Pipeline" [shape=box];
     "L3 passed?" [shape=diamond];
     "All enabled layers passed" [shape=doublecircle];
-    "Trigger ml-diagnostics" [shape=box, style=filled, fillcolor="#ffcccc"];
+    "Trigger diagnostics" [shape=box, style=filled, fillcolor="#ffcccc"];
 
     "Read validation scope from design doc" -> "L0: Engineering Efficiency";
     "L0: Engineering Efficiency" -> "L0 passed?";
     "L0 passed?" -> "L1: Process Metrics" [label="yes"];
-    "L0 passed?" -> "Trigger ml-diagnostics" [label="no"];
+    "L0 passed?" -> "Trigger diagnostics" [label="no"];
     "L1: Process Metrics" -> "L1 passed?";
     "L1 passed?" -> "L2: Overfitting Test" [label="yes"];
-    "L1 passed?" -> "Trigger ml-diagnostics" [label="no"];
+    "L1 passed?" -> "Trigger diagnostics" [label="no"];
     "L2: Overfitting Test" -> "L2 passed?";
     "L2 passed?" -> "L3: End-to-End Pipeline" [label="yes"];
-    "L2 passed?" -> "Trigger ml-diagnostics" [label="no"];
+    "L2 passed?" -> "Trigger diagnostics" [label="no"];
     "L3: End-to-End Pipeline" -> "L3 passed?";
     "L3 passed?" -> "All enabled layers passed" [label="yes"];
-    "L3 passed?" -> "Trigger ml-diagnostics" [label="no"];
+    "L3 passed?" -> "Trigger diagnostics" [label="no"];
 }
 ```
 
@@ -55,7 +55,7 @@ digraph validation_pyramid {
 1. Execute layers in order: L0 -> L1 -> L2 -> L3
 2. Skip layers marked as "skip" in design doc
 3. Each layer must pass before proceeding to next
-4. Failure at any layer -> trigger **spml:ml-diagnostics**
+4. Failure at any layer -> trigger **spml:diagnostics**
 5. After diagnostics fix -> re-run from the failed layer, not from L0
 
 ## TDD Rhythm: RED → GREEN → REFACTOR
@@ -148,6 +148,6 @@ See `layer-overview.md` for a compact table of all layers, metrics, and threshol
 
 ## Integration
 
-- **spml:ml-brainstorming** — Defines validation scope
-- **spml:ml-diagnostics** — Triggered on failure
-- **spml:ml-experiment-planning** — Each subtask specifies which layers apply
+- **spml:brainstorming** — Defines validation scope
+- **spml:diagnostics** — Triggered on failure
+- **spml:experiment-planning** — Each subtask specifies which layers apply
