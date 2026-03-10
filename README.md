@@ -23,16 +23,10 @@ Install [Superpowers](https://github.com/obra/superpowers) first. SPML depends o
 
 ### Claude Code
 
-```bash
-# 1. Clone the repo
-git clone https://github.com/qqhard/superpowers-ML.git ~/.claude/plugins/spml
-```
-
-Then in Claude Code:
+In Claude Code:
 
 ```
-# 2. Register as local marketplace and install
-/plugin marketplace add ~/.claude/plugins/spml
+/plugin marketplace add qqhard/superpowers-ML
 /plugin install spml@spml-dev
 ```
 
@@ -47,8 +41,8 @@ Start a new session and check that both plugin namespaces are available:
 
 ### Updating
 
-```bash
-cd ~/.claude/plugins/spml && git pull
+```
+/plugin update spml
 ```
 
 ## How the two plugins work together
