@@ -23,10 +23,16 @@ Install [Superpowers](https://github.com/obra/superpowers) first. SPML depends o
 
 ### Claude Code
 
-In Claude Code:
+```bash
+# 1. Clone the repo
+git clone https://github.com/qqhard/superpowers-ML.git ~/.claude/plugins/spml
+```
+
+Then in Claude Code:
 
 ```
-/plugin marketplace add qqhard/superpowers-ML
+# 2. Register as local marketplace and install
+/plugin marketplace add ~/.claude/plugins/spml
 /plugin install spml@spml-dev
 ```
 
@@ -41,8 +47,8 @@ Start a new session and check that both plugin namespaces are available:
 
 ### Updating
 
-```
-/plugin update spml
+```bash
+cd ~/.claude/plugins/spml && git pull
 ```
 
 ## How the two plugins work together
@@ -90,7 +96,7 @@ Each subtask passes through layered validation before claiming correctness:
 
 | Layer | What it checks | Time |
 |-------|---------------|------|
-| **L0: Engineering Efficiency** | MFU, GPU utilization, backend verification, I/O bandwidth | Minutes |
+| **L0: Engineering Efficiency** | Steady-state sample speed, TCA, MFU, backend verification, I/O bandwidth | Minutes |
 | **L1: Process Metrics** | Gradient health, activation patterns, architecture-specific signals | Minutes |
 | **L2: Overfitting Test** | Loss decreases on 100-1000 samples, fixed seed | ~10 min |
 | **L3: E2E Pipeline** | Full flow on tiny data: data → train → infer → evaluate | Minutes |
@@ -126,7 +132,7 @@ Long-running training is monitored by an independent agent session:
 | Skill | Checks |
 |-------|--------|
 | **validation-pyramid** | Layered validation orchestration with dynamic routing |
-| **vp-engineering-efficiency** | MFU, GPU utilization, backend, bandwidth, memory |
+| **vp-engineering-efficiency** | Steady-state sample speed, TCA, MFU, backend, bandwidth, memory |
 | **vp-process-metrics** | Gradients, activations, parameter drift, architecture-specific signals |
 | **vp-overfitting-test** | Small-scale overfit with trend-based criteria |
 | **vp-e2e-pipeline** | End-to-end data → train → infer → evaluate |

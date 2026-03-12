@@ -110,7 +110,7 @@ Walk through the Validation Pyramid layers. For each, ask: needed / skip / alrea
 
 **L2: Overfitting Test**
 - Small-scale overfit on 100-1000 samples, fixed seed
-- Loss must monotonically decrease to near 0
+- Loss must steadily decrease (前半 avg > 后半 avg, 下降比例 >= 60%)
 
 **L3: End-to-End Pipeline**
 - Full flow (data -> training -> inference -> evaluation) on tiny data

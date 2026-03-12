@@ -38,7 +38,7 @@ Always the same procedure. Task-specific thresholds:
 |------|-----------------|
 | RecSys | NDCG@10 / Recall@10 near 1.0 |
 | LLM | Perplexity < 1.1 or loss < 0.01 |
-| General | Training loss monotonically decreasing to near 0 |
+| General | Training loss steadily decreasing (前半 avg > 后半 avg, 下降比例 >= 60%) |
 
 ### L3: End-to-End Pipeline
 

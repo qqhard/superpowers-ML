@@ -20,7 +20,7 @@ Do NOT propose fixes without completing Phase 1 (evidence gathering). The tempta
 - Validation Pyramid check failed at any layer
 - Loss not decreasing / oscillating / diverging
 - Training runs but metrics are unexpectedly poor
-- GPU utilization or throughput below target
+- MFU/TCA or throughput below target
 - Any "this doesn't look right" during training
 
 ## The Three Core Questions
@@ -42,7 +42,7 @@ Every ML diagnostic starts by identifying which question you're answering:
 
 ### Q3: Why isn't it fast enough?
 - I/O bottleneck (data loading starving GPU)
-- Low GPU utilization (MFU/TCA below target)
+- Low MFU/TCA (below target)
 - High communication overhead (NCCL bandwidth insufficient)
 - Memory bottleneck (excessive fragmentation, OOM)
 - **Start with:** L0 engineering efficiency checks, then per-layer profiling

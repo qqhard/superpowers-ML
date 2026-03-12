@@ -2,7 +2,7 @@
 
 | Layer | Skill | Cost | Time | What it catches |
 |-------|-------|------|------|-----------------|
-| **L0** | vp-engineering-efficiency | Very low | Seconds | Wrong backend, bad I/O, low GPU utilization, memory waste |
+| **L0** | vp-engineering-efficiency | Very low | Minutes | Wrong backend, bad I/O, low MFU/TCA, memory waste |
 | **L1** | vp-process-metrics | Low | Seconds-minutes (first N steps) | NaN/Inf, gradient issues, activation collapse, loss spikes, parameter drift |
 | **L2** | vp-overfitting-test | Medium | ~10 minutes | Model can't fit small data = implementation bug or architecture issue |
 | **L3** | vp-e2e-pipeline | Medium-high | 10-30 minutes | Pipeline integration issues, data-to-evaluation flow broken |
@@ -11,10 +11,12 @@
 
 ### L0: Engineering Efficiency
 - Backend: Expected backends enabled (FA, MoE kernel, etc.)
-- MFU: >= user-defined threshold (typically 0.3-0.6 depending on model)
+- All metrics measured during steady-state (skip warmup, confirm data loading stable)
+- Sample speed: samples/sec or tokens/sec meets expectation
 - TCA: >= user-defined threshold
+- MFU: >= user-defined threshold (typically 0.3-0.6 depending on model)
 - Memory: No obvious waste (reserved >> allocated = fragmentation)
-- I/O: Data loading not bottlenecking GPU (GPU utilization not dropping during data fetch)
+- I/O: Data loading not bottlenecking steady-state training
 - Bandwidth: NCCL/HBM/PCIE meeting expected throughput
 
 ### L1: Process Metrics
@@ -26,8 +28,8 @@
 - Architecture-specific checks pass (attention entropy, MoE balance, etc.)
 
 ### L2: Overfitting Test
-- Training loss monotonically decreasing to near 0 on 100-1000 samples
-- Task-specific metric near perfect (NDCG near 1.0, perplexity near 1.0)
+- Training loss steadily decreasing on 100-1000 samples (前半 avg > 后半 avg, 下降比例 >= 60%)
+- Task-specific metric showing clear improvement trend
 - Completed within expected time
 
 ### L3: End-to-End Pipeline

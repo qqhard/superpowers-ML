@@ -1,4 +1,14 @@
-# GPU Utilization
+# Steady-State Efficiency: MFU / TCA / Sample Speed
+
+**IMPORTANT: All measurements MUST be taken during steady-state training.** Measurements during warmup (CUDA lazy init, JIT compilation, data prefetch filling) are not representative.
+
+## Measurement Protocol
+
+1. Run training normally
+2. Skip the first 5-10 steps (warmup)
+3. Confirm data loading is in steady state (prefetch buffers full)
+4. Measure over the next N steps (N >= 10)
+5. Report: **sample speed**, **TCA**, **MFU**
 
 ## MFU (Model FLOPs Utilization)
 
@@ -23,23 +33,38 @@ def estimate_transformer_flops(num_params, seq_len, batch_size):
     """Approximate: 6 * num_params * seq_len * batch_size per step (fwd + bwd)"""
     return 6 * num_params * seq_len * batch_size
 
-# 2. Measure step time
+# 2. Measure step time — skip warmup, measure steady-state
+warmup_steps = 10
+measure_steps = 20
+
+for _ in range(warmup_steps):
+    output = model(mock_input)
+    loss = criterion(output, mock_target)
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+
 torch.cuda.synchronize()
 start = time.perf_counter()
-for _ in range(10):  # warmup + measure
+for _ in range(measure_steps):
     output = model(mock_input)
     loss = criterion(output, mock_target)
     loss.backward()
     optimizer.step()
     optimizer.zero_grad()
 torch.cuda.synchronize()
-step_time = (time.perf_counter() - start) / 10
+step_time = (time.perf_counter() - start) / measure_steps
 
-# 3. Get GPU peak FLOPS
+# 3. Sample speed
+samples_per_sec = batch_size / step_time
+tokens_per_sec = batch_size * seq_len / step_time
+print(f"Sample speed: {samples_per_sec:.1f} samples/sec, {tokens_per_sec:.0f} tokens/sec")
+
+# 4. Get GPU peak FLOPS
 # A100: 312 TFLOPS (bf16), H100: 989 TFLOPS (bf16)
 gpu_peak_tflops = 312  # Adjust for your GPU
 
-# 4. Calculate
+# 5. Calculate MFU
 model_flops = estimate_transformer_flops(num_params, seq_len, batch_size)
 mfu = model_flops / (gpu_peak_tflops * 1e12 * step_time)
 print(f"MFU: {mfu:.2%}")
