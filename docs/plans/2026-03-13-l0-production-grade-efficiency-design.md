@@ -82,7 +82,7 @@ All metrics collected simultaneously from one continuous training run. No separa
      - Clock throttling: if GPU not running at max clock
      - Memory-bound ops: tensor cores active but waiting for data
      - Padding waste: tile alignment overhead in attention/GEMM
-   - Note: full quantitative decomposition (clock_factor, tensor_overhead, pad_ratio) requires NCU per-kernel data — available as optional deep-dive
+   - Note: full quantitative decomposition requires additional profiling tools
 
 3. **Memory Report**
    - Peak / allocated / reserved / fragmentation
@@ -104,9 +104,8 @@ All metrics collected simultaneously from one continuous training run. No separa
 | `toolkit/profiling/dcgm_profiler.py` | **New** | DCGM process management, output parsing, TCA extraction |
 | `toolkit/profiling/gap_analyzer.py` | **New** | TCA vs MFU gap analysis |
 | `toolkit/profiling/l0_runner.py` | **New** | Three-phase orchestration, report generation |
-| `toolkit/profiling/ncu_profiler.py` | **New (optional)** | NCU deep-dive for per-kernel TCA and kernel classification |
 | `toolkit/profiling/memory_profiler.py` | Minor | Adapt to steady-state measurement mode |
-| `toolkit/profiling/layer_profiler.py` | No change | Remains available as deep-dive tool |
+| `toolkit/profiling/layer_profiler.py` | No change | Remains available for per-layer analysis |
 | `skills/vp-engineering-efficiency/` | Update | Point skill docs to new toolkit |
 | `tests/toolkit/profiling/` | New tests | For all new/changed modules |
 
@@ -156,24 +155,6 @@ Column `TENACT` = `DCGM_FI_PROF_PIPE_TENSOR_ACTIVE` = TCA%.
 
 **Fallback:** If DCGM not available, report TCA as "unavailable" with instructions to install DCGM. Do not fake it.
 
-### NCU Deep-Dive (Optional, Not Part of Standard L0)
-
-When per-kernel analysis is needed (e.g., to understand why TCA is low):
-
-```python
-from toolkit.profiling.ncu_profiler import run_ncu_analysis
-
-ncu_report = run_ncu_analysis(
-    training_script="train.py",
-    training_args=["--config", "..."],
-    launch_skip=10,
-    launch_count=5,
-)
-
-# Per-kernel TCA, instruction type classification (WGMMA/HMMA/CUDA Core)
-# Quantitative gap decomposition (clock_factor, tensor_overhead, pad_ratio)
-```
-
 ### Key Design Decisions
 
 | Decision | Choice | Rationale |
@@ -185,7 +166,6 @@ ncu_report = run_ncu_analysis(
 | Pass/fail judgment | Report only | User/agent interprets results |
 | Warmup detection | Step time CV convergence | Adaptive, not fixed N steps |
 | DCGM unavailable | Report "unavailable", no fallback | Real data or nothing, never fake |
-| NCU | Optional deep-dive tool | For per-kernel analysis, not standard L0 |
 
 ### Validation Scope
 

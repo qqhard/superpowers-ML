@@ -89,17 +89,10 @@ TCA measurement requires DCGM installed on GPU nodes. If DCGM is unavailable:
 - MFU and sample speed are still measured normally
 - **Do not fake TCA** — real data or nothing
 
-## Optional Deep-Dive: NCU
-
-For per-kernel TCA analysis (when you need to understand WHY TCA is low):
-- `toolkit/profiling/ncu_profiler.py` — NCU command builder, per-kernel TCA, kernel classification (WGMMA/HMMA/CUDA Core)
-- This is a separate tool, not part of standard L0
-
 ## Failure Decomposition
 
 If MFU or TCA seem low:
 1. Check gap analysis contributors in the report
 2. Use `layer_profiler` to identify which layers are slow
 3. Check backend report — are expected kernels being used?
-4. For per-kernel analysis, use NCU deep-dive
-5. For multi-node: check distributed training bandwidth (see `distributed-training.md`)
+4. For multi-node: check distributed training bandwidth (see `distributed-training.md`)

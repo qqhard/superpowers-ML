@@ -70,7 +70,7 @@ def analyze_gap(
 
     if gap_pp > 5 and clock_factor is None:
         contributors.append(
-            "Consider running NCU deep-dive for per-kernel analysis to identify specific bottlenecks"
+            "Consider providing clock MHz data or using layer_profiler to identify bottleneck layers"
         )
 
     return {

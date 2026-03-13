@@ -311,7 +311,7 @@ def analyze_gap(
 Implementation notes:
 - Pure math + heuristics, zero dependencies beyond Python stdlib
 - Contributors are qualitative: "Clock throttling: GPU running at {actual}/{max} MHz ({ratio:.0%} of max)"
-- If gap > 5pp and no clock info: suggest "Run NCU deep-dive for per-kernel analysis"
+- If gap > 5pp and no clock info: suggest using layer_profiler to identify bottleneck layers
 
 ### Step 4: Run tests to verify they pass
 
@@ -535,36 +535,3 @@ git add toolkit/profiling/__init__.py skills/vp-engineering-efficiency/
 git commit -m "docs: update L0 skill docs and exports for production-grade efficiency toolkit"
 ```
 
----
-
-## Subtask 6 (Optional): ncu_profiler.py — NCU Deep-Dive
-
-**Goal:** Optional deep-dive tool for per-kernel TCA analysis and quantitative gap decomposition. Not part of standard L0 flow.
-
-**Implementation:** New file `toolkit/profiling/ncu_profiler.py`
-**Unit Tests:** `tests/toolkit/profiling/test_ncu_profiler.py`
-
-### Step 1: Write unit tests
-
-- `test_parse_ncu_csv()` — parse NCU CSV output, extract per-kernel metrics
-- `test_compute_per_kernel_tca()` — given tensor_active and cycles_elapsed, verify TCA = tensor_active / (cycles_elapsed * 4) * 100
-- `test_classify_kernel()` — flash_fwd → FA2 HMMA, nvjet_tst → WGMMA, triton_ → CUDA Core
-- `test_build_ncu_command()` — verify correct ncu CLI args
-
-### Step 2-5: Implement, test, commit
-
-Same TDD rhythm as above. Key functions:
-
-```python
-def check_ncu_available() -> bool
-def build_ncu_command(script, args, launch_skip=10, launch_count=5) -> list[str]
-def run_ncu_profiling(script, args, ...) -> str  # returns CSV output
-def parse_ncu_csv(csv_text) -> list[dict]  # per-kernel metrics
-def compute_per_kernel_tca(tensor_active, cycles_elapsed, sub_cores=4) -> float
-def classify_kernel(kernel_name) -> str  # FA2/WGMMA/CUDA Core/Other
-def analyze_ncu_results(kernels) -> dict  # aggregate per-category stats
-```
-
-```bash
-git commit -m "feat: add optional ncu_profiler for per-kernel TCA deep-dive"
-```
