@@ -1,125 +1,118 @@
-# Steady-State Efficiency: MFU / TCA / Sample Speed
+# GPU Utilization: MFU, TCA, Sample Speed
 
-**IMPORTANT: All measurements MUST be taken during steady-state training.** Measurements during warmup (CUDA lazy init, JIT compilation, data prefetch filling) are not representative.
+## Three Core Metrics
 
-## Measurement Protocol
+### MFU (Model FLOPs Utilization)
+
+**What:** Ratio of actual model FLOPs to theoretical peak hardware FLOPs.
+
+**How it's measured:**
+1. `FlopCounterMode` counts exact FLOPs per fwd+bwd pass (aten operator level, not 6N estimation)
+2. CUDA Events measure median step time over steady-state
+3. `MFU = flops_per_step / (step_time_s × peak_tflops × 1e12)`
+
+```python
+from toolkit.profiling.mfu_calculator import count_flops, calculate_mfu
+
+# Step 1: Count FLOPs (once, static)
+flops = count_flops(model, mock_input, include_backward=True)
+print(f"FLOPs/step: {flops['total_flops'] / 1e12:.2f} T")
+
+# Step 2: Calculate MFU (with measured step time)
+result = calculate_mfu(
+    flops_per_step=flops['total_flops'],
+    step_time_ms=measured_median_step_time,
+    gpu_peak_tflops=989.0,  # H100, or auto-detected
+)
+print(f"MFU: {result['mfu']:.2%}")
+```
+
+### TCA (Tensor Core Activity)
+
+**What:** Percentage of time tensor cores are actively computing. Hardware counter, not estimation.
+
+**How it's measured:**
+- DCGM field 1004 (`DCGM_FI_PROF_PIPE_TENSOR_ACTIVE`)
+- Sampled every 1 second by `dcgmi dmon` subprocess
+- Zero overhead on training — runs independently
+- Matches monitoring dashboard exactly
+
+```python
+from toolkit.profiling.dcgm_profiler import (
+    check_dcgm_available, start_dcgm_sampling,
+    stop_dcgm_sampling, parse_dcgm_output, compute_tca_stats,
+)
+
+if check_dcgm_available():
+    proc = start_dcgm_sampling(interval_ms=1000)
+    # ... run training ...
+    output = stop_dcgm_sampling(proc)
+    tca_values = parse_dcgm_output(output)
+    stats = compute_tca_stats(tca_values)
+    print(f"TCA: {stats['mean']:.2f}% (median={stats['median']:.2f}%)")
+```
+
+### Sample Speed
+
+**What:** Training throughput in samples/sec or tokens/sec.
+
+**How it's measured:**
+- `sample_speed = batch_size / median_step_time_s`
+- `tokens_per_sec = batch_size * seq_len / median_step_time_s` (if applicable)
+
+## TCA vs MFU Gap
+
+TCA > MFU is normal. The gap reveals inefficiencies:
+
+| Gap Cause | Explanation |
+|-----------|-------------|
+| **Clock throttling** | GPU not at max frequency (power/thermal) |
+| **Tensor overhead** | Tile padding, sub-optimal GEMM shapes |
+| **Memory-bound ops** | Tensor cores active but starved for data |
+
+```python
+from toolkit.profiling.gap_analyzer import analyze_gap
+
+gap = analyze_gap(
+    tca_percent=23.7,
+    mfu_percent=14.6,
+    actual_clock_mhz=1761,  # optional
+    max_clock_mhz=2550,      # optional
+)
+print(f"Gap: {gap['gap_pp']:.1f} pp")
+for c in gap['contributors']:
+    print(f"  - {c}")
+```
+
+## Steady-State Measurement Protocol
+
+**All measurements MUST be taken during steady-state.** Warmup measurements are not representative.
 
 1. Run training normally
-2. Skip the first 5-10 steps (warmup)
-3. Confirm data loading is in steady state (prefetch buffers full)
-4. Measure over the next N steps (N >= 10)
-5. Report: **sample speed**, **TCA**, **MFU**
+2. Warmup auto-detected by step time variance convergence (CV < 5% over 5 steps)
+3. Measure over 3 minutes of steady-state (configurable)
+4. DCGM samples TCA simultaneously, zero overhead
+5. Report uses median step time (robust to outliers)
 
-## MFU (Model FLOPs Utilization)
+The `run_l0()` function handles all of this automatically.
 
-MFU = Actual Model FLOPs / Theoretical Peak FLOPs
+## Per-Layer Profiling (on investigation)
 
-**Using toolkit (when available):**
-```python
-from toolkit.profiling.mfu_calculator import calculate_mfu
+When MFU is unexpectedly low, decompose per-layer:
 
-result = calculate_mfu(model, input_shape=(batch_size, seq_len), step_time_ms=measured_step_time)
-print(f"MFU: {result['mfu']:.2%}, TCA: {result['tca']:.2%}")
-assert result['mfu'] >= target_mfu, f"MFU {result['mfu']:.2%} below target {target_mfu:.2%}"
-```
-
-**Manual calculation:**
-```python
-import torch
-import time
-
-# 1. Count model FLOPs (approximate for Transformer)
-def estimate_transformer_flops(num_params, seq_len, batch_size):
-    """Approximate: 6 * num_params * seq_len * batch_size per step (fwd + bwd)"""
-    return 6 * num_params * seq_len * batch_size
-
-# 2. Measure step time — skip warmup, measure steady-state
-warmup_steps = 10
-measure_steps = 20
-
-for _ in range(warmup_steps):
-    output = model(mock_input)
-    loss = criterion(output, mock_target)
-    loss.backward()
-    optimizer.step()
-    optimizer.zero_grad()
-
-torch.cuda.synchronize()
-start = time.perf_counter()
-for _ in range(measure_steps):
-    output = model(mock_input)
-    loss = criterion(output, mock_target)
-    loss.backward()
-    optimizer.step()
-    optimizer.zero_grad()
-torch.cuda.synchronize()
-step_time = (time.perf_counter() - start) / measure_steps
-
-# 3. Sample speed
-samples_per_sec = batch_size / step_time
-tokens_per_sec = batch_size * seq_len / step_time
-print(f"Sample speed: {samples_per_sec:.1f} samples/sec, {tokens_per_sec:.0f} tokens/sec")
-
-# 4. Get GPU peak FLOPS
-# A100: 312 TFLOPS (bf16), H100: 989 TFLOPS (bf16)
-gpu_peak_tflops = 312  # Adjust for your GPU
-
-# 5. Calculate MFU
-model_flops = estimate_transformer_flops(num_params, seq_len, batch_size)
-mfu = model_flops / (gpu_peak_tflops * 1e12 * step_time)
-print(f"MFU: {mfu:.2%}")
-```
-
-## Memory Analysis
-
-**Using toolkit (when available):**
-```python
-from toolkit.profiling.memory_profiler import analyze_memory
-result = analyze_memory(model, mock_input)
-print(result)
-```
-
-**Manual check:**
-```python
-torch.cuda.reset_peak_memory_stats()
-
-output = model(mock_input)
-loss = criterion(output, mock_target)
-loss.backward()
-
-allocated = torch.cuda.memory_allocated() / 1e9
-reserved = torch.cuda.memory_reserved() / 1e9
-peak = torch.cuda.max_memory_allocated() / 1e9
-
-print(f"Allocated: {allocated:.2f} GB")
-print(f"Reserved:  {reserved:.2f} GB")
-print(f"Peak:      {peak:.2f} GB")
-print(f"Fragmentation: {(reserved - allocated) / reserved:.1%}")
-
-# Flag if fragmentation > 20%
-assert (reserved - allocated) / reserved < 0.2, "High memory fragmentation detected"
-```
-
-## Per-Layer Profiling (on failure)
-
-**Using toolkit (when available):**
 ```python
 from toolkit.profiling.layer_profiler import profile_layers
+
 result = profile_layers(model, mock_input)
 for layer in result['layers']:
     print(f"{layer['name']}: {layer['time_ms']:.2f}ms ({layer['percentage']:.1f}%)")
 ```
 
-**Manual:**
-```python
-with torch.profiler.profile(
-    activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-    record_shapes=True,
-    with_stack=True
-) as prof:
-    output = model(mock_input)
-    loss = criterion(output, mock_target)
-    loss.backward()
+## Memory Analysis
 
-print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=30))
+```python
+from toolkit.profiling.memory_profiler import analyze_memory
+
+result = analyze_memory(model, mock_input)
+print(f"Peak: {result['peak_gb']:.2f} GB, Fragmentation: {result['fragmentation']:.1%}")
 ```

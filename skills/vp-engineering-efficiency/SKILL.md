@@ -13,77 +13,93 @@ The cheapest, fastest layer. Run this FIRST before any training. Catches configu
 
 **TDD reminder:** Follow the RED → GREEN → REFACTOR rhythm defined in `validation-pyramid/SKILL.md`.
 
-## Steady-State Measurement
+## Three-Phase Architecture (5 min total)
 
-**All efficiency metrics MUST be measured during steady-state training, not during warmup.**
+### Phase 1: Static Analysis (~10 seconds)
 
-Steps:
-1. Run training for enough steps that data loading pipeline is warm (prefetch buffers full, no first-load overhead)
-2. Skip the first 5-10 steps (warmup: CUDA lazy init, JIT compilation, data prefetch filling)
-3. Measure over the next N steps (N >= 10) to get stable averages
-4. Confirm data loading is not the bottleneck during measurement (GPU not idle waiting for data)
+No training needed. Runs instantly.
 
-The three key metrics to report during steady-state:
-- **Sample speed**: samples/sec or tokens/sec
-- **TCA** (Tensor Core Activity): percentage of time tensor cores are active
-- **MFU** (Model FLOPs Utilization): ratio of actual model FLOPs to theoretical peak
+1. **Precise FLOPs via FlopCounterMode** — `torch.utils.flop_counter.FlopCounterMode` counts at aten operator level. Automatically handles GQA, MoE, SwiGLU, any standard PyTorch op. One fwd+bwd pass.
+2. **GPU hardware info** — model, peak BF16 TFLOPS, memory capacity, DCGM availability
+3. **Backend pre-check** — parameter dtype, FlashAttention availability
+4. **Memory snapshot** — parameter count, theoretical memory footprint
 
-## What to Check
+### Phase 2: Steady-State Measurement (~3 minutes)
 
-### 1. Backend Verification
-See `backend-checks.md` for detailed checks.
+All metrics from one continuous training run. No separate profiling passes.
 
-**Quick version:**
-- Is FlashAttention enabled? (if Transformer)
-- Is the correct MoE kernel loaded? (if MoE)
-- Are CUDA kernels the expected ones? (not falling back to slow paths)
-- Is the correct precision being used? (fp16/bf16/fp32 as intended)
+1. **Warmup detection** — runs training steps until step time variance converges (CV of last 5 steps < 5%). Not a fixed N steps — adaptive.
+2. **DCGM background sampling** — `dcgmi dmon -e 1004 -d 1` runs as subprocess. Field 1004 = `DCGM_FI_PROF_PIPE_TENSOR_ACTIVE`. **Zero overhead** on training. Matches monitoring dashboard TCA exactly.
+3. **Steady-state timing** — CUDA Events per step: `step_time_ms`, `samples/sec`, `tokens/sec`, memory stats.
+4. **Backend verification** — `torch.profiler` captures 1 step of real kernel names. Detects FlashAttention, identifies top CUDA kernels.
 
-### 2. Steady-State Efficiency (MFU / TCA / Sample Speed)
-See `gpu-utilization.md` for detailed checks.
+### Phase 3: Report (~seconds)
 
-**Quick version (all measured during steady-state, see above):**
-- Sample speed: samples/sec or tokens/sec meets expectation
-- MFU (Model FLOPs Utilization): >= user threshold
-- TCA (Tensor Core Activity): >= user threshold
-- Memory: allocated vs reserved, fragmentation check
-- If below target: use `toolkit/profiling/layer_profiler.py` to decompose per-layer
-
-### 3. Data I/O
-- Confirm data loading is not bottlenecking steady-state training (GPU not idle waiting for data)
-- Checkpoint load time: acceptable for the model size
-
-### 4. Infrastructure
-- W&B logging connected and receiving data
-- Checkpoint save/load works correctly
-- mmap data loading working (if applicable)
-
-### 5. Distributed Training (if multi-GPU/multi-node)
-See `distributed-training.md` for detailed checks.
-
-**Quick version:**
-- NCCL bandwidth meets expected throughput
-- HBM bandwidth not bottlenecked
-- PCIE bandwidth adequate
-- Communication/computation overlap working
+1. **MFU** = `FlopCounterMode_flops / (median_step_time × peak_tflops)`
+2. **TCA** = `mean(DCGM_tensor_active%)` over steady-state window
+3. **Sample speed** = `batch_size / median_step_time`
+4. **TCA vs MFU gap analysis** — qualitative contributors (clock throttling, tensor overhead, memory-bound)
+5. **Memory report** — peak / allocated / reserved / fragmentation
+6. **Backend report** — kernel names, FA status, dtype
 
 ## Using Toolkit
 
-When available, use these toolkit tools:
-- `toolkit/profiling/mfu_calculator.py` — Calculate MFU/TCA
-- `toolkit/profiling/layer_profiler.py` — Per-layer timing decomposition
-- `toolkit/profiling/memory_profiler.py` — Memory analysis
+Primary entry point:
 
-If toolkit is not yet available, write equivalent checks following the guidance in this skill.
+```python
+from toolkit.profiling.l0_runner import run_l0, format_summary_table
 
-## Pass Criteria
+report = run_l0(
+    model=model,
+    train_step_fn=train_one_step,   # user's single-step training function
+    mock_input=mock_input,          # for FlopCounterMode
+    batch_size=2048,
+    seq_len=1024,                   # optional, for tokens/sec
+    steady_state_minutes=3,         # steady-state measurement duration
+)
 
-All enabled checks pass. Any failure -> trigger **spml:diagnostics** with the specific failure data.
+print(format_summary_table(report))
+```
+
+`train_step_fn` signature: `def train_one_step(model, step_idx: int) -> None`
+
+Individual tools also available:
+- `toolkit/profiling/mfu_calculator.py` — `count_flops()`, `calculate_mfu()`, `measure_step_times()`, `detect_warmup_end()`
+- `toolkit/profiling/dcgm_profiler.py` — DCGM lifecycle + TCA parsing
+- `toolkit/profiling/gap_analyzer.py` — TCA vs MFU gap analysis
+- `toolkit/profiling/layer_profiler.py` — per-layer timing decomposition (deep-dive)
+- `toolkit/profiling/memory_profiler.py` — memory analysis
+
+## Key Metrics
+
+| Metric | Source | What It Measures |
+|--------|--------|------------------|
+| **MFU** | FlopCounterMode + CUDA Events | Useful model FLOPs / peak hardware FLOPs |
+| **TCA** | DCGM field 1004 | % time tensor cores are active (hardware counter) |
+| **Sample Speed** | CUDA Events | samples/sec or tokens/sec throughput |
+
+## Report Output (no pass/fail)
+
+L0 **reports metrics only**. It does not make pass/fail judgments. The user or agent interprets results based on context (model type, GPU, expected ranges).
+
+## DCGM Requirements
+
+TCA measurement requires DCGM installed on GPU nodes. If DCGM is unavailable:
+- TCA is reported as `None` with a warning
+- MFU and sample speed are still measured normally
+- **Do not fake TCA** — real data or nothing
+
+## Optional Deep-Dive: NCU
+
+For per-kernel TCA analysis (when you need to understand WHY TCA is low):
+- `toolkit/profiling/ncu_profiler.py` — NCU command builder, per-kernel TCA, kernel classification (WGMMA/HMMA/CUDA Core)
+- This is a separate tool, not part of standard L0
 
 ## Failure Decomposition
 
-If MFU/TCA below target:
-1. Use layer_profiler to identify which layers are slow
-2. Check if slow layers are using expected kernels
-3. Check if data loading is the bottleneck (GPU idle time)
-4. For multi-node: check communication overhead
+If MFU or TCA seem low:
+1. Check gap analysis contributors in the report
+2. Use `layer_profiler` to identify which layers are slow
+3. Check backend report — are expected kernels being used?
+4. For per-kernel analysis, use NCU deep-dive
+5. For multi-node: check distributed training bandwidth (see `distributed-training.md`)
