@@ -1,17 +1,13 @@
 """MFU (Model FLOPs Utilization) Calculator.
 
-Computes theoretical FLOPS from model structure, measures actual throughput,
-and reports MFU and TCA (Training Compute Achievable) metrics.
-
-Usage:
-    from toolkit.profiling.mfu_calculator import calculate_mfu
-    result = calculate_mfu(model, input_shape=(8, 512), step_time_ms=150.0)
+Production-grade FLOPs counting via torch.utils.flop_counter.FlopCounterMode
+and steady-state step timing via CUDA Events.
 """
 
 import torch
 import torch.nn as nn
-from typing import Optional
-
+from typing import Optional, Callable
+import statistics
 
 # Peak TFLOPS (bf16/fp16 tensor core) for known GPU architectures
 GPU_PEAK_TFLOPS = {
@@ -47,83 +43,131 @@ def _detect_gpu_peak_tflops() -> float:
     )
 
 
-def count_parameters(model: nn.Module) -> int:
-    """Count total trainable parameters."""
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
-def estimate_flops_per_step(
+def count_flops(
     model: nn.Module,
-    input_shape: tuple,
-    model_type: str = "dense",
-    num_active_experts: int = 2,
-    num_total_experts: int = 8,
-) -> float:
-    """Estimate FLOPs per training step (forward + backward).
-
-    For a dense model: ~6 * N * tokens_per_step (2x forward, 4x backward including activation recompute).
-    For MoE: scale by active/total expert ratio for expert layers.
+    mock_input: torch.Tensor,
+    include_backward: bool = True,
+    loss_fn: Optional[Callable] = None,
+) -> dict:
+    """Count FLOPs using torch.utils.flop_counter.FlopCounterMode.
 
     Args:
         model: PyTorch model
-        input_shape: (batch_size, seq_len) or (batch_size,) for non-sequence models
-        model_type: "dense" or "moe"
-        num_active_experts: for MoE, how many experts are active per token
-        num_total_experts: for MoE, total number of experts
+        mock_input: example input tensor
+        include_backward: if True, count fwd+bwd FLOPs
+        loss_fn: how to compute loss for backward (default: output.sum())
 
     Returns:
-        Estimated FLOPs for one training step
+        dict with: total_flops (int)
     """
-    num_params = count_parameters(model)
+    from torch.utils.flop_counter import FlopCounterMode
 
-    # tokens per step = product of input shape dimensions
-    tokens_per_step = 1
-    for dim in input_shape:
-        tokens_per_step *= dim
+    was_training = model.training
+    model.eval()  # eval for consistent FLOPs counting
 
-    if model_type == "dense":
-        # 6N * T: 2x for forward matmuls, 4x for backward (grad_input + grad_weight)
-        flops = 6.0 * num_params * tokens_per_step
-    elif model_type == "moe":
-        # MoE: non-expert params get full compute, expert params get scaled
-        expert_ratio = num_active_experts / num_total_experts
-        # Approximate: assume ~50% of params are in experts
-        # Better: user can provide exact split, but this is a reasonable default
-        flops = 6.0 * num_params * tokens_per_step * (0.5 + 0.5 * expert_ratio)
-    else:
-        # Fallback: treat as dense
-        flops = 6.0 * num_params * tokens_per_step
+    flop_counter = FlopCounterMode(model, display=False)
+    with flop_counter:
+        output = model(mock_input)
+        if include_backward:
+            if loss_fn is not None:
+                loss = loss_fn(output)
+            else:
+                if isinstance(output, tuple):
+                    loss = output[0].sum()
+                else:
+                    loss = output.sum()
+            loss.backward()
 
-    return flops
+    total_flops = flop_counter.get_total_flops()
+
+    if was_training:
+        model.train()
+
+    # Zero out gradients from FLOPs counting pass
+    model.zero_grad()
+
+    return {
+        "total_flops": total_flops,
+    }
+
+
+def detect_warmup_end(
+    step_times: list, window: int = 5, cv_threshold: float = 0.05
+) -> int:
+    """Find the index where step times stabilize.
+
+    Slides a window and checks if coefficient of variation < threshold.
+
+    Args:
+        step_times: list of step times (ms)
+        window: number of recent steps to check
+        cv_threshold: coefficient of variation threshold (default 5%)
+
+    Returns:
+        Index of first step in steady-state, or -1 if not converged.
+    """
+    if len(step_times) < window:
+        return -1
+
+    for i in range(window, len(step_times) + 1):
+        recent = step_times[i - window : i]
+        mean = statistics.mean(recent)
+        if mean <= 0:
+            continue
+        stdev = statistics.stdev(recent) if len(recent) > 1 else 0.0
+        cv = stdev / mean
+        if cv < cv_threshold:
+            return i - window
+
+    return -1
+
+
+def measure_step_times(
+    model: nn.Module,
+    train_step_fn: Callable,
+    num_steps: int,
+) -> list:
+    """Measure per-step wall time using CUDA Events.
+
+    Args:
+        model: PyTorch model (on CUDA)
+        train_step_fn: function(model, step_idx) that runs one training step
+        num_steps: number of steps to measure
+
+    Returns:
+        list of step_time_ms for each step
+    """
+    step_times = []
+    for step_idx in range(num_steps):
+        start_evt = torch.cuda.Event(enable_timing=True)
+        end_evt = torch.cuda.Event(enable_timing=True)
+
+        start_evt.record()
+        train_step_fn(model, step_idx)
+        end_evt.record()
+        torch.cuda.synchronize()
+
+        step_times.append(start_evt.elapsed_time(end_evt))
+
+    return step_times
 
 
 def calculate_mfu(
-    model: nn.Module,
-    input_shape: tuple,
+    flops_per_step: int,
     step_time_ms: float,
-    model_type: str = "dense",
-    num_active_experts: int = 2,
-    num_total_experts: int = 8,
     gpu_peak_tflops: Optional[float] = None,
-    target_mfu: float = 0.5,
     num_gpus: int = 1,
 ) -> dict:
-    """Calculate MFU and TCA for a model.
+    """Calculate MFU from pre-computed FLOPs and measured step time.
 
     Args:
-        model: PyTorch model
-        input_shape: (batch_size, seq_len) or (batch_size,) for non-sequence models
-        step_time_ms: measured wall-clock time per training step in milliseconds
-        model_type: "dense" or "moe"
-        num_active_experts: for MoE models
-        num_total_experts: for MoE models
-        gpu_peak_tflops: override GPU peak TFLOPS (auto-detected if None)
-        target_mfu: target MFU threshold (default 0.5 = 50%)
-        num_gpus: number of GPUs used (for multi-GPU training)
+        flops_per_step: total FLOPs per training step (from count_flops)
+        step_time_ms: median step time in milliseconds
+        gpu_peak_tflops: peak GPU TFLOPS (auto-detected if None)
+        num_gpus: number of GPUs
 
     Returns:
-        dict with keys: mfu, tca, theoretical_tflops, actual_tflops,
-        flops_per_step, step_time_ms, num_params, status, gpu_name, gpu_peak_tflops
+        dict with: mfu, actual_tflops, theoretical_tflops, step_time_ms
     """
     if step_time_ms <= 0:
         raise ValueError("step_time_ms must be positive")
@@ -132,38 +176,14 @@ def calculate_mfu(
         gpu_peak_tflops = _detect_gpu_peak_tflops()
 
     total_peak_tflops = gpu_peak_tflops * num_gpus
-
-    num_params = count_parameters(model)
-    flops_per_step = estimate_flops_per_step(
-        model, input_shape, model_type, num_active_experts, num_total_experts
-    )
-
     step_time_s = step_time_ms / 1000.0
     actual_tflops = flops_per_step / step_time_s / 1e12
 
     mfu = actual_tflops / total_peak_tflops
-    # TCA: what fraction of peak you'd get if you include all overhead
-    # For simplicity, TCA = MFU here; in practice TCA accounts for memory-bound ops
-    tca = mfu
-
-    if mfu >= target_mfu:
-        status = "on_target"
-    elif mfu >= target_mfu * 0.7:
-        status = "below_target"
-    else:
-        status = "needs_investigation"
-
-    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "N/A"
 
     return {
         "mfu": mfu,
-        "tca": tca,
-        "theoretical_tflops": total_peak_tflops,
         "actual_tflops": actual_tflops,
-        "flops_per_step": flops_per_step,
+        "theoretical_tflops": total_peak_tflops,
         "step_time_ms": step_time_ms,
-        "num_params": num_params,
-        "status": status,
-        "gpu_name": gpu_name,
-        "gpu_peak_tflops": gpu_peak_tflops,
     }

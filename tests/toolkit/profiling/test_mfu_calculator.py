@@ -1,4 +1,8 @@
-"""Tests for toolkit/profiling/mfu_calculator.py"""
+"""Tests for toolkit/profiling/mfu_calculator.py
+
+Tests MFU calculator with FlopCounterMode-based FLOPs counting
+and CUDA Events-based step timing.
+"""
 
 import sys
 import os
@@ -9,11 +13,11 @@ import torch.nn as nn
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from toolkit.profiling.mfu_calculator import (
-    calculate_mfu,
-    count_parameters,
-    estimate_flops_per_step,
     GPU_PEAK_TFLOPS,
-    _detect_gpu_peak_tflops,
+    count_flops,
+    detect_warmup_end,
+    measure_step_times,
+    calculate_mfu,
 )
 
 
@@ -28,134 +32,149 @@ class SimpleMLP(nn.Module):
         return self.fc2(self.relu(self.fc1(x)))
 
 
-class SimpleTransformer(nn.Module):
-    def __init__(self, d_model=128, nhead=4, num_layers=2, vocab_size=1000):
-        super().__init__()
-        self.embed = nn.Embedding(vocab_size, d_model)
-        encoder_layer = nn.TransformerEncoderLayer(d_model, nhead, batch_first=True)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers)
-        self.fc = nn.Linear(d_model, vocab_size)
-
-    def forward(self, x):
-        x = self.embed(x)
-        x = self.encoder(x)
-        return self.fc(x)
+# ===== Pure logic tests (no CUDA) =====
 
 
-# --- count_parameters ---
-
-def test_count_parameters():
-    model = SimpleMLP(128, 256, 10)
-    n = count_parameters(model)
-    # fc1: 128*256 + 256 = 33024, fc2: 256*10 + 10 = 2570
-    assert n == 33024 + 2570
+def test_gpu_peak_tflops_known_gpus():
+    """Verify GPU_PEAK_TFLOPS dict contains expected entries."""
+    assert GPU_PEAK_TFLOPS["H100"] == 989.0
+    assert GPU_PEAK_TFLOPS["A100"] == 312.0
+    assert GPU_PEAK_TFLOPS["B200"] == 2250.0
 
 
-def test_count_parameters_frozen():
-    model = SimpleMLP(128, 256, 10)
-    for p in model.fc2.parameters():
-        p.requires_grad = False
-    n = count_parameters(model)
-    assert n == 33024  # only fc1
+def test_warmup_convergence_detection():
+    """Given step times that converge, verify warmup detector finds steady state."""
+    step_times = [500, 300, 200, 180, 175, 172, 173, 171, 172, 173]
+    idx = detect_warmup_end(step_times, window=5, cv_threshold=0.05)
+    assert idx >= 0, "Should detect convergence"
+    # The last 5 values [172, 173, 171, 172, 173] have very low CV
+    # Steady state should start no later than index 5
+    assert idx <= 5
 
 
-# --- estimate_flops_per_step ---
-
-def test_flops_dense():
-    model = SimpleMLP(128, 256, 10)
-    n = count_parameters(model)
-    flops = estimate_flops_per_step(model, input_shape=(32,), model_type="dense")
-    assert flops == pytest.approx(6.0 * n * 32)
+def test_warmup_no_convergence():
+    """Given wildly varying step times, verify returns -1."""
+    step_times = [500, 100, 800, 50, 900, 200, 700, 150, 600, 300]
+    idx = detect_warmup_end(step_times, window=5, cv_threshold=0.05)
+    assert idx == -1
 
 
-def test_flops_sequence():
-    model = SimpleMLP(128, 256, 10)
-    n = count_parameters(model)
-    flops = estimate_flops_per_step(model, input_shape=(8, 512), model_type="dense")
-    assert flops == pytest.approx(6.0 * n * 8 * 512)
-
-
-def test_flops_moe():
-    model = SimpleMLP(128, 256, 10)
-    n = count_parameters(model)
-    flops = estimate_flops_per_step(
-        model, input_shape=(8, 512), model_type="moe",
-        num_active_experts=2, num_total_experts=8,
+def test_mfu_computation():
+    """Given known values, verify MFU calculation is correct."""
+    result = calculate_mfu(
+        flops_per_step=int(1e12),
+        step_time_ms=100.0,
+        gpu_peak_tflops=100.0,
+        num_gpus=1,
     )
-    expected_ratio = 0.5 + 0.5 * (2 / 8)
-    assert flops == pytest.approx(6.0 * n * 8 * 512 * expected_ratio)
+    # actual_tflops = 1e12 / 0.1 / 1e12 = 10.0
+    # mfu = 10.0 / 100.0 = 0.1
+    assert result["mfu"] == pytest.approx(0.1)
+    assert result["actual_tflops"] == pytest.approx(10.0)
+    assert result["theoretical_tflops"] == pytest.approx(100.0)
 
 
-# --- calculate_mfu ---
+def test_mfu_multi_gpu():
+    """Verify peak scales by num_gpus."""
+    result_1 = calculate_mfu(
+        flops_per_step=int(1e12),
+        step_time_ms=100.0,
+        gpu_peak_tflops=100.0,
+        num_gpus=1,
+    )
+    result_4 = calculate_mfu(
+        flops_per_step=int(1e12),
+        step_time_ms=100.0,
+        gpu_peak_tflops=100.0,
+        num_gpus=4,
+    )
+    assert result_4["theoretical_tflops"] == pytest.approx(400.0)
+    assert result_4["mfu"] == pytest.approx(result_1["mfu"] / 4)
+
+
+# ===== CUDA tests =====
+
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-def test_calculate_mfu_basic():
+def test_count_flops_linear():
+    """FlopCounterMode should report FLOPs for a Linear layer forward pass."""
+    model = nn.Linear(128, 256).cuda()
+    mock_input = torch.randn(8, 128, device="cuda")
+    result = count_flops(model, mock_input, include_backward=False)
+    total = result["total_flops"]
+    assert total > 0
+    # Matmul FLOPs for Linear: 2 * batch * in * out = 2 * 8 * 128 * 256 = 524288
+    expected_approx = 2 * 8 * 128 * 256
+    # Allow some tolerance (bias adds, etc.)
+    assert total >= expected_approx * 0.5
+    assert total <= expected_approx * 2.0
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
+def test_count_flops_with_backward():
+    """Forward + backward FLOPs should exceed forward-only FLOPs."""
+    model = nn.Linear(128, 256).cuda()
+    mock_input = torch.randn(8, 128, device="cuda")
+
+    fwd_only = count_flops(model, mock_input, include_backward=False)
+    fwd_bwd = count_flops(model, mock_input, include_backward=True)
+
+    assert fwd_bwd["total_flops"] > fwd_only["total_flops"]
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
+def test_measure_step_times():
+    """Run a trivial model for 10 steps, verify returns list of 10 positive floats."""
     model = SimpleMLP().cuda()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+    def train_step(model, step_idx):
+        x = torch.randn(8, 128, device="cuda")
+        out = model(x)
+        loss = out.sum()
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+    times = measure_step_times(model, train_step, num_steps=10)
+    assert len(times) == 10
+    for t in times:
+        assert isinstance(t, float)
+        assert t > 0
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
+def test_calculate_mfu_integration():
+    """Full pipeline: count_flops + measure_step_times + calculate_mfu."""
+    model = SimpleMLP().cuda()
+    mock_input = torch.randn(8, 128, device="cuda")
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+    # Count FLOPs
+    flop_result = count_flops(model, mock_input, include_backward=True)
+    assert flop_result["total_flops"] > 0
+
+    # Measure step times
+    def train_step(model, step_idx):
+        x = torch.randn(8, 128, device="cuda")
+        out = model(x)
+        loss = out.sum()
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+    step_times = measure_step_times(model, train_step, num_steps=5)
+    import statistics
+    median_time = statistics.median(step_times)
+
+    # Calculate MFU
     result = calculate_mfu(
-        model, input_shape=(32, 128), step_time_ms=10.0, gpu_peak_tflops=100.0
+        flops_per_step=flop_result["total_flops"],
+        step_time_ms=median_time,
+        gpu_peak_tflops=100.0,  # use a known value for test stability
     )
     assert "mfu" in result
-    assert "tca" in result
-    assert "theoretical_tflops" in result
     assert "actual_tflops" in result
-    assert "status" in result
+    assert "step_time_ms" in result
     assert result["mfu"] > 0
-    assert result["theoretical_tflops"] == 100.0
-    assert result["num_params"] == count_parameters(model)
-
-
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-def test_calculate_mfu_status_on_target():
-    model = SimpleMLP().cuda()
-    # Force a very fast step time to get high MFU
-    result = calculate_mfu(
-        model, input_shape=(32, 128), step_time_ms=0.001,
-        gpu_peak_tflops=0.001, target_mfu=0.01,
-    )
-    assert result["status"] == "on_target"
-
-
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-def test_calculate_mfu_status_needs_investigation():
-    model = SimpleMLP().cuda()
-    # Force a very slow step time
-    result = calculate_mfu(
-        model, input_shape=(32, 128), step_time_ms=1e9,
-        gpu_peak_tflops=1000.0, target_mfu=0.5,
-    )
-    assert result["status"] == "needs_investigation"
-
-
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-def test_calculate_mfu_multi_gpu():
-    model = SimpleMLP().cuda()
-    result_1gpu = calculate_mfu(
-        model, input_shape=(32, 128), step_time_ms=10.0, gpu_peak_tflops=100.0, num_gpus=1
-    )
-    result_2gpu = calculate_mfu(
-        model, input_shape=(32, 128), step_time_ms=10.0, gpu_peak_tflops=100.0, num_gpus=2
-    )
-    # Same actual TFLOPS, but MFU halved with 2 GPUs (same step time)
-    assert result_2gpu["mfu"] == pytest.approx(result_1gpu["mfu"] / 2)
-
-
-def test_calculate_mfu_invalid_step_time():
-    model = SimpleMLP()
-    with pytest.raises(ValueError, match="step_time_ms must be positive"):
-        calculate_mfu(model, input_shape=(32,), step_time_ms=0.0, gpu_peak_tflops=100.0)
-
-
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-def test_detect_gpu():
-    # Should not raise on a machine with known GPU
-    tflops = _detect_gpu_peak_tflops()
-    assert tflops > 0
-
-
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
-def test_calculate_mfu_auto_detect_gpu():
-    """Test that auto-detection works end-to-end."""
-    model = SimpleMLP().cuda()
-    result = calculate_mfu(model, input_shape=(32, 128), step_time_ms=10.0)
-    assert result["gpu_peak_tflops"] > 0
-    assert result["gpu_name"] != "N/A"
+    assert result["step_time_ms"] > 0
