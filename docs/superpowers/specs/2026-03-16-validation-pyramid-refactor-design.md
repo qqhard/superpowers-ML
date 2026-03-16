@@ -9,7 +9,7 @@ The current Validation Pyramid (VP) has 4 layers (L0-L3) with 20+ skill files. I
 1. Simplify from 4 layers to 3 levels with clear purposes
 2. Integrate into Superpowers' existing subagent-driven-development flow — not a separate system
 3. Shift from "report problems after the fact" to "catch and fix during implementation"
-4. Shared fix loop: detect → auto-fix → retry → 3 failures → user intervention
+4. Shared fix loop: detect → auto-fix → retry → 5 failures → user intervention
 
 ## Architecture Overview
 
@@ -45,10 +45,14 @@ Run validation
     → Pass → proceed to next level (reset counter)
     → Fail → send feedback to Implementer with specific issues
         → Implementer fixes → re-run this level
-        → 3 consecutive failures at this level → pause, notify user
+        → 5 consecutive failures at this level → pause, notify user
 ```
 
 Timeout counts as a failure. Timeouts and metric failures share the same per-level retry counter.
+
+### Large Fix Rollback Rule
+
+If the Implementer's fix modifies more than 50 lines of code, the fix is considered a substantial change. In this case, **roll back and re-run all previous stages**: Spec Review → Code Quality Review → L0 (and any passed levels before the current one). This prevents large fixes from introducing new problems that earlier reviews would have caught.
 
 ## L0: Static Analysis (ML Code Reviewer)
 
@@ -60,6 +64,10 @@ Timeout counts as a failure. Timeouts and metric failures share the same per-lev
 
 ### Checklist
 
+The checklist is split into two severity tiers:
+
+**Mandatory (Critical) — checks 1-6.** Failure blocks progress; Implementer must fix before proceeding.
+
 | # | Check | Condition | What to verify |
 |---|-------|-----------|---------------|
 | 1 | Device consistency | Uses CUDA | Model, data, loss on same device |
@@ -68,6 +76,11 @@ Timeout counts as a failure. Timeouts and metric failures share the same per-lev
 | 4 | Optimizer coverage | Always | optimizer param_groups covers all trainable params |
 | 5 | LR scheduler | Has lr_scheduler | Correctly linked to optimizer |
 | 6 | DataLoader config | Has DataLoader | num_workers, pin_memory reasonable |
+
+**Advisory (Warning) — checks 7-18.** Do not block progress. Reported as warnings; Implementer may fix or acknowledge and proceed.
+
+| # | Check | Condition | What to verify |
+|---|-------|-----------|---------------|
 | 7 | Data loading method | Dataset declared as large in brainstorming, or file size > 10GB | Uses mmap loading |
 | 8 | Padding waste | Variable-length sequences | Excessive padding or tail-wave waste |
 | 9 | Random seeds | Always | torch/np/random seeds set |
@@ -114,7 +127,16 @@ User declares during brainstorming which data flow to use:
 
 ### Failure Detection
 
-No absolute thresholds. Use obvious anomaly detection:
+Two tiers of thresholds:
+
+**Project-specific baselines (configurable):** During brainstorming, user defines acceptable minimums for key metrics. Examples:
+- Minimum MFU (e.g., "MFU must be ≥ 30% on H100")
+- Maximum step time (e.g., "step time must be < 200ms")
+- Minimum throughput (e.g., "> 10k tokens/sec")
+
+These are stored in the experiment design doc and checked during L1. If no baselines are declared, L1 only checks for anomalies (see below).
+
+**Anomaly detection (always active):** Catches obvious problems regardless of baselines:
 - Loss not decreasing, or actively increasing
 - Gradient all NaN/Inf
 - MFU abnormally low (< 1%)
@@ -132,7 +154,7 @@ Start runtime validation (default 5 min, configurable)
     → Timeout → kill process
         → Analyze hang cause (deadlock, communication block, data loading stuck)
         → Send to Implementer for fix
-        → Counts toward 3-retry limit
+        → Counts toward 5-retry limit
 ```
 
 ### Toolkit Usage
@@ -150,16 +172,18 @@ Training health metrics (gradient hooks, loss recording, arch-specific monitors)
 
 **When:** After L1 passes.
 
-### 6 Stages (1 step each)
+### 6 Stages
+
+Default: 1 step per stage. Configurable to 3-5 steps per stage (declared during brainstorming). Running multiple steps has minimal extra cost but significantly improves coverage — catches issues like shape mismatches on the second batch, accumulation bugs across steps, or non-deterministic failures.
 
 | Stage | Validates | Typical issues exposed |
 |-------|-----------|----------------------|
-| 1. Data loading | One batch loads correctly | Shape errors, path errors, preprocessing bugs |
+| 1. Data loading | N batches load correctly | Shape errors, path errors, preprocessing bugs, iterator exhaustion |
 | 2. Model instantiation | Model creates, accepts input | Config errors, layer definition bugs |
-| 3. Training 1 step | fwd + bwd + optimizer.step | Gradient errors, shape mismatch |
+| 3. Training N steps | fwd + bwd + optimizer.step × N | Gradient errors, shape mismatch, accumulation bugs |
 | 4. Checkpoint save/load | save → load → params match | Serialization bugs, incomplete state_dict |
-| 5. Inference | eval mode, 1 step | dropout/BN behavior, output NaN |
-| 6. Evaluation | metric computation on 1 batch | Metric function bugs, label format errors |
+| 5. Inference | eval mode, N steps | dropout/BN behavior, output NaN |
+| 6. Evaluation | metric computation on N batches | Metric function bugs, label format errors |
 
 ### Timeout Protection
 
@@ -241,11 +265,15 @@ The current SKILL.md contains: TDD RED-GREEN-REFACTOR rhythm, orchestration logi
 |----------|--------|-----------|
 | Number of levels | 3 (was 4) | Simpler; overfitting test absorbed into L1 data flow choice |
 | Integration point | After existing Superpowers review stages | Reuse infrastructure, consistent UX |
-| Fix mechanism | Auto-fix loop with 3-retry cap | Agent fixes most issues; user only involved for hard problems |
+| Fix mechanism | Auto-fix loop with 5-retry cap | Agent fixes most issues; user only involved for hard problems |
 | Timeout handling | Kill + count as failure | Prevents hanging tests from blocking the pipeline |
 | Toolkit extraction | Only for proven-difficult code | Avoid premature abstraction |
 | Superpowers changes | Fork into SPML, spml: prefix | Minimize cross-project coupling |
 | Checklist design | Conditional rules | Not every check applies to every project |
 | VP timing | After code reviews, not during implementation | Code quality verified before spending GPU time |
-| Retry counter scope | Per-level, resets on advance | Prevents one flaky level from exhausting retries for later levels |
+| Retry counter scope | Per-level (5 max), resets on advance | Prevents one flaky level from exhausting retries for later levels |
 | l0_runner.py naming | Keep old name despite L0→L1 shift | Renaming breaks tests/imports for no functional benefit |
+| L0 checklist severity | Checks 1-6 mandatory, 7-18 advisory | Core config errors block; optimization hints don't block |
+| L1 baselines | Project-specific configurable baselines | Users define "acceptable MFU" etc. during brainstorming |
+| L2 step count | Default 1, configurable 3-5 | Minimal extra cost, significantly better coverage |
+| Large fix rollback | Fixes > 50 lines re-run all prior reviews + L0 | Prevents large changes from introducing new problems |
