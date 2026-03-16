@@ -28,19 +28,27 @@ Subagent-Driven-Development (per task)
 
 Execution order: L0 must pass before L1. L1 must pass before L2. Each level uses the same fix loop.
 
+**Behavioral change from current design:** The current `subagent-dev` has the Implementer running VP *during* implementation. The new design moves ML validation to *after* code reviews, as separate orchestrator-dispatched stages. This ensures code quality is verified before spending GPU time on runtime validation.
+
+### Subagent Dispatch Model
+
+L0 runs as a **subagent** (the ml-code-reviewer agent, dispatched by the orchestrator like spec-reviewer and code-quality-reviewer). L1 and L2 run as **skills invoked by the orchestrator** — the orchestrator runs the validation commands directly, since these are execution tasks, not review tasks.
+
+When any level fails, the orchestrator sends the **same Implementer subagent** back to fix the issue (resumed, not a new instance). After the Implementer fixes, re-run only the failed level — do not re-run earlier reviews (Spec Review, Code Quality Review, or earlier VP levels that already passed).
+
 ### Shared Fix Loop
 
-All three levels share one mechanism:
+All three levels share one mechanism. Each level has its own retry counter (resets when advancing to the next level):
 
 ```
 Run validation
-    → Pass → proceed to next level
+    → Pass → proceed to next level (reset counter)
     → Fail → send feedback to Implementer with specific issues
-        → Implementer fixes → re-run validation
-        → 3 consecutive failures → pause, notify user for intervention
+        → Implementer fixes → re-run this level
+        → 3 consecutive failures at this level → pause, notify user
 ```
 
-Timeout counts as a failure. Timeouts and metric failures share the same retry counter.
+Timeout counts as a failure. Timeouts and metric failures share the same per-level retry counter.
 
 ## L0: Static Analysis (ML Code Reviewer)
 
@@ -48,7 +56,7 @@ Timeout counts as a failure. Timeouts and metric failures share the same retry c
 
 **When:** After Spec Review and Code Quality Review pass.
 
-**How:** Fork Superpowers' `code-reviewer.md` agent definition into SPML, register as `spml:ml-code-reviewer`. Add the ML checklist. The reviewer reads code and checks applicable rules — if a rule fails, it gives specific fix instructions (file:line) and sends the Implementer back to fix. Uses the same Critical/Important/Minor severity levels as Superpowers.
+**How:** Copy Superpowers' `agents/code-reviewer.md` into SPML's `agents/ml-code-reviewer.md` and modify it to include the ML checklist. Register as a named agent with frontmatter `name: ml-code-reviewer` — SPML skills reference it as `spml:ml-code-reviewer` via the `spml:` skill prefix. The reviewer reads code and checks applicable rules — if a rule fails, it gives specific fix instructions (file:line) and sends the Implementer back to fix. Uses the same Critical/Important/Minor severity levels as Superpowers.
 
 ### Checklist
 
@@ -60,16 +68,16 @@ Timeout counts as a failure. Timeouts and metric failures share the same retry c
 | 4 | Optimizer coverage | Always | optimizer param_groups covers all trainable params |
 | 5 | LR scheduler | Has lr_scheduler | Correctly linked to optimizer |
 | 6 | DataLoader config | Has DataLoader | num_workers, pin_memory reasonable |
-| 7 | Data loading method | Large dataset | Uses mmap loading |
+| 7 | Data loading method | Dataset declared as large in brainstorming, or file size > 10GB | Uses mmap loading |
 | 8 | Padding waste | Variable-length sequences | Excessive padding or tail-wave waste |
 | 9 | Random seeds | Always | torch/np/random seeds set |
 | 10 | Gradient accumulation consistency | Has gradient accumulation | accumulation_steps × micro_batch = global_batch |
 | 11 | Loss reduction | Has gradient accumulation | mean vs sum matches accumulation strategy |
 | 12 | Vocab/Embedding match | Has Embedding layer | tokenizer vocab_size == embedding dim |
 | 13 | Frozen layers | Fine-tuning | Frozen layers match expectations |
-| 14 | FLOPs estimate | Always | FlopCounterMode static count, report theoretical compute |
-| 15 | GPU hardware info | Uses CUDA | Model, peak TFLOPS, memory capacity |
-| 16 | Memory estimate | Always | Param count, theoretical memory fits GPU capacity |
+| 14 | FLOPs estimate | Always | Estimate from model architecture (param dims, known FLOPs-per-op), order-of-magnitude check. NOT FlopCounterMode — that requires runtime, used in L1 |
+| 15 | GPU hardware info | Uses CUDA | Review code for target GPU assumptions; actual hardware detection happens in L1 |
+| 16 | Memory estimate | Always | Estimate from param count + dtype + expected activations; check if theoretical footprint fits target GPU capacity |
 | 17 | MoE backend | MoE architecture | Expert parallel, routing optimization, aux loss |
 | 18 | CUDA kernel selection | Uses CUDA | Optimized kernels, not fallback |
 
@@ -107,7 +115,7 @@ User declares during brainstorming which data flow to use:
 ### Failure Detection
 
 No absolute thresholds. Use obvious anomaly detection:
-- Loss not decreasing or increasing
+- Loss not decreasing, or actively increasing
 - Gradient all NaN/Inf
 - MFU abnormally low (< 1%)
 - Memory fragmentation extreme
@@ -115,9 +123,11 @@ No absolute thresholds. Use obvious anomaly detection:
 
 ### Timeout Protection
 
+L1 default runtime: 5 minutes. User can override during brainstorming. Timeout = configured runtime × 1.5.
+
 ```
-Start runtime validation (expected N minutes)
-    → Timeout = N × 1.5 (e.g., expect 5 min → timeout 7.5 min)
+Start runtime validation (default 5 min, configurable)
+    → Timeout = runtime × 1.5 (e.g., 5 min → timeout 7.5 min)
     → Normal completion → check metrics
     → Timeout → kill process
         → Analyze hang cause (deadlock, communication block, data loading stuck)
@@ -153,7 +163,7 @@ Training health metrics (gradient hooks, loss recording, arch-specific monitors)
 
 ### Timeout Protection
 
-Same as L1 — each stage has a timeout. Single stage hanging beyond timeout is killed and counts as a failure.
+Each stage has a default timeout of 2 minutes (configurable). Single stage hanging beyond timeout is killed and counts as a failure. The entire L2 run has an overall timeout of 10 minutes.
 
 ### Difference from L1
 
@@ -202,6 +212,29 @@ skills/
 toolkit/profiling/                 ← no changes, L1 reuses as-is
 ```
 
+Note: `toolkit/profiling/l0_runner.py` is named after the old L0 layer but is now used by the new L1 for runtime performance collection. This naming mismatch is acknowledged and acceptable — renaming would break existing tests and imports for no functional benefit.
+
+### Migration: Update References to Old VP Skills
+
+The following files reference old VP skill names and must be updated during implementation:
+
+- `skills/brainstorming/SKILL.md` — references to VP scope selection
+- `skills/diagnostics/SKILL.md` — references to `spml:vp-*` skills
+- `skills/experiment-planning/SKILL.md` — references to VP layer names
+- `skills/subagent-dev/SKILL.md` — VP integration in workflow
+- `skills/validation-pyramid/SKILL.md` — complete rewrite
+- Any other skills referencing `vp-engineering-efficiency`, `vp-process-metrics`, `vp-overfitting-test`, `vp-e2e-pipeline`
+
+### Content from Current `validation-pyramid/SKILL.md`
+
+The current SKILL.md contains: TDD RED-GREEN-REFACTOR rhythm, orchestration logic, hierarchical decomposition, three granularity levels, and red flags. In the rewrite:
+
+- **TDD rhythm** — absorbed into the fix loop. The fix loop IS the RED-GREEN cycle: validation fails (RED), implementer fixes (GREEN). Explicit TDD framing is dropped since the loop enforces it mechanically.
+- **Orchestration logic** — replaced by the L0→L1→L2 chain in `subagent-dev/SKILL.md`.
+- **Hierarchical decomposition** — retained in L1 (when metrics fail, decompose to find root cause before fixing).
+- **Three granularity levels** — dropped. The new 3-level design replaces this.
+- **Red flags** — retained and updated for the new 3-level design.
+
 ## Key Design Decisions
 
 | Decision | Choice | Rationale |
@@ -213,3 +246,6 @@ toolkit/profiling/                 ← no changes, L1 reuses as-is
 | Toolkit extraction | Only for proven-difficult code | Avoid premature abstraction |
 | Superpowers changes | Fork into SPML, spml: prefix | Minimize cross-project coupling |
 | Checklist design | Conditional rules | Not every check applies to every project |
+| VP timing | After code reviews, not during implementation | Code quality verified before spending GPU time |
+| Retry counter scope | Per-level, resets on advance | Prevents one flaky level from exhausting retries for later levels |
+| l0_runner.py naming | Keep old name despite L0→L1 shift | Renaming breaks tests/imports for no functional benefit |
