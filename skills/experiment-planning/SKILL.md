@@ -21,6 +21,27 @@ Assume the implementer is a skilled developer but may not recognize when ML code
 
 The agent determines where to place test and validation code based on the user's existing project structure.
 
+## Directory Layout Convention
+
+Each experiment lives in a single directory. All artifacts — core code, tests, training outputs, and handoff files — are co-located under this directory. This makes experiments self-contained and easy to find.
+
+```
+[experiment-dir]/
+├── train.py                  # training script
+├── model.py                  # model code (if separate)
+├── data.py                   # data loading (if separate)
+├── experiment-context.md     # handoff artifact
+├── watchdog-prompt.md        # handoff artifact
+├── outputs/
+│   ├── train.log             # training log
+│   └── ckpt.pt              # checkpoint(s)
+└── tests/
+    ├── test_model.py         # unit tests
+    └── test_train.py         # validation scripts
+```
+
+The top-level directory name is flexible — use whatever fits the user's existing project structure (e.g., `experiments/seq_tower/`). The key rule: **one directory per experiment, everything inside it.**
+
 ## Plan Document Header
 
 **Every plan MUST start with this header:**
@@ -56,6 +77,7 @@ Plans have two sections: shared scaffold, then atomic subtasks.
 - [list all existing infra identified in brainstorm]
 
 ### Needs setup
+- Experiment directory: `[experiment-dir]/`
 - [Only what's missing, with exact file paths and implementation]
 ```
 
