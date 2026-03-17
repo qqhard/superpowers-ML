@@ -56,6 +56,8 @@ digraph process {
 
     "Read plan, extract subtasks, create TodoWrite" [shape=box];
     "More subtasks?" [shape=diamond];
+    "Needs long-running training?" [shape=diamond style=filled fillcolor=lightyellow];
+    "Invoke training-handoff" [shape=box style=filled fillcolor=orange];
     "Invoke verification" [shape=box style=filled fillcolor=lightblue];
 
     "Read plan, extract subtasks, create TodoWrite" -> "Dispatch ML implementer subagent";
@@ -83,7 +85,9 @@ digraph process {
     "Implementer fixes L2 issues" -> "L2: ML E2E Validator" [label="re-run L2\n(fix>50 lines: rollback)"];
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
-    "More subtasks?" -> "Invoke verification" [label="no"];
+    "More subtasks?" -> "Needs long-running training?" [label="no"];
+    "Needs long-running training?" -> "Invoke training-handoff" [label="yes\n(hours/days)"];
+    "Needs long-running training?" -> "Invoke verification" [label="no\n(already complete)"];
 }
 ```
 
@@ -211,6 +215,22 @@ After each subtask completes all reviews:
 
 Record this in the plan document or a separate experiment log.
 
+## Training Handoff Decision
+
+After all subtasks complete, before invoking verification, check:
+
+**Does this experiment need a long-running execution phase?** (training for hours/days, large-scale data processing, full evaluation sweep)
+
+- **Yes** → Invoke `spml:training-handoff`. This generates:
+  - Production training script with JSONL logging (including MFU, gradient norms, etc.)
+  - `experiment-context.md` with VP baseline metrics
+  - `watchdog-prompt.md` for monitoring in a separate session
+  - Verification happens LATER, after training completes (via `spml:training-resume`)
+
+- **No** → Invoke `spml:verification` directly. The experiment is already complete within this session.
+
+**How to decide:** If VP validation (L1/L2) ran a shortened version of training (e.g., 1250 steps instead of 100K), and the experiment goal requires full-scale results, then a long-running phase is needed.
+
 ## Red Flags
 
 **Never:**
@@ -231,8 +251,9 @@ Record this in the plan document or a separate experiment log.
 
 - **spml:experiment-planning** — Creates the plan this skill executes
 - **spml:validation-pyramid** — Defines the 3-level VP orchestration
-- **spml:ml-static-checks** — L0 static analysis (dispatched as subagent after quality review)
+- **spml:vp-static-checks** — L0 static analysis (dispatched as subagent after quality review)
 - **spml:ml-runtime-validator** — L1 runtime validation (orchestrator invokes after L0)
-- **spml:ml-e2e-validator** — L2 E2E pipeline validation (orchestrator invokes after L1)
+- **spml:vp-e2e-pipeline** — L2 E2E pipeline validation (orchestrator invokes after L1)
 - **spml:diagnostics** — Called when VP check fails
-- **spml:verification** — Called after all subtasks complete
+- **spml:training-handoff** — Called after all subtasks complete IF long-running training is needed
+- **spml:verification** — Called after all subtasks complete IF experiment is already done (no long-running phase)

@@ -1,22 +1,21 @@
 ---
 name: training-handoff
-description: Use after VP passes when the task includes a long-running phase — generates production-ready training script, human-readable logging, experiment context file, and Watchdog prompt for monitoring
+description: Use after VP passes when the task includes a long-running phase — verifies training script readiness, writes experiment context file, and generates Watchdog prompt for monitoring
 ---
 
 # ML Training Handoff
 
 ## Overview
 
-Bridge between VP validation (minute-level) and long-running execution (hours/days). Generates everything needed to run training and monitor it with a Watchdog Agent session.
+Bridge between VP validation (minute-level) and long-running execution (hours/days). Generates monitoring artifacts (experiment-context.md + watchdog-prompt.md) for a training script that has already been built and validated by the upstream flow.
 
-**Core principle:** Training scripts are core code — independently deployable to production, zero agent dependency. The monitoring protocol (prompt + context file + log file) is framework-agnostic.
+**Core principle:** Do not rewrite VP-validated code. The training script was built by subagent-dev, tested by VP L1/L2, and reviewed by spec+quality reviewers. Handoff's job is to verify it's production-ready and set up monitoring — not to modify it.
 
 <HARD-GATE>
 Do NOT hand off without:
 1. All enabled VP layers passed
-2. Training script tested (at least 1-step smoke test)
-3. Log output verified (at least 1 line written to log file)
-4. experiment-context.md written with VP baseline
+2. Training script exists and was validated by VP (L1 ran it successfully)
+3. experiment-context.md written with VP baseline
 </HARD-GATE>
 
 ## When to Use
@@ -28,70 +27,49 @@ Do NOT hand off without:
 ## Checklist
 
 1. **Verify VP completion** — all enabled layers passed with actual numbers
-2. **Generate training script** — production-ready, with human-readable logging
-3. **Smoke test** — run 1-2 steps to verify script works and log output is written
-4. **Write experiment-context.md** — full context for downstream sessions
-5. **Write watchdog-prompt.md** — prompt for Watchdog session
-6. **Present launch instructions** — how to start the Watchdog session
+2. **Verify training script readiness** — check existing script against production requirements
+3. **Write experiment-context.md** — full context for downstream sessions
+4. **Write watchdog-prompt.md** — prompt for Watchdog session
+5. **Present launch instructions** — how to start the Watchdog session
 
 ## Step 1: Verify VP Completion
 
 Confirm all VP layers that were enabled in the brainstorm design doc have passed. Record the actual metrics as VP baseline — the Watchdog will use these as reference.
 
-## Step 2: Generate Training Script
+## Step 2: Verify Training Script Readiness
 
-The training script is core code. Requirements:
+The training script already exists — it was implemented during subagent-dev and validated by VP. Do NOT rewrite it. Instead, verify it meets production requirements:
 
-- **Zero agent dependency** — runs with `bash run_training.sh` or `python train.py`
-- **Human-readable log output:**
-  - Terminal: tqdm progress bar or similar (for human monitoring)
-  - File: one line per step/epoch with key metrics (for Watchdog monitoring)
-- **Checkpoint support** — periodic saves, configurable interval
-- **Resumable** — can restart from a checkpoint and continue from where it left off
-- **Fixed seeds** — for reproducibility
+**Required (block handoff if missing):**
+- [ ] Zero agent dependency — runs standalone (`python train.py` or `bash run.sh`)
+- [ ] Log output to file — Watchdog needs something to read
+- [ ] Fixed seeds — for reproducibility
 
-**Terminal output (tqdm):**
-```python
-from tqdm import tqdm
+**Expected (flag gap if missing, ask user whether to quick-fix or proceed):**
+- [ ] Terminal progress indicator (tqdm or similar)
+- [ ] Key metrics in log: loss, gradient norm, learning rate
+- [ ] MFU in log (needed for efficiency monitoring)
+- [ ] Checkpoint support with configurable interval
+- [ ] Resumable from checkpoint
 
-pbar = tqdm(range(total_steps), desc="Training")
-for step in pbar:
-    # ... training step ...
-    pbar.set_postfix(loss=f"{loss:.3f}", MFU=f"{mfu:.0%}")
-```
+**If gaps are found:**
+- Do NOT silently rewrite the script
+- List the gaps explicitly to the user
+- Ask: "Fix these before handoff, or proceed as-is?"
+- If fixing, make minimal targeted changes (not a rewrite) and re-run the affected VP layer to verify nothing broke
 
-**Log file output (human-readable, one line per step):**
-```python
-import logging
+**No smoke test needed.** VP L1 already ran the script for a meaningful number of steps (far more thorough than a 2-step smoke test). If VP L1 passed, the script works.
 
-logger = logging.getLogger("training")
-file_handler = logging.FileHandler(log_file)
-file_handler.setFormatter(logging.Formatter("%(message)s"))
-logger.addHandler(file_handler)
+### Upstream: Production Script Requirements
 
-# After each step:
-logger.info(f"step={step} loss={loss:.4f} lr={lr:.6f} grad_norm={grad_norm:.4f} mfu={mfu:.4f} mem_mb={mem_mb}")
-```
+These requirements should be part of the experiment plan so subagent-dev implements them from the start. If you find yourself frequently patching scripts at handoff, the fix is in `spml:experiment-planning`, not here. Key requirements to include in plans:
 
-The log file should include all metrics that VP L1 confirmed are worth tracking: loss, gradient norm, learning rate, MFU, memory usage, and any architecture-specific metrics (attention entropy, MoE balance, etc.).
+- Human-readable log file output (one line per step with key metrics)
+- MFU calculation and logging
+- Terminal progress bar (tqdm)
+- Checkpoint save/resume support
 
-The exact format is flexible (key=value, tabular, or any readable layout). The Watchdog is an LLM and parses any consistent text format.
-
-## Step 3: Smoke Test
-
-Run the training script for 1-2 steps to verify:
-- Script starts without errors
-- tqdm progress bar appears
-- Log file is created with at least 1 line containing metrics
-- Checkpoint directory is created
-
-```bash
-python train.py --max-steps 2 --log-file logs/training.log
-# Verify log file has content
-cat logs/training.log
-```
-
-## Step 4: Write experiment-context.md
+## Step 3: Write experiment-context.md
 
 ```markdown
 # Experiment Context: [name]
@@ -137,7 +115,7 @@ cat logs/training.log
 (empty)
 ```
 
-## Step 5: Write watchdog-prompt.md
+## Step 4: Write watchdog-prompt.md
 
 ```markdown
 I need you to act as a Watchdog Agent, monitoring and shepherding a long-running ML task.
@@ -157,7 +135,7 @@ Use the spml:watchdog skill. It will guide you through:
 - Producing completion-prompt.md when training finishes
 ```
 
-## Step 6: Present Launch Instructions
+## Step 5: Present Launch Instructions
 
 ```
 Handoff complete. All artifacts generated:

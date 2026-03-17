@@ -123,13 +123,15 @@ After completing the checklist, present this summary to the user:
 
 After presenting the summary, ask the user:
 
-**"Experiment complete. Three options:**
+**"Experiment complete. Four options:**
 
 **1. Finish** — Effective subtasks are ready. Invoke `superpowers:finishing-a-development-branch` to wrap up.
 
-**2. Add subtasks** — Continue this experiment with additional subtasks. I'll add them to the existing plan.
+**2. Train** — Experiment needs a long-running training phase (hours/days). Invoke `spml:training-handoff` to generate production training script, monitoring artifacts, and Watchdog prompt.
 
-**3. New brainstorm** — Start a new experiment direction. Invoke `spml:brainstorming`."
+**3. Add subtasks** — Continue this experiment with additional subtasks. I'll add them to the existing plan.
+
+**4. New brainstorm** — Start a new experiment direction. Invoke `spml:brainstorming`."
 
 ## Red Flags
 
@@ -150,5 +152,6 @@ After presenting the summary, ask the user:
 
 - **spml:subagent-dev** — Produces the subtask results this skill verifies
 - **spml:validation-pyramid** — VP checks referenced in verification
+- **spml:training-handoff** — Next step if experiment needs long-running training
 - **spml:brainstorming** — Next step if new experiment needed
 - **superpowers:finishing-a-development-branch** — Next step if experiment is done

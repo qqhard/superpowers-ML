@@ -155,6 +155,20 @@ Each step should be one action:
 - "Record conclusion" — step
 - "Commit" — step
 
+## Production Training Script Requirements
+
+If the experiment includes a training script subtask AND will need a long-running training phase (hours/days), include these requirements in the subtask spec so the implementer builds them from the start. Do NOT leave them for training-handoff to patch later.
+
+**Required in the training script subtask:**
+- Human-readable log file output (one line per step with key metrics: loss, grad norm, lr)
+- MFU calculation and logging
+- Terminal progress indicator (tqdm or similar)
+- Checkpoint save with configurable interval
+- Resume from checkpoint support
+- Fixed random seeds
+
+These enable the Watchdog to monitor training and the user to track progress. Without them, training-handoff will flag gaps and potentially need to modify VP-validated code.
+
 ## Remember
 - Exact file paths always
 - Complete code in plan (not "add validation")
