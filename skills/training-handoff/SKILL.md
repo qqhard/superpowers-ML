@@ -27,16 +27,26 @@ Do NOT hand off without:
 ## Checklist
 
 1. **Verify VP completion** — all enabled layers passed with actual numbers
-2. **Verify training script readiness** — check existing script against production requirements
-3. **Write experiment-context.md** — full context for downstream sessions
-4. **Write watchdog-prompt.md** — prompt for Watchdog session
-5. **Present launch instructions** — how to start the Watchdog session
+2. **Verify directory layout** — experiment artifacts are co-located
+3. **Verify training script readiness** — check existing script against production requirements
+4. **Write experiment-context.md** — full context for downstream sessions
+5. **Write watchdog-prompt.md** — prompt for Watchdog session
+6. **Present launch instructions** — how to start the Watchdog session
 
 ## Step 1: Verify VP Completion
 
 Confirm all VP layers that were enabled in the brainstorm design doc have passed. Record the actual metrics as VP baseline — the Watchdog will use these as reference.
 
-## Step 2: Verify Training Script Readiness
+## Step 2: Verify Directory Layout
+
+Check that the experiment follows the co-located layout convention from `spml:experiment-planning`:
+
+- Training script, tests, and outputs are under the same experiment directory
+- Handoff artifacts (experiment-context.md, watchdog-prompt.md) will be written to that same directory
+
+**Not a hard gate** — the user may have reasons for a different layout. If artifacts would be written outside the training script's directory, flag this to the user and ask whether to proceed or reorganize.
+
+## Step 3: Verify Training Script Readiness
 
 The training script already exists — it was implemented during subagent-dev and validated by VP. Do NOT rewrite it. Instead, verify it meets production requirements:
 
@@ -69,7 +79,7 @@ These requirements should be part of the experiment plan so subagent-dev impleme
 - Terminal progress bar (tqdm)
 - Checkpoint save/resume support
 
-## Step 3: Write experiment-context.md
+## Step 4: Write experiment-context.md
 
 ```markdown
 # Experiment Context: [name]
@@ -90,10 +100,10 @@ These requirements should be part of the experiment plan so subagent-dev impleme
 - [Architecture-specific metrics]
 
 ## Training Configuration
-- Script: [path to run_training.sh or train.py command]
+- Script: [experiment-dir]/train.py (or actual script name)
 - Launch command: [exact command to run training, including all arguments]
-- Log file: [path to training.log]
-- Checkpoint directory: [path]
+- Log file: [experiment-dir]/outputs/train.log
+- Checkpoint directory: [experiment-dir]/outputs/
 - Expected total steps: [N]
 - Estimated duration: [hours]
 - Key hyperparameters: [lr, batch_size, etc.]
@@ -115,14 +125,14 @@ These requirements should be part of the experiment plan so subagent-dev impleme
 (empty)
 ```
 
-## Step 4: Write watchdog-prompt.md
+## Step 5: Write watchdog-prompt.md
 
 ```markdown
 I need you to act as a Watchdog Agent, monitoring and shepherding a long-running ML task.
 
 ## Setup
-1. Read `[path]/experiment-context.md` for full experiment context, VP baseline, and watchdog mode
-2. Locate the training log at `[path]/logs/training.log`
+1. Read `[experiment-dir]/experiment-context.md` for full experiment context, VP baseline, and watchdog mode
+2. Locate the training log at `[experiment-dir]/outputs/train.log`
 3. Locate the training script: `[exact launch command]`
 
 ## Your Behavior
@@ -135,14 +145,14 @@ Use the spml:watchdog skill. It will guide you through:
 - Producing completion-prompt.md when training finishes
 ```
 
-## Step 5: Present Launch Instructions
+## Step 6: Present Launch Instructions
 
 ```
 Handoff complete. All artifacts generated:
-- Training script: [path]
-- Log file: [path] (human-readable, one line per step)
-- Experiment context: [path]/experiment-context.md
-- Watchdog prompt: [path]/watchdog-prompt.md
+- Training script: [experiment-dir]/train.py
+- Log file: [experiment-dir]/outputs/train.log (human-readable, one line per step)
+- Experiment context: [experiment-dir]/experiment-context.md
+- Watchdog prompt: [experiment-dir]/watchdog-prompt.md
 - Watchdog mode: [mode] (configurable in experiment-context.md)
 
 To start:
