@@ -1,5 +1,15 @@
 # Superpowers Release Notes
 
+## v0.5.2 (2026-03-18)
+
+### Fixed
+
+**Renamed `brainstorming` → `ml-brainstorming` to resolve slash command conflict**
+
+The `/brainstorming` slash command was ambiguous between the `superpowers` and `spml` plugins. The SPML skill is now named `ml-brainstorming`, consistent with the existing `ml-static-checks` / `ml-runtime-validator` naming convention. The command now shows as `/ml-brainstorming (spml)` in the menu.
+
+---
+
 ## v0.5.1 (2026-03-18)
 
 ### Fixed
