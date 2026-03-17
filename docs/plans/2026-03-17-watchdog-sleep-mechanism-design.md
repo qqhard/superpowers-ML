@@ -55,7 +55,7 @@ loop {
     1. Bash tool: `sleep <interval_seconds>`
        - Normal: 120-300s (2-5 min)
        - Post-restart / post-anomaly: 60s for 5 cycles, then back to normal
-    2. Bash tool: `tail -20 <log_file>`
+    2. Bash tool: `tail -20 <log_file>` (each new log line = heartbeat; format is human-readable text, not JSONL)
     3. Check for new lines since last check:
        a. New lines → parse metrics, go to step 4
        b. No new lines → Bash tool: `ps aux | grep <training_script>`
@@ -63,7 +63,7 @@ loop {
           - Process alive → compare silence duration vs step baseline
             - Startup grace period (first 15 min or until 3 logged steps): do not classify silence as hang
             - Within baseline → continue (go to step 1)
-            - Exceeds 10x baseline → kill process → classify as Tier 1
+            - Exceeds 10x baseline → kill process → classify problem tier (environment hang → Tier 1; possible code issue → Tier 2/3)
     4. Analyze metrics:
        a. Sanity: NaN, Inf, negative loss, zero gradient
        b. Baseline comparison vs VP ranges in experiment-context.md
