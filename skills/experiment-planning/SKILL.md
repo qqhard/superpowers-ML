@@ -34,7 +34,7 @@ The agent determines where to place test and validation code based on the user's
 
 **Hypothesis:** [Doing X is expected to cause Y] (if applicable)
 
-**Validation scope:** [Reference validation scope from brainstorm design doc — which layers enabled, which skipped, key thresholds]
+**Validation scope:** [Reference validation scope from brainstorm design doc — which levels enabled (L0/L1/L2), data flow choice, baselines, L2 step count]
 
 **Architecture:** [2-3 sentences about approach]
 
@@ -69,7 +69,7 @@ Each subtask is an atomic experiment or implementation unit. Each goes through t
 **Hypothesis:** [Specific hypothesis for this subtask]
 **Implementation:** [What to change, which files]
 **Unit Tests:** [Which custom functions need traditional deterministic tests]
-**Validation Pyramid:** [Which layers apply + specific metrics + thresholds from brainstorm]
+**Validation Pyramid:** [Which levels apply (L0/L1/L2) + specific metrics + baselines from brainstorm]
 **Expected Conclusion:** [What success means / what failure means]
 
 ### Step 1: Write unit tests for custom functions
@@ -105,16 +105,15 @@ Expected: PASS
 
 ### Step 6: Run Validation Pyramid
 
-[Exact commands for each enabled layer, with expected output ranges]
+L0 (static analysis) is handled by code review — no separate command needed.
 
-Run: `python validation/run_l0_efficiency.py`
-Expected: MFU >= 0.40, no backend warnings
+L1 (runtime validation):
+Run: `[project-specific training command with monitoring]`
+Expected: MFU >= [baseline from brainstorm], no NaN/Inf, loss decreasing
 
-Run: `python validation/run_l1_process_metrics.py`
-Expected: No NaN/Inf, gradient norm in [1e-4, 1e2], loss decreasing
-
-Run: `python validation/run_l2_overfit.py`
-Expected: Loss < 0.01 after 10 epochs on 100 samples
+L2 (E2E pipeline):
+Run: `[project-specific E2E validation command]`
+Expected: All 6 stages complete without error
 
 ### Step 7: Record conclusion
 

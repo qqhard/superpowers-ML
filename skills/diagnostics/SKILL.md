@@ -45,7 +45,7 @@ Every ML diagnostic starts by identifying which question you're answering:
 - Low MFU/TCA (below target)
 - High communication overhead (NCCL bandwidth insufficient)
 - Memory bottleneck (excessive fragmentation, OOM)
-- **Start with:** L0 engineering efficiency checks, then per-layer profiling
+- **Start with:** L0 static checks + L1 runtime efficiency metrics, then per-layer profiling
 
 ## The Four Phases
 
@@ -183,7 +183,7 @@ def diagnostic_snapshot(model, loss_history, step):
 
 ```
 Validation Pyramid check fails
-    -> Identify which check failed (L0/L1/L2/L3)
+    -> Identify which check failed (L0/L1/L2)
     -> Map to core question (Q1/Q2/Q3)
     -> Enter Phase 1 with relevant metrics already collected
     -> After fix: re-run the failed Validation Pyramid check
@@ -193,7 +193,7 @@ Validation Pyramid check fails
 
 ## Related Skills
 
-- **spml:vp-engineering-efficiency** — L0 checks that trigger Q3 diagnostics
-- **spml:vp-process-metrics** — L1 checks that trigger Q1/Q2 diagnostics
-- **spml:vp-overfitting-test** — L2 check that triggers Q1 diagnostics
+- **spml:ml-code-reviewer** — L0 static checks; failures trigger Q3 (efficiency/config) diagnostics
+- **spml:ml-runtime-validator** — L1 runtime checks; failures trigger Q1 (convergence) or Q3 (efficiency) diagnostics
+- **spml:ml-e2e-validator** — L2 pipeline checks; failures trigger Q2 (pipeline/data) diagnostics
 - **superpowers:systematic-debugging** — For non-ML bugs (integration, pipeline, data format)

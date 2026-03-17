@@ -89,33 +89,26 @@ For experiment/ablation tasks, clarify:
 - **Control variable:** What stays the same
 
 ### Confirming validation scope
-Walk through the Validation Pyramid layers. For each, ask: needed / skip / already covered by existing infra?
+Walk through the Validation Pyramid levels. For each, ask: needed / skip / already covered by existing infra?
 
-**L0: Engineering Efficiency**
-- Backend checks (FA, MoE backend, CUDA kernels)
-- Bandwidth (NCCL, HBM, PCIE) — multi-node/multi-GPU only
-- GPU efficiency (MFU, TCA)
-- Infrastructure (checkpoint, W&B, sample consumption speed, memory)
-- Data I/O speed
+**L0: ML Static Analysis (spml:ml-code-reviewer)**
+- Always enabled for ML code tasks
+- Checks: device consistency, precision, FA, optimizer, scheduler, DataLoader (mandatory); plus 12 advisory checks
+- Ask: "Any project-specific checks to add?"
 
-**L1: Process Metrics**
-- Universal: gradient health, parameter drift, loss spike detection
-- Architecture-specific (auto-recommend based on ML context):
-  - Transformer: attention distribution, attention entropy
-  - MoE: MoE entropy, load balance
-  - Residual networks: residual stream write ratio
-  - RecSys: embedding norm stability, negative sampling quality
-  - LLM: per-token loss distribution, KV cache growth
-- User can add or remove any check
+**L1: ML Runtime Validation (spml:ml-runtime-validator)**
+- Default: enabled
+- Ask: "Real data flow or mock overfit data flow?"
+- Ask: "Runtime duration? (default 5 minutes)"
+- Ask: "Project-specific baselines? (e.g., minimum MFU, max step time, min throughput)"
+  - If user provides baselines, record them in the design doc
+  - If not, L1 uses anomaly detection only
 
-**L2: Overfitting Test**
-- Small-scale overfit on 100-1000 samples, fixed seed
-- Loss must steadily decrease (前半 avg > 后半 avg, 下降比例 >= 60%)
+**L2: ML E2E Pipeline (spml:ml-e2e-validator)**
+- Default: enabled
+- Ask: "Steps per stage? (default 1, recommend 3-5 for better coverage)"
 
-**L3: End-to-End Pipeline**
-- Full flow (data -> training -> inference -> evaluation) on tiny data
-
-**User can skip any layer entirely.** Record decisions in natural language in the design doc.
+**User can skip any level.** Record decisions in natural language in the design doc.
 
 ### Dataset preparation (when applicable)
 If the task involves constructing or transforming datasets:

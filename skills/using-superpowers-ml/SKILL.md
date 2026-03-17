@@ -105,12 +105,12 @@ These thoughts mean STOP—you're rationalizing:
 When multiple skills could apply, use this order:
 
 1. **Process skills first** (brainstorming, diagnostics) - these determine HOW to approach the task
-2. **Validation skills second** (validation-pyramid, vp-*) - these verify correctness
+2. **Validation skills second** (validation-pyramid, ml-code-reviewer, ml-runtime-validator, ml-e2e-validator) - these verify correctness
 3. **Implementation skills third** (experiment-planning, subagent-dev) - these guide execution
 
 "Let's train X" -> brainstorming first, then planning skills.
 "Training isn't converging" -> diagnostics first, then validation skills.
-"MFU is too low" -> diagnostics first, then vp-engineering-efficiency.
+"MFU is too low" -> diagnostics first, then ml-runtime-validator.
 
 ## Skill Types
 
