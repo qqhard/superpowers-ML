@@ -1,21 +1,21 @@
 ---
 name: training-handoff
-description: Use after VP passes when the task includes a long-running phase — generates production-ready training script, structured logging, experiment context file, and Watchdog prompt for monitoring
+description: Use after VP passes when the task includes a long-running phase — generates production-ready training script, human-readable logging, experiment context file, and Watchdog prompt for monitoring
 ---
 
 # ML Training Handoff
 
 ## Overview
 
-Bridge between VP validation (minute-level) and long-running execution (hours/days). Generates everything needed for the user to run training independently and optionally monitor it with a Watchdog Agent session.
+Bridge between VP validation (minute-level) and long-running execution (hours/days). Generates everything needed to run training and monitor it with a Watchdog Agent session.
 
-**Core principle:** Training scripts are core code — independently deployable to production, zero agent dependency. The monitoring protocol (prompt + context file + JSONL logs) is framework-agnostic.
+**Core principle:** Training scripts are core code — independently deployable to production, zero agent dependency. The monitoring protocol (prompt + context file + log file) is framework-agnostic.
 
 <HARD-GATE>
 Do NOT hand off without:
 1. All enabled VP layers passed
 2. Training script tested (at least 1-step smoke test)
-3. JSONL logging verified (at least 1 line written)
+3. Log output verified (at least 1 line written to log file)
 4. experiment-context.md written with VP baseline
 </HARD-GATE>
 
@@ -28,11 +28,11 @@ Do NOT hand off without:
 ## Checklist
 
 1. **Verify VP completion** — all enabled layers passed with actual numbers
-2. **Generate training script** — production-ready, with dual output logging
-3. **Smoke test** — run 1-2 steps to verify script works and JSONL is written
+2. **Generate training script** — production-ready, with human-readable logging
+3. **Smoke test** — run 1-2 steps to verify script works and log output is written
 4. **Write experiment-context.md** — full context for downstream sessions
-5. **Write watchdog-prompt.md** — short prompt for Watchdog session
-6. **Present user options** — separated or combined execution
+5. **Write watchdog-prompt.md** — prompt for Watchdog session
+6. **Present launch instructions** — how to start the Watchdog session
 
 ## Step 1: Verify VP Completion
 
@@ -43,14 +43,14 @@ Confirm all VP layers that were enabled in the brainstorm design doc have passed
 The training script is core code. Requirements:
 
 - **Zero agent dependency** — runs with `bash run_training.sh` or `python train.py`
-- **Dual output logging:**
-  - Terminal: tqdm progress bar (one line, continuously updating)
-  - File: JSONL with all tracked metrics per step
+- **Human-readable log output:**
+  - Terminal: tqdm progress bar or similar (for human monitoring)
+  - File: one line per step/epoch with key metrics (for Watchdog monitoring)
 - **Checkpoint support** — periodic saves, configurable interval
-- **Resumable** — can restart from a checkpoint
+- **Resumable** — can restart from a checkpoint and continue from where it left off
 - **Fixed seeds** — for reproducibility
 
-**tqdm progress bar (terminal):**
+**Terminal output (tqdm):**
 ```python
 from tqdm import tqdm
 
@@ -60,31 +60,35 @@ for step in pbar:
     pbar.set_postfix(loss=f"{loss:.3f}", MFU=f"{mfu:.0%}")
 ```
 
-**JSONL logging (file):**
+**Log file output (human-readable, one line per step):**
 ```python
-import json
+import logging
 
-def log_metrics(log_file, step, metrics):
-    metrics["step"] = step
-    metrics["timestamp"] = datetime.now().isoformat()
-    with open(log_file, "a") as f:
-        f.write(json.dumps(metrics) + "\n")
+logger = logging.getLogger("training")
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(logging.Formatter("%(message)s"))
+logger.addHandler(file_handler)
+
+# After each step:
+logger.info(f"step={step} loss={loss:.4f} lr={lr:.6f} grad_norm={grad_norm:.4f} mfu={mfu:.4f} mem_mb={mem_mb}")
 ```
 
-The JSONL should include all metrics that VP L1 confirmed are worth tracking: loss, gradient norm, learning rate, MFU, memory usage, and any architecture-specific metrics (attention entropy, MoE balance, etc.).
+The log file should include all metrics that VP L1 confirmed are worth tracking: loss, gradient norm, learning rate, MFU, memory usage, and any architecture-specific metrics (attention entropy, MoE balance, etc.).
+
+The exact format is flexible (key=value, tabular, or any readable layout). The Watchdog is an LLM and parses any consistent text format.
 
 ## Step 3: Smoke Test
 
 Run the training script for 1-2 steps to verify:
 - Script starts without errors
 - tqdm progress bar appears
-- JSONL file is created with at least 1 valid line
+- Log file is created with at least 1 line containing metrics
 - Checkpoint directory is created
 
 ```bash
-python train.py --max-steps 2 --log-file logs/smoke_test.jsonl
-# Verify JSONL
-python -c "import json; [json.loads(l) for l in open('logs/smoke_test.jsonl')]"
+python train.py --max-steps 2 --log-file logs/training.log
+# Verify log file has content
+cat logs/training.log
 ```
 
 ## Step 4: Write experiment-context.md
@@ -109,11 +113,17 @@ python -c "import json; [json.loads(l) for l in open('logs/smoke_test.jsonl')]"
 
 ## Training Configuration
 - Script: [path to run_training.sh or train.py command]
-- Log file: [path to metrics.jsonl]
+- Launch command: [exact command to run training, including all arguments]
+- Log file: [path to training.log]
 - Checkpoint directory: [path]
 - Expected total steps: [N]
 - Estimated duration: [hours]
 - Key hyperparameters: [lr, batch_size, etc.]
+
+## Watchdog Configuration
+- watchdog_mode: guardian
+  (Options: monitor | guardian | autonomous)
+  (monitor = report only; guardian = auto-restart + auto-fix simple issues + report complex; autonomous = handle everything including complex issues via sub-agent)
 
 ## Code State
 - Git commit: [hash]
@@ -130,64 +140,37 @@ python -c "import json; [json.loads(l) for l in open('logs/smoke_test.jsonl')]"
 ## Step 5: Write watchdog-prompt.md
 
 ```markdown
-I need you to act as a Watchdog Agent, monitoring a long-running ML task.
-
-Your job is to OBSERVE and DIAGNOSE, never intervene.
+I need you to act as a Watchdog Agent, monitoring and shepherding a long-running ML task.
 
 ## Setup
-1. Read `[path]/experiment-context.md` for full experiment context and VP baseline
-2. Read `[path]/logs/metrics.jsonl` for training metrics
+1. Read `[path]/experiment-context.md` for full experiment context, VP baseline, and watchdog mode
+2. Locate the training log at `[path]/logs/training.log`
+3. Locate the training script: `[exact launch command]`
 
 ## Your Behavior
-- Periodically read the latest entries from the JSONL log
-- Compare metrics against the VP baseline in experiment-context.md
-- Detect anomalies: spikes, NaN, stagnation, sudden trend changes
-- Adaptive frequency: check often at start (first 10% of steps), less in steady state, more near completion
-- You can adjust frequency if the user asks
-
-## Output
-- When monitoring in combined mode (you launched the training): report progress periodically
-- When monitoring in separated mode (training runs elsewhere): stay silent when normal, speak only on anomaly
-- On anomaly: describe what you see, write diagnosis to experiment-context.md, produce recovery-prompt.md
-- On normal completion: summarize results, write to experiment-context.md, produce completion-prompt.md
-
-## Anomaly Diagnosis
-When you detect a problem:
-1. Collect evidence from JSONL (what changed, when, which metrics co-moved)
-2. Compare against VP baseline (is this outside the range we saw in quick validation?)
-3. Write your diagnosis to the "Diagnosis History" section of experiment-context.md
-4. Create recovery-prompt.md with a short prompt that tells the next agent to read experiment-context.md
-
-## Completion
-When training finishes normally:
-1. Summarize final metrics
-2. Compare against VP baseline and experiment hypothesis
-3. Update experiment-context.md
-4. Create completion-prompt.md with a short prompt that tells the next agent to read experiment-context.md and run verification
-
-## Boundaries
-- DO: read logs, analyze trends, write reports, produce prompts, notify user
-- DO NOT: stop training, modify code, adjust hyperparameters, rollback checkpoints
+Use the spml:watchdog skill. It will guide you through:
+- Operating mode selection (Monitor/Guardian/Autonomous — preset in experiment-context.md, you can ask to override)
+- Launching the training script
+- Monitoring the training log for anomalies
+- Taking action based on the operating mode and problem classification (Tier 1/2/3)
+- Recording all interventions in experiment-context.md
+- Producing completion-prompt.md when training finishes
 ```
 
-## Step 6: Present User Options
+## Step 6: Present Launch Instructions
 
 ```
 Handoff complete. All artifacts generated:
 - Training script: [path]
-- Metrics log: [path] (JSONL)
+- Log file: [path] (human-readable, one line per step)
 - Experiment context: [path]/experiment-context.md
 - Watchdog prompt: [path]/watchdog-prompt.md
+- Watchdog mode: [mode] (configurable in experiment-context.md)
 
-Two execution options:
-
-Option A: Separated execution
-  1. Start training: [exact command]
-  2. Open a new agent session and paste the contents of watchdog-prompt.md
-
-Option B: Combined execution
-  1. Open a new agent session and paste the contents of watchdog-prompt.md
-  2. Ask the Watchdog to launch training and begin monitoring
+To start:
+  1. Open a new agent session
+  2. Paste the contents of watchdog-prompt.md
+  3. The Watchdog will launch training and begin monitoring
 ```
 
 ## Integration
