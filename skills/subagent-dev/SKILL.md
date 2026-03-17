@@ -44,11 +44,13 @@ digraph process {
         "Implementer fixes quality issues" [shape=box];
         "L0: ML Code Reviewer" [shape=box style=filled fillcolor=lightyellow];
         "L0 passed?" [shape=diamond];
+        "Implementer fixes L0 issues" [shape=box];
         "L1: ML Runtime Validator" [shape=box style=filled fillcolor=lightyellow];
         "L1 passed?" [shape=diamond];
+        "Implementer fixes L1 issues" [shape=box];
         "L2: ML E2E Validator" [shape=box style=filled fillcolor=lightyellow];
         "L2 passed?" [shape=diamond];
-        "Implementer fixes VP issues" [shape=box];
+        "Implementer fixes L2 issues" [shape=box];
         "Record conclusion" [shape=box style=filled fillcolor=lightgreen];
     }
 
@@ -69,14 +71,16 @@ digraph process {
     "Quality reviewer: code quality?" -> "L0: ML Code Reviewer" [label="yes"];
     "L0: ML Code Reviewer" -> "L0 passed?";
     "L0 passed?" -> "L1: ML Runtime Validator" [label="yes"];
-    "L0 passed?" -> "Implementer fixes VP issues" [label="no"];
+    "L0 passed?" -> "Implementer fixes L0 issues" [label="no"];
+    "Implementer fixes L0 issues" -> "L0: ML Code Reviewer" [label="re-run L0\n(fix>50 lines: rollback)"];
     "L1: ML Runtime Validator" -> "L1 passed?";
     "L1 passed?" -> "L2: ML E2E Validator" [label="yes"];
-    "L1 passed?" -> "Implementer fixes VP issues" [label="no"];
+    "L1 passed?" -> "Implementer fixes L1 issues" [label="no"];
+    "Implementer fixes L1 issues" -> "L1: ML Runtime Validator" [label="re-run L1\n(fix>50 lines: rollback)"];
     "L2: ML E2E Validator" -> "L2 passed?";
     "L2 passed?" -> "Record conclusion" [label="yes"];
-    "L2 passed?" -> "Implementer fixes VP issues" [label="no"];
-    "Implementer fixes VP issues" -> "L0: ML Code Reviewer" [label="re-run failed level\n(fix > 50 lines:\nrollback to spec review)"];
+    "L2 passed?" -> "Implementer fixes L2 issues" [label="no"];
+    "Implementer fixes L2 issues" -> "L2: ML E2E Validator" [label="re-run L2\n(fix>50 lines: rollback)"];
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
     "More subtasks?" -> "Invoke verification" [label="no"];
@@ -92,7 +96,7 @@ You are implementing Subtask N: [subtask name]
 
 **Overall hypothesis:** [from plan header]
 **This subtask's hypothesis:** [specific to this subtask]
-**Validation scope:** [which VP layers are enabled]
+**Validation scope:** [which VP levels are enabled]
 
 ## Task Description
 
@@ -169,9 +173,7 @@ Report:
 ```
 You are reviewing implementation quality for a completed ML subtask.
 
-## Validation Pyramid Results
-
-[Paste actual results from implementer report]
+Note: Validation Pyramid (L0/L1/L2) runs AFTER this quality review. You review code quality only — VP metrics are the orchestrator's responsibility.
 
 ## Your Job
 
