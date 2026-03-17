@@ -91,9 +91,10 @@ For experiment/ablation tasks, clarify:
 ### Confirming validation scope
 Walk through the Validation Pyramid levels. For each, ask: needed / skip / already covered by existing infra?
 
-**L0: ML Static Analysis (spml:ml-code-reviewer)**
+**L0: VP Static Checks (spml:vp-static-checks)**
 - Always enabled for ML code tasks
-- Checks: device consistency, precision, FA, optimizer, scheduler, DataLoader (mandatory); plus 12 advisory checks
+- Checks: device consistency, precision, FA, optimizer, scheduler, DataLoader, loss/speed file output, visualization tool (mandatory); plus 15 advisory checks
+- Ask: "Do you need visualization metrics output (e.g., WandB, TensorBoard, MLflow)? If yes, which tool?"
 - Ask: "Any project-specific checks to add?"
 
 **L1: ML Runtime Validation (spml:ml-runtime-validator)**
