@@ -1,5 +1,7 @@
 # Watchdog Agent Design Document
 
+> **Note:** This document describes the original read-only Watchdog design. The Watchdog has since been redesigned as an active shepherd — see `docs/superpowers/specs/2026-03-17-watchdog-active-shepherd-design.md` for the current design.
+
 > **For Claude:** This is a design document for the Watchdog Agent system. Use superpowers:writing-plans to create the implementation plan.
 
 **Project:** mlsp — Watchdog Agent for long-running ML tasks
