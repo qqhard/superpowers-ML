@@ -9,12 +9,21 @@ description: Use when resuming from a Watchdog session — reads experiment cont
 
 Entry point for recovery or completion after a long-running ML task. Reads the experiment context file (written by handoff, updated by Watchdog) and autonomously decides what to do next.
 
-**Core principle:** Decide from evidence, not assumptions. All information needed is in experiment-context.md and metrics.jsonl. The agent judges the rollback level itself.
+**Core principle:** Decide from evidence, not assumptions. All information needed is in experiment-context.md and the training log. The agent judges the rollback level itself.
 
 ## When to Use
 
 - User has pasted a recovery-prompt.md (Watchdog found an issue)
 - User has pasted a completion-prompt.md (training finished normally)
+
+## When Spawned by Watchdog
+
+When this skill is invoked by a Watchdog sub-agent (Autonomous mode, Tier 3 problem):
+- The Watchdog has already written a diagnosis to experiment-context.md
+- Follow the normal Recovery Path below
+- Do NOT run VP — trust that initial VP validation covers code correctness
+- After fixing the issue, restart the training script (launch command is in experiment-context.md)
+- The Watchdog will resume monitoring after this agent completes
 
 ## Startup
 
@@ -36,7 +45,7 @@ Read the Watchdog's diagnosis in experiment-context.md:
 
 ### Step 2: Analyze Root Cause
 
-If needed, read metrics.jsonl directly for deeper analysis:
+If needed, read the training log directly for deeper analysis:
 - Look at the metrics trajectory before/during/after the anomaly
 - Compare with VP baseline ranges
 - Check for patterns in the common anomaly table
@@ -105,7 +114,7 @@ Read experiment-context.md Watchdog completion summary:
 
 ### Step 2: Deep Analysis (if needed)
 
-Read metrics.jsonl for:
+Read the training log for:
 - Full training curve (loss trajectory)
 - Metric stability in final phase
 - Any concerning trends even if training "completed"
