@@ -19,6 +19,28 @@ This is not negotiable. This is not optional. You cannot rationalize your way ou
 
 # Using Skills
 
+## ML Experiment Gate (CHECK FIRST)
+
+**Before considering any `spml:*` skill, determine whether the current task is conducting an ML experiment.** SPML skills are designed for running experiments, not for building software — even software that happens to involve ML code.
+
+**IS an ML experiment** (→ proceed with SPML skills):
+- Actually training or fine-tuning a model to observe results
+- Running hyperparameter sweeps or ablation studies
+- Evaluating a trained model's performance on a dataset
+- Debugging a live training run (convergence failures, NaN losses, gradient issues)
+- Preparing a dataset **for an imminent experiment** (not building a reusable data pipeline)
+
+**Is NOT an ML experiment** (→ skip ALL `spml:*` skills, defer to `superpowers:*` equivalents):
+- Building or refactoring ML frameworks, toolkits, or scaffolding
+- Implementing model architectures, loss functions, or data loaders as software components
+- Writing tests, CI/CD, or infrastructure for ML code
+- Developing training pipelines, evaluation harnesses, or experiment tracking systems
+- Any task where the goal is shipping code, not observing experimental outcomes
+
+**The key question: Is the goal to observe an experimental outcome, or to ship working software?**
+- Observe outcome → SPML
+- Ship software → Superpowers (even if the software is ML-related)
+
 ## The Rule
 
 **Invoke relevant or requested skills BEFORE any response or action.** Even a 1% chance a skill might apply means that you should invoke the skill to check. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
@@ -29,7 +51,9 @@ digraph skill_flow {
     "About to EnterPlanMode?" [shape=doublecircle];
     "Already brainstormed?" [shape=diamond];
     "Invoke brainstorming skill" [shape=box];
-    "Might any skill apply?" [shape=diamond];
+    "Is this an ML experiment?" [shape=diamond, style=bold, color=red];
+    "Skip all spml:* skills\nDefer to superpowers:*" [shape=box, style=dashed];
+    "Might any spml skill apply?" [shape=diamond];
     "Invoke Skill tool" [shape=box];
     "Announce: 'Using [skill] to [purpose]'" [shape=box];
     "Has checklist?" [shape=diamond];
@@ -39,12 +63,15 @@ digraph skill_flow {
 
     "About to EnterPlanMode?" -> "Already brainstormed?";
     "Already brainstormed?" -> "Invoke brainstorming skill" [label="no"];
-    "Already brainstormed?" -> "Might any skill apply?" [label="yes"];
-    "Invoke brainstorming skill" -> "Might any skill apply?";
+    "Already brainstormed?" -> "Is this an ML experiment?" [label="yes"];
+    "Invoke brainstorming skill" -> "Is this an ML experiment?";
 
-    "User message received" -> "Might any skill apply?";
-    "Might any skill apply?" -> "Invoke Skill tool" [label="yes, even 1%"];
-    "Might any skill apply?" -> "Respond (including clarifications)" [label="definitely not"];
+    "User message received" -> "Is this an ML experiment?";
+    "Is this an ML experiment?" -> "Skip all spml:* skills\nDefer to superpowers:*" [label="no"];
+    "Skip all spml:* skills\nDefer to superpowers:*" -> "Respond (including clarifications)";
+    "Is this an ML experiment?" -> "Might any spml skill apply?" [label="yes"];
+    "Might any spml skill apply?" -> "Invoke Skill tool" [label="yes, even 1%"];
+    "Might any spml skill apply?" -> "Respond (including clarifications)" [label="definitely not"];
     "Invoke Skill tool" -> "Announce: 'Using [skill] to [purpose]'";
     "Announce: 'Using [skill] to [purpose]'" -> "Has checklist?";
     "Has checklist?" -> "Create TodoWrite todo per item" [label="yes"];
