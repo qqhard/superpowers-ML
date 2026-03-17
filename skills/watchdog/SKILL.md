@@ -124,26 +124,28 @@ Note: Autonomous mode's sub-agent spawn introduces a Claude Code dependency. Mon
 
 ```
 loop {
-    1. Sleep (interval)
-    2. Read latest lines from training log (tail, not full re-read)
-    3. Check for new lines:
-       a. New lines present → parse metrics, analyze
-       b. No new lines → check process alive
-          - Process dead → read exit code → classify problem → execute action
-          - Process alive → assess hang (compare silence duration vs step baseline)
-            - Within baseline → continue waiting
-            - Exceeds baseline significantly (e.g., 10x) → kill process → classify problem
-    4. If new lines, analyze:
+    1. Bash tool: `sleep <interval_seconds>`
+       - Normal: 120-300s (2-5 min)
+       - Post-restart / post-anomaly: 60s for 5 cycles, then back to normal
+    2. Bash tool: `tail -20 <log_file>` (each new log line = heartbeat; format is human-readable text, not JSONL)
+    3. Check for new lines since last check:
+       a. New lines → parse metrics, go to step 4
+       b. No new lines → Bash tool: `ps aux | grep <training_script>`
+          - Process dead → read exit code → classify problem tier → act
+          - Process alive → compare silence duration vs step baseline
+            - Startup grace period (first 15 min or until 3 logged steps): do not classify silence as hang
+            - Within baseline → continue (go to step 1)
+            - Exceeds 10x baseline → kill process → classify problem tier (environment hang → Tier 1; possible code issue → Tier 2/3)
+    4. Analyze metrics:
        a. Sanity: NaN, Inf, negative loss, zero gradient
-       b. Baseline comparison: current metrics vs VP baseline ranges
-       c. Trend: is loss decreasing? gradient norm stable? MFU consistent?
+       b. Baseline comparison vs VP ranges in experiment-context.md
+       c. Trend: loss decreasing? grad_norm stable?
        d. Anomaly patterns: spike, plateau, divergence, sudden shift
-    5. Classify state:
-       - NORMAL: metrics within expected ranges, healthy trends → update step time baseline, report progress, continue
-       - ANOMALY: deviation detected → classify problem tier → execute tier action
-       - COMPLETE: training finished (final step reached or early stop triggered) → enter completion mode
-    6. All interventions → record in experiment-context.md
-    7. After restart → enter intensive observation period
+    5. Classify:
+       - NORMAL → update step time baseline, output one-line progress, go to step 1
+       - ANOMALY → diagnose, classify tier, act per operating mode, record in experiment-context.md
+       - COMPLETE → enter completion mode
+    6. After any restart → enter intensive observation (60s interval, 5 cycles)
 }
 ```
 
