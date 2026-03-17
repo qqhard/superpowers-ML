@@ -120,7 +120,7 @@ Long-running training is monitored by an independent agent session:
 | Skill | Checks |
 |-------|--------|
 | **validation-pyramid** | 3-level validation orchestration integrated into subagent-dev workflow |
-| **ml-code-reviewer** | L0: Static analysis — device consistency, precision, FA, optimizer, DataLoader + 12 advisory checks |
+| **vp-static-checks** | L0: Static analysis — device consistency, precision, FA, optimizer, DataLoader, logging & observability + 15 advisory checks |
 | **ml-runtime-validator** | L1: Minutes-level runtime — MFU, TCA, throughput, gradient health, loss trend, arch-specific metrics |
 | **ml-e2e-validator** | L2: End-to-end pipeline — data → train → checkpoint → infer → evaluate (1-5 steps per stage) |
 

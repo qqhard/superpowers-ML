@@ -11,7 +11,7 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 
 **Adapted from:** subagent-driven-development. Key changes:
 - Validation Pyramid runs AFTER code reviews as 3 separate orchestrator-dispatched stages (L0 → L1 → L2)
-- L0: ML Code Reviewer subagent checks static ML correctness
+- L0: VP Static Checks subagent checks static ML correctness
 - L1: Runtime validation (minutes-level training run with metrics collection)
 - L2: E2E pipeline validation (1-5 steps per stage)
 - Spec reviewer checks experiment design compliance (hypothesis, variable control)
@@ -42,7 +42,7 @@ digraph process {
         "Dispatch ML quality reviewer" [shape=box];
         "Quality reviewer: code quality?" [shape=diamond];
         "Implementer fixes quality issues" [shape=box];
-        "L0: ML Code Reviewer" [shape=box style=filled fillcolor=lightyellow];
+        "L0: VP Static Checks" [shape=box style=filled fillcolor=lightyellow];
         "L0 passed?" [shape=diamond];
         "Implementer fixes L0 issues" [shape=box];
         "L1: ML Runtime Validator" [shape=box style=filled fillcolor=lightyellow];
@@ -68,11 +68,11 @@ digraph process {
     "Dispatch ML quality reviewer" -> "Quality reviewer: code quality?";
     "Quality reviewer: code quality?" -> "Implementer fixes quality issues" [label="no"];
     "Implementer fixes quality issues" -> "Dispatch ML quality reviewer" [label="re-review"];
-    "Quality reviewer: code quality?" -> "L0: ML Code Reviewer" [label="yes"];
-    "L0: ML Code Reviewer" -> "L0 passed?";
+    "Quality reviewer: code quality?" -> "L0: VP Static Checks" [label="yes"];
+    "L0: VP Static Checks" -> "L0 passed?";
     "L0 passed?" -> "L1: ML Runtime Validator" [label="yes"];
     "L0 passed?" -> "Implementer fixes L0 issues" [label="no"];
-    "Implementer fixes L0 issues" -> "L0: ML Code Reviewer" [label="re-run L0\n(fix>50 lines: rollback)"];
+    "Implementer fixes L0 issues" -> "L0: VP Static Checks" [label="re-run L0\n(fix>50 lines: rollback)"];
     "L1: ML Runtime Validator" -> "L1 passed?";
     "L1 passed?" -> "L2: ML E2E Validator" [label="yes"];
     "L1 passed?" -> "Implementer fixes L1 issues" [label="no"];
@@ -231,7 +231,7 @@ Record this in the plan document or a separate experiment log.
 
 - **spml:experiment-planning** — Creates the plan this skill executes
 - **spml:validation-pyramid** — Defines the 3-level VP orchestration
-- **spml:ml-code-reviewer** — L0 static analysis (dispatched as subagent after quality review)
+- **spml:vp-static-checks** — L0 static analysis (dispatched as subagent after quality review)
 - **spml:ml-runtime-validator** — L1 runtime validation (orchestrator invokes after L0)
 - **spml:ml-e2e-validator** — L2 E2E pipeline validation (orchestrator invokes after L1)
 - **spml:diagnostics** — Called when VP check fails

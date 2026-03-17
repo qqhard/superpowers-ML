@@ -28,7 +28,7 @@ Subagent-Driven-Development (per task)
 ├─ Implementer writes code
 ├─ Spec Reviewer (unchanged)
 ├─ Code Quality Reviewer (unchanged)
-├─ L0: ML Code Reviewer (spml:ml-code-reviewer)       — static analysis
+├─ L0: VP Static Checks (spml:vp-static-checks)        — static analysis
 ├─ L1: ML Runtime Validator (spml:ml-runtime-validator) — minutes-level run
 ├─ L2: ML E2E Validator (spml:ml-e2e-validator)        — pipeline flow check
 └─ All pass → task complete
@@ -40,13 +40,13 @@ Execution order: L0 must pass before L1. L1 must pass before L2.
 
 | Level | Skill | What it catches | Duration |
 |-------|-------|----------------|----------|
-| L0 | spml:ml-code-reviewer | Static config errors (device mismatch, precision, optimizer, DataLoader) | Seconds (code review) |
+| L0 | spml:vp-static-checks | Static config errors, logging & observability (device, precision, optimizer, DataLoader, loss/speed output) | Seconds (code review) |
 | L1 | spml:ml-runtime-validator | Performance anomalies (low MFU, gradient NaN, loss not decreasing) | ~5 minutes |
 | L2 | spml:ml-e2e-validator | Pipeline flow errors (shape mismatch, checkpoint bug, eval crash) | ~2 minutes |
 
 ## Dispatch Model
 
-- **L0** runs as a **subagent** (the ml-code-reviewer agent, dispatched like spec-reviewer and code-quality-reviewer)
+- **L0** runs as a **subagent** (the vp-static-checks agent, dispatched like spec-reviewer and code-quality-reviewer)
 - **L1 and L2** run as **skills invoked by the orchestrator** (execution tasks, not review tasks)
 
 When any level fails, the orchestrator resumes the **same Implementer subagent** to fix the issue. After fixing, re-run only the failed level.

@@ -193,7 +193,7 @@ Validation Pyramid check fails
 
 ## Related Skills
 
-- **spml:ml-code-reviewer** — L0 static checks; failures trigger Q3 (efficiency/config) diagnostics
+- **spml:vp-static-checks** — L0 static checks; failures trigger Q3 (efficiency/config) diagnostics
 - **spml:ml-runtime-validator** — L1 runtime checks; failures trigger Q1 (convergence) or Q3 (efficiency) diagnostics
 - **spml:ml-e2e-validator** — L2 pipeline checks; failures trigger Q2 (pipeline/data) diagnostics
 - **superpowers:systematic-debugging** — For non-ML bugs (integration, pipeline, data format)
