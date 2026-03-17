@@ -59,7 +59,7 @@ digraph skill_flow {
     "User message received" [shape=doublecircle];
     "About to EnterPlanMode?" [shape=doublecircle];
     "Already brainstormed?" [shape=diamond];
-    "Invoke brainstorming skill" [shape=box];
+    "Invoke spml:brainstorming" [shape=box];
     "Is this an ML experiment?" [shape=diamond, style=bold, color=red];
     "Skip all spml:* skills\nDefer to superpowers:*" [shape=box, style=dashed];
     "Might any spml skill apply?" [shape=diamond];
@@ -71,9 +71,9 @@ digraph skill_flow {
     "Respond (including clarifications)" [shape=doublecircle];
 
     "About to EnterPlanMode?" -> "Already brainstormed?";
-    "Already brainstormed?" -> "Invoke brainstorming skill" [label="no"];
+    "Already brainstormed?" -> "Invoke spml:brainstorming" [label="no"];
     "Already brainstormed?" -> "Is this an ML experiment?" [label="yes"];
-    "Invoke brainstorming skill" -> "Is this an ML experiment?";
+    "Invoke spml:brainstorming" -> "Is this an ML experiment?";
 
     "User message received" -> "Is this an ML experiment?";
     "Is this an ML experiment?" -> "Skip all spml:* skills\nDefer to superpowers:*" [label="no"];
@@ -113,13 +113,13 @@ These thoughts mean STOP—you're rationalizing:
 
 When multiple skills could apply, use this order:
 
-1. **Process skills first** (brainstorming, diagnostics) - these determine HOW to approach the task
-2. **Validation skills second** (validation-pyramid, ml-static-checks, ml-runtime-validator, ml-e2e-validator) - these verify correctness
-3. **Implementation skills third** (experiment-planning, subagent-dev) - these guide execution
+1. **Process skills first** (`spml:brainstorming`, `spml:diagnostics`) - these determine HOW to approach the task
+2. **Validation skills second** (`spml:validation-pyramid`, `spml:ml-static-checks`, `spml:ml-runtime-validator`, `spml:ml-e2e-validator`) - these verify correctness
+3. **Implementation skills third** (`spml:experiment-planning`, `spml:subagent-dev`) - these guide execution
 
-"Let's train X" -> brainstorming first, then planning skills.
-"Training isn't converging" -> diagnostics first, then validation skills.
-"MFU is too low" -> diagnostics first, then ml-runtime-validator.
+"Let's train X" -> `spml:brainstorming` first, then `spml:experiment-planning`.
+"Training isn't converging" -> `spml:diagnostics` first, then validation skills.
+"MFU is too low" -> `spml:diagnostics` first, then `spml:ml-runtime-validator`.
 
 ## Skill Types
 

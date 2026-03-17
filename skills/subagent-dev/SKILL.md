@@ -57,8 +57,8 @@ digraph process {
     "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" [shape=box];
     "More subtasks?" [shape=diamond];
     "Needs long-running training?" [shape=diamond style=filled fillcolor=lightyellow];
-    "Invoke training-handoff" [shape=box style=filled fillcolor=orange];
-    "Invoke verification" [shape=box style=filled fillcolor=lightblue];
+    "Invoke spml:training-handoff" [shape=box style=filled fillcolor=orange];
+    "Invoke spml:verification" [shape=box style=filled fillcolor=lightblue];
 
     "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" -> "Dispatch ML implementer subagent";
     "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement";
@@ -86,8 +86,8 @@ digraph process {
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
     "More subtasks?" -> "Needs long-running training?" [label="no"];
-    "Needs long-running training?" -> "Invoke training-handoff" [label="yes\n(hours/days)"];
-    "Needs long-running training?" -> "Invoke verification" [label="no\n(already complete)"];
+    "Needs long-running training?" -> "Invoke spml:training-handoff" [label="yes\n(hours/days)"];
+    "Needs long-running training?" -> "Invoke spml:verification" [label="no\n(already complete)"];
 }
 ```
 

@@ -32,7 +32,7 @@ You MUST create a task for each of these items and complete them in order:
 5. **Propose 2-3 approaches** — with trade-offs and your recommendation
 6. **Present design** — in sections scaled to their complexity, get user approval after each section
 7. **Write design doc** — save to `docs/plans/YYYY-MM-DD-<topic>-design.md` and commit
-8. **Transition to implementation** — invoke experiment-planning skill to create implementation plan
+8. **Transition to implementation** — invoke `spml:experiment-planning` skill to create implementation plan
 
 ## Process Flow
 
@@ -46,7 +46,7 @@ digraph ml_brainstorming {
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
     "Write design doc" [shape=box];
-    "Invoke experiment-planning skill" [shape=doublecircle];
+    "Invoke spml:experiment-planning" [shape=doublecircle];
 
     "Explore project context" -> "Collect ML context";
     "Collect ML context" -> "Ask clarifying questions";
@@ -56,11 +56,11 @@ digraph ml_brainstorming {
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
     "User approves design?" -> "Write design doc" [label="yes"];
-    "Write design doc" -> "Invoke experiment-planning skill";
+    "Write design doc" -> "Invoke spml:experiment-planning";
 }
 ```
 
-**The terminal state is invoking experiment-planning.** Do NOT invoke any other implementation skill.
+**The terminal state is invoking `spml:experiment-planning`.** Do NOT invoke any other implementation skill.
 
 ## The Process
 
@@ -136,8 +136,8 @@ If the task involves constructing or transforming datasets:
 - Commit the design document to git
 
 **Implementation:**
-- Invoke the experiment-planning skill to create a detailed implementation plan
-- Do NOT invoke any other skill. experiment-planning is the next step.
+- Invoke the `spml:experiment-planning` skill to create a detailed implementation plan
+- Do NOT invoke any other skill. `spml:experiment-planning` is the next step.
 
 ## Key Principles
 
