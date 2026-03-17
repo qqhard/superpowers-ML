@@ -1,6 +1,6 @@
 ---
 name: using-spml
-description: Use when starting any conversation - establishes how to find and use ML skills, requiring Skill tool invocation before ANY response including clarifying questions
+description: Use when starting any conversation - establishes how to find and use ML skills, requiring host-appropriate skill loading before ANY response including clarifying questions
 ---
 
 <EXTREMELY-IMPORTANT>
@@ -13,9 +13,15 @@ This is not negotiable. This is not optional. You cannot rationalize your way ou
 
 ## How to Access Skills
 
-**In Claude Code:** Use the `Skill` tool. When you invoke a skill, its content is loaded and presented to you—follow it directly. Never use the Read tool on skill files.
+Use the mechanism that matches your host:
 
-**In other environments:** Check your platform's documentation for how skills are loaded.
+- In Claude Code: use the `Skill` tool to load skills, `TodoWrite` to track
+  checklist items, and `Task` for subagents when a skill asks for them.
+- In Codex: rely on native skill discovery from the configured skills
+  directory, use `update_plan` to track checklist items, and use native
+  subagents.
+- In any host: once a skill is loaded, follow it directly and do not treat
+  `SKILL.md` like an ordinary project file.
 
 # Using Skills
 
@@ -43,7 +49,10 @@ This is not negotiable. This is not optional. You cannot rationalize your way ou
 
 ## The Rule
 
-**Invoke relevant or requested skills BEFORE any response or action.** Even a 1% chance a skill might apply means that you should invoke the skill to check. If an invoked skill turns out to be wrong for the situation, you don't need to use it.
+**Load relevant or requested skills BEFORE any response or action.** Even a 1%
+chance a skill might apply means that you should load it to check using the
+host-appropriate mechanism. If a loaded skill turns out to be wrong for the
+situation, you don't need to use it.
 
 ```dot
 digraph skill_flow {
@@ -54,10 +63,10 @@ digraph skill_flow {
     "Is this an ML experiment?" [shape=diamond, style=bold, color=red];
     "Skip all spml:* skills\nDefer to superpowers:*" [shape=box, style=dashed];
     "Might any spml skill apply?" [shape=diamond];
-    "Invoke Skill tool" [shape=box];
+    "Load relevant skill\n(Skill tool / native discovery)" [shape=box];
     "Announce: 'Using [skill] to [purpose]'" [shape=box];
     "Has checklist?" [shape=diamond];
-    "Create TodoWrite todo per item" [shape=box];
+    "Create checklist tracking item\n(TodoWrite / update_plan)" [shape=box];
     "Follow skill exactly" [shape=box];
     "Respond (including clarifications)" [shape=doublecircle];
 
@@ -70,13 +79,13 @@ digraph skill_flow {
     "Is this an ML experiment?" -> "Skip all spml:* skills\nDefer to superpowers:*" [label="no"];
     "Skip all spml:* skills\nDefer to superpowers:*" -> "Respond (including clarifications)";
     "Is this an ML experiment?" -> "Might any spml skill apply?" [label="yes"];
-    "Might any spml skill apply?" -> "Invoke Skill tool" [label="yes, even 1%"];
+    "Might any spml skill apply?" -> "Load relevant skill\n(Skill tool / native discovery)" [label="yes, even 1%"];
     "Might any spml skill apply?" -> "Respond (including clarifications)" [label="definitely not"];
-    "Invoke Skill tool" -> "Announce: 'Using [skill] to [purpose]'";
+    "Load relevant skill\n(Skill tool / native discovery)" -> "Announce: 'Using [skill] to [purpose]'";
     "Announce: 'Using [skill] to [purpose]'" -> "Has checklist?";
-    "Has checklist?" -> "Create TodoWrite todo per item" [label="yes"];
+    "Has checklist?" -> "Create checklist tracking item\n(TodoWrite / update_plan)" [label="yes"];
     "Has checklist?" -> "Follow skill exactly" [label="no"];
-    "Create TodoWrite todo per item" -> "Follow skill exactly";
+    "Create checklist tracking item\n(TodoWrite / update_plan)" -> "Follow skill exactly";
 }
 ```
 

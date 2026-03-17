@@ -23,7 +23,7 @@ Do NOT claim an experiment is complete without running through this entire check
 
 ## The Verification Checklist
 
-You MUST check each item. Create a TodoWrite task for each.
+You MUST check each item. Create a tracking entry for each (`TodoWrite` in Claude Code, `update_plan` in Codex).
 
 ### 1. Validation Pyramid Completion
 

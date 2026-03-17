@@ -54,13 +54,13 @@ digraph process {
         "Record conclusion" [shape=box style=filled fillcolor=lightgreen];
     }
 
-    "Read plan, extract subtasks, create TodoWrite" [shape=box];
+    "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" [shape=box];
     "More subtasks?" [shape=diamond];
     "Needs long-running training?" [shape=diamond style=filled fillcolor=lightyellow];
     "Invoke training-handoff" [shape=box style=filled fillcolor=orange];
     "Invoke verification" [shape=box style=filled fillcolor=lightblue];
 
-    "Read plan, extract subtasks, create TodoWrite" -> "Dispatch ML implementer subagent";
+    "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" -> "Dispatch ML implementer subagent";
     "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement";
     "Implementer: unit tests + implement" -> "Dispatch ML spec reviewer";
     "Dispatch ML spec reviewer" -> "Spec reviewer: experiment design compliance?";

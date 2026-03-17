@@ -30,14 +30,37 @@ In Claude Code:
 /plugin install spml
 ```
 
+### Codex
+
+SPML also works with Codex through native skill discovery.
+
+Install `superpowers` first, then install SPML:
+
+```bash
+git clone https://github.com/obra/superpowers.git ~/.codex/superpowers
+git clone https://github.com/qqhard/superpowers-ML.git ~/.codex/spml
+mkdir -p ~/.codex/skills
+ln -s ~/.codex/superpowers/skills ~/.codex/skills/superpowers
+ln -s ~/.codex/spml/skills ~/.codex/skills/spml
+```
+
+See [docs/README.codex.md](docs/README.codex.md) for the full Codex guide.
+
 ### Verify Installation
 
-Start a new session and check that both plugin namespaces are available:
+Start a new session and check that both skill sets are available.
+
+Claude Code:
 
 ```
 /superpowers:brainstorm   → general software brainstorming
 /spml:brainstorm          → ML experiment brainstorming
 ```
+
+Codex:
+
+Ask Codex to use `superpowers:brainstorming` for general software work or
+`spml:brainstorming` for ML experiment work.
 
 ## How the two plugins work together
 
