@@ -228,7 +228,7 @@ Read the training log and summarize:
 ```markdown
 A long-running ML task has completed successfully. Please analyze results and conclude the experiment.
 
-Read `[path]/experiment-context.md` for the full context including:
+Read `[experiment-dir]/experiment-context.md` for the full context including:
 - Original experiment design and hypothesis
 - VP baseline metrics
 - Watchdog monitoring summary and interventions
