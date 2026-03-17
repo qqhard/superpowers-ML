@@ -149,21 +149,6 @@ loop {
 }
 ```
 
-## Polling and Hang Detection
-
-**Log as heartbeat:** Training scripts output one line per step/epoch with key metrics (loss, lr, grad norm, etc.). Each new log line is a heartbeat signal. The format is human-readable text — not JSONL.
-
-**Polling interval:**
-- Normal: 2–5 minutes (sampling, not every step)
-- Post-anomaly / post-restart: 1 minute for 5 cycles, then back to normal
-- Must use Bash tool `sleep` to implement intervals — ensures the loop runs continuously and does not stall
-
-**Hang detection:** During normal monitoring, observe step intervals and build a baseline of typical step duration. If no new log line appears for significantly longer than the baseline (e.g., 10x typical step duration) and the process is still alive, judge the process as hung. Kill the process and classify the problem:
-- Likely environment (deadlock, NCCL hang) → Tier 1, restart
-- Possibly code issue → Escalate to Tier 2 or Tier 3
-
-**Step baseline:** Calculated from observed intervals between log lines during normal operation. Updated continuously. At startup (before baseline is established), use a generous timeout (e.g., 15 minutes) before judging a hang.
-
 ## Restart Mechanism
 
 Obtain the training script path and launch command from experiment-context.md (written by training-handoff). Restart = re-run the same command via Bash tool. The training script's built-in checkpoint resume handles continuation from the latest saved state.
