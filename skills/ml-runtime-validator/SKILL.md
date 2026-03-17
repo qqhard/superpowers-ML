@@ -13,7 +13,7 @@ Run training for a few minutes, collecting performance and training health metri
 
 ## When to Use
 
-- After L0 (spml:ml-code-reviewer) passes
+- After L0 (spml:vp-static-checks) passes
 - Invoked by the orchestrator in `spml:subagent-dev`, not by the Implementer directly
 - Skip only if explicitly marked "skip L1" in the experiment design doc
 
@@ -47,6 +47,19 @@ Load based on model architecture:
 | LLM | KV cache growth | Memory growth linear with sequence length, not quadratic |
 | ResNet | Residual write ratio | Residual branch contributing meaningful signal |
 
+### Logging Output Validation
+
+Checks that the training code's logging actually produces correct output at runtime. Each check validates three layers: **existence → frequency → value correctness**.
+
+| # | Check | Severity | Validation Method |
+|---|-------|----------|-------------------|
+| L.1 | Loss file output correctness | **Mandatory** | File exists, non-empty, parseable format; values reasonable (no all-NaN/Inf/zero, trend consistent with gradient behavior) |
+| L.2 | Step speed output correctness | **Mandatory** | File exists, non-empty; values match wall clock (step count × reported step time ≈ actual elapsed time) |
+| L.3 | Data loading duration correctness | Advisory | Duration record exists; values reasonable (non-zero, non-negative, consistent with actual time window) |
+| L.4 | Output frequency reasonableness | Advisory | Actual log entry timestamps have intervals approximately minute-level (complements L0 check 22 which verifies interval-control logic in code) |
+| L.5 | Progress bar correctness | Advisory | Progress bar total matches training target — 1 epoch → dataset size; N steps → total = N; T minutes → time-based estimate; advance rate matches actual speed |
+| L.6 | Visualization tool output correctness (if enabled) | **Mandatory** | Output directory/API has data; frequency reasonable; values cross-validated against loss/speed files for consistency; skip if not enabled |
+
 ## Failure Detection
 
 Two tiers of thresholds:
@@ -68,6 +81,7 @@ Catches obvious problems regardless of baselines:
 - MFU abnormally low (< 1%)
 - Memory fragmentation extreme
 - Architecture-specific metrics degenerate
+- Logging outputs missing or empty (L.1, L.2 checks)
 
 ## Timeout Protection
 
@@ -118,6 +132,6 @@ Uses the shared fix loop from `spml:validation-pyramid`:
 
 - **spml:subagent-dev** — invokes this as a validation stage
 - **spml:validation-pyramid** — L1 in the 3-level pyramid
-- **spml:ml-code-reviewer** — must pass before L1 runs
+- **spml:vp-static-checks** — must pass before L1 runs
 - **spml:ml-e2e-validator** — next level after L1 passes
 - **spml:diagnostics** — triggered on failure for root cause analysis
