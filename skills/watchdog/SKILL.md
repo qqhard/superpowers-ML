@@ -34,7 +34,7 @@ At startup, read the mode from experiment-context.md. Ask the user if they want 
 2. **Verify log file exists** — check that the training log file is at the expected path
 3. **Confirm mode** — read `watchdog_mode` from experiment-context.md, offer user override
 4. **Locate training script** — confirm the training script path and launch command from experiment-context.md
-5. **Launch training** — run the training script via Bash tool, then enter monitoring loop
+5. **Launch training** — run the training script via Bash tool (all modes, including Monitor), then enter monitoring loop
 
 ## Problem Classification
 
@@ -54,7 +54,7 @@ Examples:
 - SIGKILL / SIGTERM from external source
 - Deadlock / hang (process alive but no output for significantly longer than baseline step interval)
 
-**Action (Guardian/Autonomous):** Restart training script from latest checkpoint. No code changes. No retry limit — keep restarting. After repeated crashes (e.g., 5+ in a short period), notify the user that environment instability is persisting but continue retrying.
+**Action (Guardian/Autonomous):** Restart training script from latest checkpoint. No code changes. No retry limit — keep restarting. After repeated crashes (e.g., 5+ within 30 minutes), notify the user that environment instability is persisting but continue retrying.
 
 **Action (Monitor):** Write diagnosis to experiment-context.md, generate recovery-prompt.md, notify user.
 
@@ -151,7 +151,7 @@ After restart, enter **intensive observation** (1-minute interval, 5 cycles) to 
 
 During normal monitoring, output periodic progress:
 ```
-[14:10] step 2000/10000 (20%) — loss=0.52, grad_norm=1.8 [estimated 3:20 remaining]
+[14:10] step 2000/10000 (20%) — loss=0.52, MFU=45%, grad_norm=1.8 [estimated 3:20 remaining]
 ```
 
 ## Diagnosis Mode
