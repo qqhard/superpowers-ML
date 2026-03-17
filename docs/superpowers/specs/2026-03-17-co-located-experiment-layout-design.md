@@ -55,21 +55,22 @@ The top-level directory name (`experiments/`) is a default — use whatever fits
 - If handoff artifacts would be written outside the training script's directory, flag to user
 - **Not a hard gate** — user may have reasons for a different layout; default expectation is co-location
 
-**Rename `[path]` → `[experiment-dir]`** in all six occurrences across Steps 3-5:
+**Rename `[path]` → `[experiment-dir]`** in all occurrences across Steps 3-5:
 
 - Step 3 (experiment-context.md template):
+  - `Script: [experiment-dir]/train.py` (or actual script name)
   - `Log file: [experiment-dir]/outputs/train.log`
   - `Checkpoint directory: [experiment-dir]/outputs/`
 - Step 4 (watchdog-prompt.md template):
   - `Read [experiment-dir]/experiment-context.md`
   - `Locate the training log at [experiment-dir]/outputs/train.log`
-  - **Note:** This also changes the subdirectory from `logs/` to `outputs/` to match the canonical layout
+  - **Note:** This changes the subdirectory from `logs/` to `outputs/` and the filename from `training.log` to `train.log` to match the canonical layout
 - Step 5 (launch instructions):
   - All paths use `[experiment-dir]` prefix
 
 ### 3. watchdog (SKILL.md) — cosmetic only
 
-Rename `[path]` → `[experiment-dir]` in the completion-prompt.md and recovery-prompt.md templates for consistency. No behavioral change — watchdog reads actual paths from experiment-context.md at runtime.
+Rename `[path]` → `[experiment-dir]` in the completion-prompt.md template for consistency. (recovery-prompt.md is referenced in prose but has no template block in the current skill — no change needed there.) No behavioral change — watchdog reads actual paths from experiment-context.md at runtime.
 
 ### 4. No changes needed
 
