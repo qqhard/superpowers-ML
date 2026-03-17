@@ -20,7 +20,7 @@ Subagent-Driven-Development (per task)
 ├─ Implementer writes code
 ├─ Spec Reviewer (unchanged)
 ├─ Code Quality Reviewer (unchanged)
-├─ L0: ML Code Reviewer (spml:ml-code-reviewer)       — static analysis
+├─ L0: ML Code Reviewer (spml:ml-static-checks)       — static analysis
 ├─ L1: ML Runtime Validator (spml:ml-runtime-validator) — minutes-level run
 ├─ L2: ML E2E Validator (spml:ml-e2e-validator)        — 1-step-per-stage pipeline
 └─ All pass → task complete
@@ -32,7 +32,7 @@ Execution order: L0 must pass before L1. L1 must pass before L2. Each level uses
 
 ### Subagent Dispatch Model
 
-L0 runs as a **subagent** (the ml-code-reviewer agent, dispatched by the orchestrator like spec-reviewer and code-quality-reviewer). L1 and L2 run as **skills invoked by the orchestrator** — the orchestrator runs the validation commands directly, since these are execution tasks, not review tasks.
+L0 runs as a **subagent** (the ml-static-checks agent, dispatched by the orchestrator like spec-reviewer and code-quality-reviewer). L1 and L2 run as **skills invoked by the orchestrator** — the orchestrator runs the validation commands directly, since these are execution tasks, not review tasks.
 
 When any level fails, the orchestrator sends the **same Implementer subagent** back to fix the issue (resumed, not a new instance). After the Implementer fixes, re-run only the failed level — do not re-run earlier reviews (Spec Review, Code Quality Review, or earlier VP levels that already passed).
 
@@ -60,7 +60,7 @@ If the Implementer's fix modifies more than 50 lines of code, the fix is conside
 
 **When:** After Spec Review and Code Quality Review pass.
 
-**How:** Copy Superpowers' `agents/code-reviewer.md` into SPML's `agents/ml-code-reviewer.md` and modify it to include the ML checklist. Register as a named agent with frontmatter `name: ml-code-reviewer` — SPML skills reference it as `spml:ml-code-reviewer` via the `spml:` skill prefix. The reviewer reads code and checks applicable rules — if a rule fails, it gives specific fix instructions (file:line) and sends the Implementer back to fix. Uses the same Critical/Important/Minor severity levels as Superpowers.
+**How:** Copy Superpowers' `agents/code-reviewer.md` into SPML's `agents/ml-static-checks.md` and modify it to include the ML checklist. Register as a named agent with frontmatter `name: ml-static-checks` — SPML skills reference it as `spml:ml-static-checks` via the `spml:` skill prefix. The reviewer reads code and checks applicable rules — if a rule fails, it gives specific fix instructions (file:line) and sends the Implementer back to fix. Uses the same Critical/Important/Minor severity levels as Superpowers.
 
 ### Checklist
 
@@ -206,7 +206,7 @@ Each stage has a default timeout of 2 minutes (configurable). Single stage hangi
 skills/
 ├─ validation-pyramid/
 │   └─ SKILL.md                    ← rewrite: 3-level definition + shared fix loop
-├─ ml-code-reviewer/               ← new (L0)
+├─ ml-static-checks/               ← new (L0)
 │   ├─ SKILL.md                    ← trigger timing, integration description
 │   └─ checklist.md                ← conditional checklist (maintainable)
 ├─ ml-runtime-validator/           ← new (L1)
@@ -217,7 +217,7 @@ skills/
 │   └─ SKILL.md                    ← modify: chain L0→L1→L2 after code review
 
 agents/
-├─ ml-code-reviewer.md             ← fork from Superpowers code-reviewer.md + ML checklist
+├─ ml-static-checks.md             ← fork from Superpowers code-reviewer.md + ML checklist
 ```
 
 ### Delete (old VP files)

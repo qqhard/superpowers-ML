@@ -1,5 +1,7 @@
 # L0 Production-Grade Engineering Efficiency
 
+> **Superseded:** L0 has been redefined as static analysis (`ml-static-checks`). The runtime efficiency metrics described here are now part of L1 (`ml-runtime-validator`). See `docs/superpowers/specs/2026-03-16-validation-pyramid-refactor-design.md` for the current VP design.
+
 ## Summary
 
 Upgrade L0 from toy-level checks (6N FLOPs estimation, TCA=MFU alias) to production-grade engineering efficiency validation that produces real MFU, real TCA, and real sample speed from a single 3-minute steady-state training run.

@@ -31,16 +31,16 @@
 **What:** Fork the Superpowers code-reviewer agent into SPML, add ML-specific static analysis checklist with mandatory/advisory tiers.
 
 **Files to create:**
-- `agents/ml-code-reviewer.md`
+- `agents/ml-static-checks.md`
 
 **Implementation:**
 
-### Step 1: Create `agents/` directory and `agents/ml-code-reviewer.md`
+### Step 1: Create `agents/` directory and `agents/ml-static-checks.md`
 
 Copy the Superpowers code-reviewer agent structure. Modify to:
 
 1. Change frontmatter:
-   - `name: ml-code-reviewer`
+   - `name: ml-static-checks`
    - `description:` updated to reference ML static analysis
 
 2. Keep the original 6 review areas (Plan Alignment, Code Quality, Architecture, Documentation, Issue Identification, Communication Protocol)
@@ -92,27 +92,27 @@ Check that frontmatter is well-formed YAML with `name`, `description`, `model` f
 ### Step 3: Commit
 
 ```bash
-git add agents/ml-code-reviewer.md
-git commit -m "feat: add ml-code-reviewer agent (L0 static analysis)"
+git add agents/ml-static-checks.md
+git commit -m "feat: add ml-static-checks agent (L0 static analysis)"
 ```
 
 ---
 
 ## Task 2: Create ML Code Reviewer skill (L0 skill)
 
-**What:** Create the skill that describes when and how to invoke the ml-code-reviewer agent.
+**What:** Create the skill that describes when and how to invoke the ml-static-checks agent.
 
 **Files to create:**
-- `skills/ml-code-reviewer/SKILL.md`
-- `skills/ml-code-reviewer/checklist.md`
+- `skills/ml-static-checks/SKILL.md`
+- `skills/ml-static-checks/checklist.md`
 
 **Implementation:**
 
-### Step 1: Create `skills/ml-code-reviewer/SKILL.md`
+### Step 1: Create `skills/ml-static-checks/SKILL.md`
 
 ```markdown
 ---
-name: ml-code-reviewer
+name: ml-static-checks
 description: Use when reviewing ML code for static correctness — dispatched after Spec Review and Code Quality Review in the subagent-dev workflow
 ---
 
@@ -132,7 +132,7 @@ A specialized code-reviewer subagent that checks ML-specific static correctness.
 
 ## How It Works
 
-1. Orchestrator dispatches `ml-code-reviewer` agent (defined in `agents/ml-code-reviewer.md`)
+1. Orchestrator dispatches `ml-static-checks` agent (defined in `agents/ml-static-checks.md`)
 2. Agent reads all changed files
 3. Agent evaluates each checklist item's applicability condition
 4. For applicable items: verify the code meets the requirement
@@ -162,7 +162,7 @@ See `checklist.md` for the full conditional checklist.
 - **spml:ml-runtime-validator** — next level after L0 passes
 ```
 
-### Step 2: Create `skills/ml-code-reviewer/checklist.md`
+### Step 2: Create `skills/ml-static-checks/checklist.md`
 
 Extract the full checklist tables from the design doc (both mandatory and advisory tiers). This is the maintainable reference — add new checks here as patterns emerge.
 
@@ -198,8 +198,8 @@ When a new common ML agent mistake is identified:
 ### Step 3: Commit
 
 ```bash
-git add skills/ml-code-reviewer/
-git commit -m "feat: add ml-code-reviewer skill with conditional checklist (L0)"
+git add skills/ml-static-checks/
+git commit -m "feat: add ml-static-checks skill with conditional checklist (L0)"
 ```
 
 ---
@@ -306,7 +306,7 @@ New content must cover:
 4. **Level summary table:**
    | Level | Skill | What it catches | Duration |
    |-------|-------|----------------|----------|
-   | L0 | spml:ml-code-reviewer | Static config errors | Seconds (code review) |
+   | L0 | spml:ml-static-checks | Static config errors | Seconds (code review) |
    | L1 | spml:ml-runtime-validator | Performance + health anomalies | ~5 minutes |
    | L2 | spml:ml-e2e-validator | Pipeline flow errors | ~2 minutes |
 5. **Shared Fix Loop** — full description with 5-retry cap, per-level counter
@@ -360,7 +360,7 @@ Read `skills/subagent-dev/SKILL.md` (236 lines) to understand full structure.
 2. **ML Implementer Subagent Prompt (lines 69-119):** Remove "Run Validation Pyramid" from the implementer's responsibilities (step 6, line 96). The implementer no longer runs VP — the orchestrator does after reviews.
 
 3. **Validation Pyramid Execution section (lines 101-110):** Replace the old L0-L3 execution with new L0-L2 description:
-   - L0: Dispatch `spml:ml-code-reviewer` agent
+   - L0: Dispatch `spml:ml-static-checks` agent
    - L1: Run `spml:ml-runtime-validator` skill (orchestrator executes)
    - L2: Run `spml:ml-e2e-validator` skill (orchestrator executes)
 
@@ -373,7 +373,7 @@ Read `skills/subagent-dev/SKILL.md` (236 lines) to understand full structure.
 
 6. **Integration section (lines 230-236):** Update skill references:
    - `spml:validation-pyramid` → keep (still the orchestration overview)
-   - Add: `spml:ml-code-reviewer`, `spml:ml-runtime-validator`, `spml:ml-e2e-validator`
+   - Add: `spml:ml-static-checks`, `spml:ml-runtime-validator`, `spml:ml-e2e-validator`
    - `spml:diagnostics` → keep
 
 ### Step 3: Commit
@@ -407,7 +407,7 @@ Replace the 4-layer descriptions with:
 
 After understanding the experiment, confirm which validation levels apply:
 
-**L0: ML Static Analysis (spml:ml-code-reviewer)**
+**L0: ML Static Analysis (spml:ml-static-checks)**
 - Always enabled for ML code tasks
 - Checks: device consistency, precision, FA, optimizer, scheduler, DataLoader (mandatory); plus 12 advisory checks
 - Ask: "Any project-specific checks to add?"
@@ -460,7 +460,7 @@ Replace:
 
 With:
 ```
-- **spml:ml-code-reviewer** — L0 static checks; failures trigger Q3 (efficiency/config) diagnostics
+- **spml:ml-static-checks** — L0 static checks; failures trigger Q3 (efficiency/config) diagnostics
 - **spml:ml-runtime-validator** — L1 runtime checks; failures trigger Q1 (convergence) or Q3 (efficiency) diagnostics
 - **spml:ml-e2e-validator** — L2 pipeline checks; failures trigger Q2 (pipeline/data) diagnostics
 ```
@@ -581,7 +581,7 @@ Expected: no matches (all references updated in Tasks 5-10).
 
 ```bash
 git add -A skills/vp-engineering-efficiency/ skills/vp-process-metrics/ skills/vp-overfitting-test/ skills/vp-e2e-pipeline/
-git commit -m "cleanup: delete old VP skills replaced by ml-code-reviewer, ml-runtime-validator, ml-e2e-validator"
+git commit -m "cleanup: delete old VP skills replaced by ml-static-checks, ml-runtime-validator, ml-e2e-validator"
 ```
 
 ---
@@ -602,13 +602,13 @@ Expected: no matches except in the design doc (which documents the old system fo
 
 ### Step 2: Verify new skill references resolve
 
-Check that all `spml:ml-code-reviewer`, `spml:ml-runtime-validator`, `spml:ml-e2e-validator` references point to existing files:
+Check that all `spml:ml-static-checks`, `spml:ml-runtime-validator`, `spml:ml-e2e-validator` references point to existing files:
 
 ```bash
-ls skills/ml-code-reviewer/SKILL.md
+ls skills/ml-static-checks/SKILL.md
 ls skills/ml-runtime-validator/SKILL.md
 ls skills/ml-e2e-validator/SKILL.md
-ls agents/ml-code-reviewer.md
+ls agents/ml-static-checks.md
 ```
 
 ### Step 3: Verify no broken cross-references in validation-pyramid

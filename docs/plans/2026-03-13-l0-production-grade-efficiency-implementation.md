@@ -1,5 +1,7 @@
 # L0 Production-Grade Engineering Efficiency Implementation Plan
 
+> **Superseded:** L0 has been redefined as static analysis (`ml-static-checks`). The runtime efficiency metrics in this plan are now part of L1 (`ml-runtime-validator`). See `docs/superpowers/specs/2026-03-16-validation-pyramid-refactor-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use spml:subagent-dev to implement this plan task-by-task. (If subagent-dev is not yet available, use spml:executing-plans.)
 
 **Goal:** Replace toy-level L0 checks with production-grade MFU (FlopCounterMode), TCA (DCGM), and sample speed measurement from a single 3-minute steady-state training run.

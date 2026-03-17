@@ -1,5 +1,7 @@
 # TDD-First Validation Pyramid Design
 
+> **Superseded:** The 4-layer VP described here has been replaced by a 3-level design. See `docs/superpowers/specs/2026-03-16-validation-pyramid-refactor-design.md` for the current design. TDD rhythm is now expressed through the shared fix loop.
+
 **Date:** 2026-03-08
 
 **Summary:** Redefine the relationship between TDD and Validation Pyramid from "replace" to "extend". TDD's RED-GREEN-REFACTOR rhythm applies to every layer of the Validation Pyramid.

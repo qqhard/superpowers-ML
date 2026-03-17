@@ -1,10 +1,14 @@
-# MLSP Design Document
+# SPML Design Document
 
-> **For Claude:** This is a design document for a new project. Use superpowers:writing-plans to create the implementation plan.
+> **Superseded:** This is the original design document. Key architectural decisions have changed since initial writing. The following specs reflect the current design:
+> - Validation Pyramid: `docs/superpowers/specs/2026-03-16-validation-pyramid-refactor-design.md` (4 layers → 3 levels)
+> - Watchdog: `docs/superpowers/specs/2026-03-17-watchdog-active-shepherd-design.md` (read-only → active shepherd)
+> - VP Logging: `docs/superpowers/specs/2026-03-17-vp-logging-observability-design.md`
+> - Co-located Layout: `docs/superpowers/specs/2026-03-17-co-located-experiment-layout-design.md`
 
-**Project:** mlsp
+**Project:** spml
 
-**Source:** Fork from [obra/superpowers](https://github.com/obra/superpowers), independent development
+**Source:** Addon plugin for [obra/superpowers](https://github.com/obra/superpowers) (not a fork)
 
 **Date:** 2026-03-06
 
@@ -12,9 +16,9 @@
 
 ## 1. Project Positioning
 
-**Name:** mlsp
+**Name:** spml
 
-**Positioning:** ML/RecSys/LLM training development workflow framework for AI agents. Fork from Superpowers, restructuring all core workflows for ML development.
+**Positioning:** ML/RecSys/LLM training development workflow framework for AI agents. Addon plugin for Superpowers, extending core workflows for ML development.
 
 **Target users:** AI coding agents (Claude Code, Codex, OpenCode, Cursor), serving ML engineering teams, later expanding to community.
 
@@ -36,7 +40,7 @@
 ## 2. Project Structure
 
 ```
-mlsp/
+spml/
   # === Core Skills ===
   skills/
     ml-brainstorming/              # Experiment design + context collection + validation scope confirmation
@@ -82,7 +86,7 @@ mlsp/
     frameworks/                    # Empty initially; add specific framework skills as needed in practice
 
     # Reused skills (minor adjustments or direct reuse)
-    using-mlsp/
+    using-spml/
     writing-skills/
     dispatching-parallel-agents/
     finishing-a-development-branch/
@@ -212,7 +216,7 @@ Core code (model, training, data) must never import from test/validation code or
 ```markdown
 # [Experiment Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use mlsp:ml-subagent-dev
+> **For Claude:** REQUIRED SUB-SKILL: Use spml:ml-subagent-dev
 
 **Goal:** [one sentence]
 **Hypothesis:** [doing X is expected to cause Y]
@@ -541,10 +545,10 @@ frameworks/deepspeed/SKILL.md guides:
 
 **Goal:** Fork complete, namespace switched, core workflow skeleton usable.
 
-- Fork superpowers, rename to mlsp
+- Fork superpowers, rename to spml
 - Rename commands: `ml-brainstorm`, `ml-plan`, `ml-execute`
 - Adapt plugin.json / hooks / multi-platform configs for new naming
-- `using-mlsp` skill (entry skill, replaces using-superpowers)
+- `using-spml` skill (entry skill, replaces using-superpowers)
 - `ml-brainstorming` skill v1 (context collection, validation scope confirmation)
 - `ml-experiment-planning` skill v1 (subtask decomposition + shared infra annotation)
 - `ml-data-preparation` skill (TDD-first dataset processing)

@@ -4,7 +4,7 @@
 
 > **For Claude:** This is a design document for the Watchdog Agent system. Use superpowers:writing-plans to create the implementation plan.
 
-**Project:** mlsp — Watchdog Agent for long-running ML tasks
+**Project:** spml — Watchdog Agent for long-running ML tasks
 
 **Date:** 2026-03-08
 

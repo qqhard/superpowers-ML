@@ -1,5 +1,7 @@
 # Watchdog Agent Implementation Plan
 
+> **Superseded:** This plan implemented the original read-only Watchdog. It has since been redesigned as an active shepherd with three operating modes. See `docs/superpowers/specs/2026-03-17-watchdog-active-shepherd-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add three new skills (ml-training-handoff, ml-watchdog, ml-training-resume) and update design docs to support long-running ML task monitoring through a session chain architecture.

@@ -1,5 +1,7 @@
 # TDD-Validation Pyramid Integration Implementation Plan
 
+> **Superseded:** The 4-layer VP and TDD integration described here has been replaced by a 3-level VP with a shared fix loop. See `docs/superpowers/specs/2026-03-16-validation-pyramid-refactor-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Integrate TDD's RED-GREEN-REFACTOR rhythm into every Validation Pyramid layer, changing the relationship from "replace" to "extend".

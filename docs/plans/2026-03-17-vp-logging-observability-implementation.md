@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add training log output validation checks to L0 (static) and L1 (runtime) of the Validation Pyramid, and rename `ml-code-reviewer` to `vp-static-checks`.
+**Goal:** Add training log output validation checks to L0 (static) and L1 (runtime) of the Validation Pyramid, and rename `ml-code-reviewer` to `ml-static-checks`.
 
-**Architecture:** Extend existing L0 and L1 skill files with new check items. Rename the L0 skill/agent/directory from `ml-code-reviewer` to `vp-static-checks`. Add a brainstorming question for visualization tool preference. Propagate the rename across all referencing files.
+**Architecture:** Extend existing L0 and L1 skill files with new check items. Rename the L0 skill/agent/directory from `ml-code-reviewer` to `ml-static-checks`. Add a brainstorming question for visualization tool preference. Propagate the rename across all referencing files.
 
 **Tech Stack:** Markdown skill definitions (no code changes)
 
@@ -15,25 +15,25 @@
 ### Task 1: Rename L0 skill directory
 
 **Files:**
-- Rename: `skills/ml-code-reviewer/` → `skills/vp-static-checks/`
+- Rename: `skills/ml-code-reviewer/` → `skills/ml-static-checks/`
 
 - [ ] **Step 1: Rename the directory**
 
 ```bash
-git mv skills/ml-code-reviewer skills/vp-static-checks
+git mv skills/ml-code-reviewer skills/ml-static-checks
 ```
 
 - [ ] **Step 2: Verify rename**
 
 ```bash
-ls skills/vp-static-checks/
+ls skills/ml-static-checks/
 ```
 Expected: `SKILL.md  checklist.md`
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add skills/vp-static-checks/ && git commit -m "refactor: rename ml-code-reviewer directory to vp-static-checks"
+git add skills/ml-static-checks/ && git commit -m "refactor: rename ml-code-reviewer directory to ml-static-checks"
 ```
 
 ---
@@ -41,11 +41,11 @@ git add skills/vp-static-checks/ && git commit -m "refactor: rename ml-code-revi
 ### Task 2: Update L0 SKILL.md for new name and scope
 
 **Files:**
-- Modify: `skills/vp-static-checks/SKILL.md`
+- Modify: `skills/ml-static-checks/SKILL.md`
 
 - [ ] **Step 1: Update frontmatter name**
 
-Change `name: ml-code-reviewer` to `name: vp-static-checks`.
+Change `name: ml-code-reviewer` to `name: ml-static-checks`.
 
 - [ ] **Step 2: Update title and description**
 
@@ -68,12 +68,12 @@ To:
 
 - [ ] **Step 4: Update How It Works**
 
-In the numbered list under "How It Works", change step 1: `Orchestrator dispatches `ml-code-reviewer` agent (defined in `agents/ml-code-reviewer.md`)` → `Orchestrator dispatches `vp-static-checks` agent (defined in `agents/vp-static-checks.md`)`.
+In the numbered list under "How It Works", change step 1: `Orchestrator dispatches `ml-code-reviewer` agent (defined in `agents/ml-code-reviewer.md`)` → `Orchestrator dispatches `ml-static-checks` agent (defined in `agents/ml-static-checks.md`)`.
 
 - [ ] **Step 5: Update Integration section**
 
 Change `**spml:subagent-dev** — dispatches this as a review stage` to keep as-is (no name reference).
-Verify all self-references use `vp-static-checks`.
+Verify all self-references use `ml-static-checks`.
 
 - [ ] **Step 6: Verify the file reads correctly**
 
@@ -82,7 +82,7 @@ Read the full file and confirm all references to `ml-code-reviewer` are replaced
 - [ ] **Step 7: Commit**
 
 ```bash
-git add skills/vp-static-checks/SKILL.md && git commit -m "refactor: update L0 SKILL.md for vp-static-checks rename and expanded scope"
+git add skills/ml-static-checks/SKILL.md && git commit -m "refactor: update L0 SKILL.md for ml-static-checks rename and expanded scope"
 ```
 
 ---
@@ -90,7 +90,7 @@ git add skills/vp-static-checks/SKILL.md && git commit -m "refactor: update L0 S
 ### Task 3: Add logging checks 19-24 to L0 checklist
 
 **Files:**
-- Modify: `skills/vp-static-checks/checklist.md`
+- Modify: `skills/ml-static-checks/checklist.md`
 
 - [ ] **Step 1: Add mandatory checks 19, 20, 24 to the Mandatory table**
 
@@ -122,7 +122,7 @@ Change `## Advisory (Warning) — checks 7-18` to `## Advisory (Warning) — che
 
 - [ ] **Step 5: Update "Adding New Checks" section**
 
-Change `Update the agent definition in `agents/ml-code-reviewer.md` to match` to `Update the agent definition in `agents/vp-static-checks.md` to match`.
+Change `Update the agent definition in `agents/ml-code-reviewer.md` to match` to `Update the agent definition in `agents/ml-static-checks.md` to match`.
 
 - [ ] **Step 6: Verify the complete checklist**
 
@@ -135,7 +135,7 @@ Read the full file. Confirm:
 - [ ] **Step 7: Commit**
 
 ```bash
-git add skills/vp-static-checks/checklist.md && git commit -m "feat: add logging & observability checks 19-24 to L0 checklist"
+git add skills/ml-static-checks/checklist.md && git commit -m "feat: add logging & observability checks 19-24 to L0 checklist"
 ```
 
 ---
@@ -143,18 +143,18 @@ git add skills/vp-static-checks/checklist.md && git commit -m "feat: add logging
 ### Task 4: Rename and update agent definition
 
 **Files:**
-- Rename: `agents/ml-code-reviewer.md` → `agents/vp-static-checks.md`
-- Modify: `agents/vp-static-checks.md`
+- Rename: `agents/ml-code-reviewer.md` → `agents/ml-static-checks.md`
+- Modify: `agents/ml-static-checks.md`
 
 - [ ] **Step 1: Rename the agent file**
 
 ```bash
-git mv agents/ml-code-reviewer.md agents/vp-static-checks.md
+git mv agents/ml-code-reviewer.md agents/ml-static-checks.md
 ```
 
 - [ ] **Step 2: Update frontmatter name and description**
 
-Change `name: ml-code-reviewer` to `name: vp-static-checks`.
+Change `name: ml-code-reviewer` to `name: ml-static-checks`.
 
 Change description from `ML-specialized code reviewer that checks static correctness of ML code — device consistency, precision, FlashAttention, optimizer coverage, and 12 additional advisory checks.` to `Static analysis agent that checks ML code correctness and training observability — device consistency, precision, FlashAttention, optimizer coverage, logging & observability, and 15 additional advisory checks.`
 
@@ -191,7 +191,7 @@ Read the full file. Confirm all `ml-code-reviewer` references are gone and new c
 - [ ] **Step 7: Commit**
 
 ```bash
-git add agents/ && git commit -m "refactor: rename ml-code-reviewer agent to vp-static-checks and add logging checks"
+git add agents/ && git commit -m "refactor: rename ml-code-reviewer agent to ml-static-checks and add logging checks"
 ```
 
 ---
@@ -229,17 +229,17 @@ In the "Catches obvious problems" list, add:
 
 - [ ] **Step 3: Update the Integration section references**
 
-Change `**spml:ml-code-reviewer** — must pass before L1 runs` to `**spml:vp-static-checks** — must pass before L1 runs`.
+Change `**spml:ml-code-reviewer** — must pass before L1 runs` to `**spml:ml-static-checks** — must pass before L1 runs`.
 
 - [ ] **Step 4: Update When to Use section**
 
-Change `After L0 (spml:ml-code-reviewer) passes` to `After L0 (spml:vp-static-checks) passes`.
+Change `After L0 (spml:ml-code-reviewer) passes` to `After L0 (spml:ml-static-checks) passes`.
 
 - [ ] **Step 5: Verify the file**
 
 Read the full file. Confirm:
 - New Logging Output Validation section present with 6 checks
-- All `ml-code-reviewer` references replaced with `vp-static-checks`
+- All `ml-code-reviewer` references replaced with `ml-static-checks`
 - Existing sections unchanged
 
 - [ ] **Step 6: Commit**
@@ -266,7 +266,7 @@ Change:
 ```
 To:
 ```markdown
-**L0: VP Static Checks (spml:vp-static-checks)**
+**L0: VP Static Checks (spml:ml-static-checks)**
 - Always enabled for ML code tasks
 - Checks: device consistency, precision, FA, optimizer, scheduler, DataLoader, loss/speed file output, visualization tool (mandatory); plus 15 advisory checks
 - Ask: "Do you need visualization metrics output (e.g., WandB, TensorBoard, MLflow)? If yes, which tool?"
@@ -296,14 +296,14 @@ git add skills/brainstorming/SKILL.md && git commit -m "feat: add visualization 
 
 - [ ] **Step 1: Update validation-pyramid/SKILL.md**
 
-Replace all instances of `ml-code-reviewer` with `vp-static-checks`:
-- Line 31: `├─ L0: ML Code Reviewer (spml:ml-code-reviewer)` → `├─ L0: VP Static Checks (spml:vp-static-checks)`
-- Line 43: `| L0 | spml:ml-code-reviewer |` → `| L0 | spml:vp-static-checks |`
-- Line 49: `the ml-code-reviewer agent` → `the vp-static-checks agent`
+Replace all instances of `ml-code-reviewer` with `ml-static-checks`:
+- Line 31: `├─ L0: ML Code Reviewer (spml:ml-code-reviewer)` → `├─ L0: VP Static Checks (spml:ml-static-checks)`
+- Line 43: `| L0 | spml:ml-code-reviewer |` → `| L0 | spml:ml-static-checks |`
+- Line 49: `the ml-code-reviewer agent` → `the ml-static-checks agent`
 
 Also update the L0 description in the Level Summary table to mention logging/observability:
 ```
-| L0 | spml:vp-static-checks | Static config errors, logging & observability (device, precision, optimizer, DataLoader, loss/speed output) | Seconds (code review) |
+| L0 | spml:ml-static-checks | Static config errors, logging & observability (device, precision, optimizer, DataLoader, loss/speed output) | Seconds (code review) |
 ```
 
 - [ ] **Step 2: Update subagent-dev/SKILL.md**
@@ -312,21 +312,21 @@ Replace all 6 occurrences of `ml-code-reviewer` / `ML Code Reviewer`:
 - Line 14: `L0: ML Code Reviewer subagent` → `L0: VP Static Checks subagent`
 - Line 45: `"L0: ML Code Reviewer"` (dot graph node) → `"L0: VP Static Checks"`
 - Lines 71-72, 75: `"L0: ML Code Reviewer"` (dot graph edges) → `"L0: VP Static Checks"`
-- Line 234: `**spml:ml-code-reviewer**` → `**spml:vp-static-checks**`
+- Line 234: `**spml:ml-code-reviewer**` → `**spml:ml-static-checks**`
 
 - [ ] **Step 3: Update using-superpowers-ml/SKILL.md**
 
-At line 108, replace `ml-code-reviewer` with `vp-static-checks`.
+At line 108, replace `ml-code-reviewer` with `ml-static-checks`.
 
 - [ ] **Step 4: Update diagnostics/SKILL.md**
 
-At line 196, replace `spml:ml-code-reviewer` with `spml:vp-static-checks`.
+At line 196, replace `spml:ml-code-reviewer` with `spml:ml-static-checks`.
 
 - [ ] **Step 5: Update README.md**
 
-At line 123, replace `ml-code-reviewer` with `vp-static-checks` and update the description to include logging checks:
+At line 123, replace `ml-code-reviewer` with `ml-static-checks` and update the description to include logging checks:
 ```markdown
-| **vp-static-checks** | L0: Static analysis — device consistency, precision, FA, optimizer, DataLoader, logging & observability + 15 advisory checks |
+| **ml-static-checks** | L0: Static analysis — device consistency, precision, FA, optimizer, DataLoader, logging & observability + 15 advisory checks |
 ```
 
 - [ ] **Step 6: Verify no remaining references**
@@ -339,7 +339,7 @@ Expected: No output (zero matches). Historical docs in `docs/` are intentionally
 - [ ] **Step 7: Commit**
 
 ```bash
-git add skills/validation-pyramid/SKILL.md skills/subagent-dev/SKILL.md skills/using-superpowers-ml/SKILL.md skills/diagnostics/SKILL.md README.md && git commit -m "refactor: propagate ml-code-reviewer → vp-static-checks rename across all skills"
+git add skills/validation-pyramid/SKILL.md skills/subagent-dev/SKILL.md skills/using-superpowers-ml/SKILL.md skills/diagnostics/SKILL.md README.md && git commit -m "refactor: propagate ml-code-reviewer → ml-static-checks rename across all skills"
 ```
 
 ---
@@ -362,21 +362,21 @@ rm -rf ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/vp-process-metrics
 rm -rf ~/.claude/plugins/cache/spml-dev/spml/0.1.0/agents/ml-code-reviewer.md
 
 # Copy updated source to cache
-cp -r skills/vp-static-checks ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
+cp -r skills/ml-static-checks ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
 cp -r skills/ml-runtime-validator ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
 cp -r skills/brainstorming ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
 cp -r skills/validation-pyramid ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
 cp -r skills/subagent-dev ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
 cp -r skills/using-superpowers-ml ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
 cp -r skills/diagnostics ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/
-cp agents/vp-static-checks.md ~/.claude/plugins/cache/spml-dev/spml/0.1.0/agents/
+cp agents/ml-static-checks.md ~/.claude/plugins/cache/spml-dev/spml/0.1.0/agents/
 ```
 
 - [ ] **Step 2: Verify cache is correct**
 
 ```bash
-ls ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/vp-static-checks/
-ls ~/.claude/plugins/cache/spml-dev/spml/0.1.0/agents/vp-static-checks.md
+ls ~/.claude/plugins/cache/spml-dev/spml/0.1.0/skills/ml-static-checks/
+ls ~/.claude/plugins/cache/spml-dev/spml/0.1.0/agents/ml-static-checks.md
 ```
 Expected: Both paths exist.
 

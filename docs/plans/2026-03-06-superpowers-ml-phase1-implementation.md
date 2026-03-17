@@ -1,5 +1,7 @@
 # MLSP Phase 1 Implementation Plan
 
+> **Superseded:** This Phase 1 plan was executed but the project has since evolved significantly: name changed from mlsp to spml, architecture changed from fork to addon plugin, skill naming uses `spml:` namespace prefix instead of `ml-*` prefix. See `docs/plans/2026-03-06-superpowers-ml-design.md` for a summary of changes.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use mlsp:executing-plans to implement this plan task-by-task.
 
 **Goal:** Fork superpowers into mlsp with renamed namespace, ML-adapted brainstorming and experiment planning skills, ready for a complete brainstorm -> plan flow.

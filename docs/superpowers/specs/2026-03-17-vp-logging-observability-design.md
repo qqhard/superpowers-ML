@@ -14,7 +14,7 @@ The Validation Pyramid currently checks ML code correctness and training health,
 - **Check granularity:** Semantic-level — verify that specific metrics are output, without requiring specific libraries
 - **Output frequency target:** ~1 minute intervals (not every step, not long gaps)
 - **Visualization tools:** User preference collected during brainstorming, not auto-detected
-- **Rename:** `ml-code-reviewer` → `vp-static-checks` (scope now extends beyond ML code review to include observability)
+- **Rename:** `ml-code-reviewer` → `ml-static-checks` (scope now extends beyond ML code review to include observability)
 
 ## Changes
 
@@ -26,7 +26,7 @@ Add to the ML-specific brainstorming flow (in the "Confirming validation scope" 
 
 Record the answer in the experiment design doc. Downstream L0/L1 checks read from this doc.
 
-### 2. `ml-code-reviewer` → `vp-static-checks` (L0)
+### 2. `ml-code-reviewer` → `ml-static-checks` (L0)
 
 Rename the skill directory and add new checks to `checklist.md`, continuing the existing flat numbering (19-24).
 
@@ -72,21 +72,21 @@ Add a new **Logging Output Validation** section as a third category alongside th
 
 ### 4. Reference Updates (Rename Propagation)
 
-Rename `ml-code-reviewer` → `vp-static-checks`. Files to update:
+Rename `ml-code-reviewer` → `ml-static-checks`. Files to update:
 
 | File | Change |
 | --- | --- |
-| `skills/ml-code-reviewer/` | Rename directory to `skills/vp-static-checks/` |
+| `skills/ml-code-reviewer/` | Rename directory to `skills/ml-static-checks/` |
 | `skills/ml-code-reviewer/SKILL.md` | Update name, title, description |
 | `skills/ml-code-reviewer/checklist.md` | Add checks 19-24 |
-| `skills/ml-runtime-validator/SKILL.md` | Update reference from `ml-code-reviewer` to `vp-static-checks` |
+| `skills/ml-runtime-validator/SKILL.md` | Update reference from `ml-code-reviewer` to `ml-static-checks` |
 | `skills/validation-pyramid/SKILL.md` | Update L0 reference |
 | `skills/subagent-dev/SKILL.md` | Update L0 references |
 | `skills/using-superpowers-ml/SKILL.md` | Update L0 reference |
 | `skills/brainstorming/SKILL.md` | Update L0 reference |
 | `skills/diagnostics/SKILL.md` | Update L0 reference |
 | `README.md` | Update L0 reference |
-| `agents/ml-code-reviewer.md` | Rename to `agents/vp-static-checks.md`, update contents |
+| `agents/ml-code-reviewer.md` | Rename to `agents/ml-static-checks.md`, update contents |
 | `.claude-plugin/plugin.json` or skill registration | Update skill name mapping |
 | Plugin cache | Reinstall/resync after source changes |
 

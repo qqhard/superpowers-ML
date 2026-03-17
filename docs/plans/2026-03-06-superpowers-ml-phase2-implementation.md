@@ -1,5 +1,7 @@
 # MLSP Phase 2 Implementation Plan
 
+> **Superseded:** This Phase 2 plan was executed but the VP has since been redesigned from 4 layers (L0-L3) to 3 levels (L0-L2). Old VP skill names (`vp-engineering-efficiency`, `vp-process-metrics`, `vp-e2e-pipeline`) are replaced by `ml-static-checks`, `ml-runtime-validator`, `ml-e2e-validator`. See `docs/superpowers/specs/2026-03-16-validation-pyramid-refactor-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use mlsp:executing-plans to implement this plan task-by-task.
 
 **Goal:** Deliver the Validation Pyramid core — orchestration skill, L0-L2 layer skills, and profiling toolkit.

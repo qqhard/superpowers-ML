@@ -222,7 +222,7 @@ After all subtasks complete, before invoking verification, check:
 **Does this experiment need a long-running execution phase?** (training for hours/days, large-scale data processing, full evaluation sweep)
 
 - **Yes** → Invoke `spml:training-handoff`. This generates:
-  - Production training script with JSONL logging (including MFU, gradient norms, etc.)
+  - Production training script with human-readable logging (including MFU, gradient norms, etc.)
   - `experiment-context.md` with VP baseline metrics
   - `watchdog-prompt.md` for monitoring in a separate session
   - Verification happens LATER, after training completes (via `spml:training-resume`)
@@ -251,9 +251,9 @@ After all subtasks complete, before invoking verification, check:
 
 - **spml:experiment-planning** — Creates the plan this skill executes
 - **spml:validation-pyramid** — Defines the 3-level VP orchestration
-- **spml:vp-static-checks** — L0 static analysis (dispatched as subagent after quality review)
+- **spml:ml-static-checks** — L0 static analysis (dispatched as subagent after quality review)
 - **spml:ml-runtime-validator** — L1 runtime validation (orchestrator invokes after L0)
-- **spml:vp-e2e-pipeline** — L2 E2E pipeline validation (orchestrator invokes after L1)
+- **spml:ml-e2e-validator** — L2 E2E pipeline validation (orchestrator invokes after L1)
 - **spml:diagnostics** — Called when VP check fails
 - **spml:training-handoff** — Called after all subtasks complete IF long-running training is needed
 - **spml:verification** — Called after all subtasks complete IF experiment is already done (no long-running phase)
