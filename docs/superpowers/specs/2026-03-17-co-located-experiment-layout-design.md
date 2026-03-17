@@ -31,6 +31,10 @@ experiments/<experiment-name>/
 
 The top-level directory name (`experiments/`) is a default — use whatever fits the user's existing project structure. The key rule: **one directory per experiment, everything inside it.**
 
+**Scope:** This convention applies to new experiments only. Existing experiments are not migrated.
+
+**Plan documents** remain in `docs/plans/` — they are planning artifacts, not experiment runtime artifacts.
+
 ## Changes
 
 ### 1. experiment-planning (SKILL.md)
@@ -41,7 +45,7 @@ The top-level directory name (`experiments/`) is a default — use whatever fits
 - State the key rule: one directory per experiment, everything inside it
 - Note the top-level name is flexible
 
-**Update "Shared Scaffold" template** to reference `[experiment-dir]` instead of generic paths.
+**Add `[experiment-dir]` to "Shared Scaffold" template** — add a line establishing the experiment directory path (e.g., `- Experiment directory: [experiment-dir]/`). Existing infra paths (e.g., `path/to/data_loader.py`) stay as-is since existing infra may live outside the experiment directory.
 
 ### 2. training-handoff (SKILL.md)
 
@@ -51,15 +55,24 @@ The top-level directory name (`experiments/`) is a default — use whatever fits
 - If handoff artifacts would be written outside the training script's directory, flag to user
 - **Not a hard gate** — user may have reasons for a different layout; default expectation is co-location
 
-**Rename `[path]` → `[experiment-dir]`** throughout all templates:
+**Rename `[path]` → `[experiment-dir]`** in all six occurrences across Steps 3-5:
 
-- Step 3: `[experiment-dir]/experiment-context.md`
-- Step 4: `[experiment-dir]/watchdog-prompt.md`, log at `[experiment-dir]/outputs/train.log`
-- Step 5: All paths in launch instructions use `[experiment-dir]`
+- Step 3 (experiment-context.md template):
+  - `Log file: [experiment-dir]/outputs/train.log`
+  - `Checkpoint directory: [experiment-dir]/outputs/`
+- Step 4 (watchdog-prompt.md template):
+  - `Read [experiment-dir]/experiment-context.md`
+  - `Locate the training log at [experiment-dir]/outputs/train.log`
+  - **Note:** This also changes the subdirectory from `logs/` to `outputs/` to match the canonical layout
+- Step 5 (launch instructions):
+  - All paths use `[experiment-dir]` prefix
 
-### 3. No changes needed
+### 3. watchdog (SKILL.md) — cosmetic only
 
-- **watchdog** — Already reads paths from experiment-context.md; will automatically pick up the new paths
-- **training-resume** — Same; reads experiment-context.md
+Rename `[path]` → `[experiment-dir]` in the completion-prompt.md and recovery-prompt.md templates for consistency. No behavioral change — watchdog reads actual paths from experiment-context.md at runtime.
+
+### 4. No changes needed
+
+- **training-resume** — Reads paths from experiment-context.md; picks up new paths automatically
 - **verification** — No path dependencies
 - **subagent-dev** — Delegates to training-handoff; no direct path logic
