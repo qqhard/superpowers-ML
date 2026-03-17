@@ -59,9 +59,25 @@ Plans have two sections: shared scaffold, then atomic subtasks.
 - [Only what's missing, with exact file paths and implementation]
 ```
 
+### Subtask Decomposition
+
+Each subtask = one functional change that can be independently tested and committed. A subtask always contains BOTH the code change AND its tests (Steps 1-4 in the template below).
+
+Split by functional boundary (model, training loop, data pipeline), NOT by artifact type (all tests, all implementation, all scripts).
+
+**Wrong (split by artifact type):**
+- Subtask 1: Rewrite model unit tests
+- Subtask 2: Rewrite model implementation
+- Subtask 3: Add train tests
+- Subtask 4: Rewrite training script
+
+**Right (split by functional unit):**
+- Subtask 1: Rewrite model (tests + implementation)
+- Subtask 2: Rewrite training script (tests + implementation)
+
 ### Subtask Structure
 
-Each subtask is an atomic experiment or implementation unit. Each goes through the Validation Pyramid.
+Each subtask goes through the Validation Pyramid.
 
 ````markdown
 ## Subtask N: [Experiment/Component Name]
