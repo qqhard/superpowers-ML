@@ -1,5 +1,22 @@
 # Superpowers Release Notes
 
+## v0.5.1 (2026-03-18)
+
+### Fixed
+
+**Skill invocation names now consistently use `spml:` prefix**
+
+All skill invocation references within SPML skills (e.g., `spml:brainstorming`, `spml:experiment-planning`) now include the `spml:` namespace prefix, making them distinguishable from equivalent `superpowers:` skills.
+
+**Synced design documents with current implementation**
+
+- Added superseded notices to outdated design and implementation plans
+- Updated VP refactor design and VP logging design to use current L0 skill name (`ml-static-checks`)
+- Fixed `subagent-dev` skill: JSONL → human-readable log format reference, stale L0/L2 skill names
+- Plugin cache cleaned: removed stale `vp-e2e-pipeline`, `vp-overfitting-test`, `vp-static-checks` directories; added `ml-static-checks`, `ml-e2e-validator`
+
+---
+
 ## v4.3.1 (2026-02-21)
 
 ### Added
