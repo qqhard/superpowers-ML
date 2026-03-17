@@ -60,7 +60,7 @@ Claude Code:
 Codex:
 
 Ask Codex to use `superpowers:brainstorming` for general software work or
-`spml:brainstorming` for ML experiment work.
+`spml:ml-brainstorming` for ML experiment work.
 
 ## How the two plugins work together
 

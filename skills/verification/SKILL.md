@@ -131,7 +131,7 @@ After presenting the summary, ask the user:
 
 **3. Add subtasks** — Continue this experiment with additional subtasks. I'll add them to the existing plan.
 
-**4. New brainstorm** — Start a new experiment direction. Invoke `spml:brainstorming`."
+**4. New brainstorm** — Start a new experiment direction. Invoke `spml:ml-brainstorming`."
 
 ## Red Flags
 
@@ -153,5 +153,5 @@ After presenting the summary, ask the user:
 - **spml:subagent-dev** — Produces the subtask results this skill verifies
 - **spml:validation-pyramid** — VP checks referenced in verification
 - **spml:training-handoff** — Next step if experiment needs long-running training
-- **spml:brainstorming** — Next step if new experiment needed
+- **spml:ml-brainstorming** — Next step if new experiment needed
 - **superpowers:finishing-a-development-branch** — Next step if experiment is done

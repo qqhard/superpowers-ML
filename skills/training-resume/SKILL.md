@@ -59,7 +59,7 @@ Based on evidence, decide which workflow stage to return to:
 | NaN/Inf, shape error, crash | Code fix | Fix bug → re-run VP → re-handoff |
 | Loss not converging, gradients healthy, code correct | Hyperparameter adjustment | Adjust LR/batch/optimizer → possibly re-run VP L2 → re-handoff |
 | Training works but wrong metrics tracked, wrong evaluation | Task spec fix | Back to `spml:experiment-planning` to adjust subtask spec |
-| Fundamental approach doesn't work despite correct implementation | Hypothesis revision | Back to `spml:brainstorming` |
+| Fundamental approach doesn't work despite correct implementation | Hypothesis revision | Back to `spml:ml-brainstorming` |
 | Data quality issues (corrupted batches, distribution shift) | Data fix | Back to `spml:data-preparation` |
 
 ### Step 4: Execute
@@ -87,7 +87,7 @@ Based on the determined rollback level:
 **Hypothesis revision:**
 1. Explain why the current hypothesis appears invalid
 2. Present evidence from the training run
-3. Invoke `spml:brainstorming` for a new experiment design
+3. Invoke `spml:ml-brainstorming` for a new experiment design
 
 **Data fix:**
 1. Identify the data quality issue from training metrics
@@ -154,7 +154,7 @@ experiment-context.md may contain multiple rounds (Round 1, Round 2, ...) from p
 - **spml:watchdog** — Produces the prompts and context this skill consumes
 - **spml:training-handoff** — Re-invoked when fix requires another training run
 - **spml:verification** — Invoked on the completion path
-- **spml:brainstorming** — Invoked when hypothesis needs revision
+- **spml:ml-brainstorming** — Invoked when hypothesis needs revision
 - **spml:experiment-planning** — Invoked when task decomposition needs revision
 - **spml:data-preparation** — Invoked when data quality is the issue
 - **spml:diagnostics** — May be invoked for deeper code-level diagnosis

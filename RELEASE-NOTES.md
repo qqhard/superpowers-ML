@@ -6,7 +6,7 @@
 
 **Skill invocation names now consistently use `spml:` prefix**
 
-All skill invocation references within SPML skills (e.g., `spml:brainstorming`, `spml:experiment-planning`) now include the `spml:` namespace prefix, making them distinguishable from equivalent `superpowers:` skills.
+All skill invocation references within SPML skills (e.g., `spml:ml-brainstorming`, `spml:experiment-planning`) now include the `spml:` namespace prefix, making them distinguishable from equivalent `superpowers:` skills.
 
 **Synced design documents with current implementation**
 

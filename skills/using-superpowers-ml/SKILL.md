@@ -59,7 +59,7 @@ digraph skill_flow {
     "User message received" [shape=doublecircle];
     "About to EnterPlanMode?" [shape=doublecircle];
     "Already brainstormed?" [shape=diamond];
-    "Invoke spml:brainstorming" [shape=box];
+    "Invoke spml:ml-brainstorming" [shape=box];
     "Is this an ML experiment?" [shape=diamond, style=bold, color=red];
     "Skip all spml:* skills\nDefer to superpowers:*" [shape=box, style=dashed];
     "Might any spml skill apply?" [shape=diamond];
@@ -71,9 +71,9 @@ digraph skill_flow {
     "Respond (including clarifications)" [shape=doublecircle];
 
     "About to EnterPlanMode?" -> "Already brainstormed?";
-    "Already brainstormed?" -> "Invoke spml:brainstorming" [label="no"];
+    "Already brainstormed?" -> "Invoke spml:ml-brainstorming" [label="no"];
     "Already brainstormed?" -> "Is this an ML experiment?" [label="yes"];
-    "Invoke spml:brainstorming" -> "Is this an ML experiment?";
+    "Invoke spml:ml-brainstorming" -> "Is this an ML experiment?";
 
     "User message received" -> "Is this an ML experiment?";
     "Is this an ML experiment?" -> "Skip all spml:* skills\nDefer to superpowers:*" [label="no"];
@@ -113,11 +113,11 @@ These thoughts mean STOP—you're rationalizing:
 
 When multiple skills could apply, use this order:
 
-1. **Process skills first** (`spml:brainstorming`, `spml:diagnostics`) - these determine HOW to approach the task
+1. **Process skills first** (`spml:ml-brainstorming`, `spml:diagnostics`) - these determine HOW to approach the task
 2. **Validation skills second** (`spml:validation-pyramid`, `spml:ml-static-checks`, `spml:ml-runtime-validator`, `spml:ml-e2e-validator`) - these verify correctness
 3. **Implementation skills third** (`spml:experiment-planning`, `spml:subagent-dev`) - these guide execution
 
-"Let's train X" -> `spml:brainstorming` first, then `spml:experiment-planning`.
+"Let's train X" -> `spml:ml-brainstorming` first, then `spml:experiment-planning`.
 "Training isn't converging" -> `spml:diagnostics` first, then validation skills.
 "MFU is too low" -> `spml:diagnostics` first, then `spml:ml-runtime-validator`.
 

@@ -18,7 +18,7 @@ The Validation Pyramid currently checks ML code correctness and training health,
 
 ## Changes
 
-### 1. `spml:brainstorming` — New Question
+### 1. `spml:ml-brainstorming` — New Question
 
 Add to the ML-specific brainstorming flow (in the "Confirming validation scope" section):
 

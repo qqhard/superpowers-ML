@@ -82,7 +82,7 @@ If the Implementer's fix modifies more than 50 lines of code, the fix is conside
 
 ## Integration
 
-- **spml:brainstorming** — Defines validation scope (which levels, baselines, data flow choice)
+- **spml:ml-brainstorming** — Defines validation scope (which levels, baselines, data flow choice)
 - **spml:subagent-dev** — Orchestrates the VP as review stages
 - **spml:diagnostics** — Triggered on failure for root cause analysis
 - **spml:experiment-planning** — Each subtask specifies which levels apply

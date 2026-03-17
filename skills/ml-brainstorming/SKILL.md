@@ -1,5 +1,5 @@
 ---
-name: brainstorming
+name: ml-brainstorming
 description: Use before any ML work - designing experiments, building models, preparing datasets, or optimizing training. Explores experiment design, collects context, and confirms validation scope before implementation.
 ---
 
