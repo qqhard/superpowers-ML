@@ -19,7 +19,7 @@ Three changes to `skills/watchdog/SKILL.md`:
 
 ### 1. New Hard Gate: Sleep Loop Mechanism
 
-Add a new `<HARD-GATE>` block after the "When to Use" section and before the "Operating Modes" section, ensuring all three modes (Monitor, Guardian, Autonomous) are bound by it.
+Add a new `<HARD-GATE>` block after the "Overview" section and before "When to Use", matching the placement convention of all other skills (diagnostics, training-handoff, verification, brainstorming).
 
 ```markdown
 <HARD-GATE>
