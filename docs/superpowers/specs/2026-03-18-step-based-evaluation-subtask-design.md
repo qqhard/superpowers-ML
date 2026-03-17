@@ -92,15 +92,15 @@ An integration subtask is not required as a separate item if the evaluation subt
 
 ### Required Plan Fields
 
-Any training plan that includes a meaningful evaluation phase must explicitly state:
+Any training plan with a validation or evaluation phase must explicitly state:
 
 - **Evaluation cadence:** step-based, e.g. `every 500 steps`
 - **Evaluation scope:** default `full validation`, or an explicit override
-- **Evaluation entry modes:** checkpoint-based, in-memory, or both
+- **Evaluation entry modes:** both checkpoint-based and in-memory, with one shared evaluator core
 - **Expected observability:** progress bar, phase messages, and summary output
 - **Failure handling expectations:** what happens if checkpoint load, metric aggregation, or dataloader setup fails
 
-If a plan says only "run validation" without cadence, entry mode, or observability requirements, the plan is incomplete.
+If a plan says only "run validation" without cadence, both entry modes, or observability requirements, the plan is incomplete.
 
 ## Evaluation Subtask Contract
 
@@ -190,6 +190,7 @@ Plans should fail review if they:
 
 - omit an evaluation subtask
 - omit step-based cadence
+- omit either required evaluation entry mode
 - hide evaluation inside "trainer implementation"
 - define only final-epoch evaluation by default
 - do not specify evaluation progress visibility
