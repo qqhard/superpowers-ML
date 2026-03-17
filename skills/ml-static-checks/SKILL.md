@@ -1,9 +1,9 @@
 ---
-name: vp-static-checks
+name: ml-static-checks
 description: Use when reviewing ML code for static correctness — dispatched after Spec Review and Code Quality Review in the subagent-dev workflow
 ---
 
-# L0: VP Static Checks
+# L0: ML Static Checks
 
 ## Overview
 
@@ -19,7 +19,7 @@ A specialized static-analysis subagent that checks ML code correctness and train
 
 ## How It Works
 
-1. Orchestrator dispatches `vp-static-checks` agent (defined in `agents/vp-static-checks.md`)
+1. Orchestrator dispatches `ml-static-checks` agent (defined in `agents/ml-static-checks.md`)
 2. Agent reads all changed files
 3. Agent evaluates each checklist item's applicability condition
 4. For applicable items: verify the code meets the requirement

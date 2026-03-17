@@ -231,7 +231,7 @@ Record this in the plan document or a separate experiment log.
 
 - **spml:experiment-planning** — Creates the plan this skill executes
 - **spml:validation-pyramid** — Defines the 3-level VP orchestration
-- **spml:vp-static-checks** — L0 static analysis (dispatched as subagent after quality review)
+- **spml:ml-static-checks** — L0 static analysis (dispatched as subagent after quality review)
 - **spml:ml-runtime-validator** — L1 runtime validation (orchestrator invokes after L0)
 - **spml:ml-e2e-validator** — L2 E2E pipeline validation (orchestrator invokes after L1)
 - **spml:diagnostics** — Called when VP check fails

@@ -13,7 +13,7 @@ Run training for a few minutes, collecting performance and training health metri
 
 ## When to Use
 
-- After L0 (spml:vp-static-checks) passes
+- After L0 (spml:ml-static-checks) passes
 - Invoked by the orchestrator in `spml:subagent-dev`, not by the Implementer directly
 - Skip only if explicitly marked "skip L1" in the experiment design doc
 
@@ -132,6 +132,6 @@ Uses the shared fix loop from `spml:validation-pyramid`:
 
 - **spml:subagent-dev** — invokes this as a validation stage
 - **spml:validation-pyramid** — L1 in the 3-level pyramid
-- **spml:vp-static-checks** — must pass before L1 runs
+- **spml:ml-static-checks** — must pass before L1 runs
 - **spml:ml-e2e-validator** — next level after L1 passes
 - **spml:diagnostics** — triggered on failure for root cause analysis

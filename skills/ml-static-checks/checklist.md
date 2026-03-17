@@ -48,4 +48,4 @@ When a new common ML agent mistake is identified:
 1. Add it to the appropriate tier (Mandatory or Advisory)
 2. Define a clear applicability condition
 3. Describe what to verify in specific, actionable terms
-4. Update the agent definition in `agents/vp-static-checks.md` to match
+4. Update the agent definition in `agents/ml-static-checks.md` to match
