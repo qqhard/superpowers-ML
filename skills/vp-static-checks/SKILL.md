@@ -1,13 +1,13 @@
 ---
-name: ml-code-reviewer
+name: vp-static-checks
 description: Use when reviewing ML code for static correctness — dispatched after Spec Review and Code Quality Review in the subagent-dev workflow
 ---
 
-# L0: ML Static Analysis (ML Code Reviewer)
+# L0: VP Static Checks
 
 ## Overview
 
-A specialized code-reviewer subagent that checks ML-specific static correctness. Runs after standard Spec Review and Code Quality Review pass. Catches configuration errors, device mismatches, precision problems, and optimization oversights — issues that ML agents commonly introduce and that don't require runtime to detect.
+A specialized static-analysis subagent that checks ML code correctness and training observability. Runs after standard Spec Review and Code Quality Review pass. Catches configuration errors, device mismatches, precision problems, and optimization oversights — issues that ML agents commonly introduce and that don't require runtime to detect.
 
 **This is a RIGID skill.** Follow the checklist exactly. Don't skip applicable checks.
 
@@ -19,7 +19,7 @@ A specialized code-reviewer subagent that checks ML-specific static correctness.
 
 ## How It Works
 
-1. Orchestrator dispatches `ml-code-reviewer` agent (defined in `agents/ml-code-reviewer.md`)
+1. Orchestrator dispatches `vp-static-checks` agent (defined in `agents/vp-static-checks.md`)
 2. Agent reads all changed files
 3. Agent evaluates each checklist item's applicability condition
 4. For applicable items: verify the code meets the requirement
@@ -27,8 +27,8 @@ A specialized code-reviewer subagent that checks ML-specific static correctness.
 
 ## Severity Tiers
 
-- **Mandatory checks (1-6):** Failure is Critical — blocks progress, Implementer must fix
-- **Advisory checks (7-18):** Failure is Warning — reported but does not block progress
+- **Mandatory checks (1-6, 19-20, 24):** Failure is Critical — blocks progress, Implementer must fix
+- **Advisory checks (7-18, 21-23):** Failure is Warning — reported but does not block progress
 
 ## Fix Loop
 
