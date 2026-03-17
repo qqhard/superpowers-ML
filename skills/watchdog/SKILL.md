@@ -11,6 +11,27 @@ Active shepherd for long-running ML tasks. Periodically reads training logs, det
 
 **Core principle:** Keep training running. The Watchdog classifies problems into three tiers and responds with the minimum intervention needed — restart for environment crashes, parameter adjustment for simple issues, and sub-agent delegation for complex problems.
 
+<HARD-GATE>
+## Monitoring Loop Mechanism
+
+You MUST use the Bash tool to execute `sleep <seconds>` as the ONLY way to wait between checks.
+
+After each sleep returns, immediately proceed to the next check — do NOT wait for user input.
+
+**Prohibited:**
+- Outputting "I'll check in N minutes" and then stopping
+- Writing a standalone monitoring/watchdog script that runs its own loop or scheduling (Python, shell, or any other). Inline one-liners for log parsing are fine.
+- Using /loop or any external scheduling mechanism
+- Asking the user to remind you to check
+
+**Required execution pattern:**
+1. Bash tool: `sleep <interval>`  (see Monitoring Loop step 1 for interval values)
+2. Bash tool: `tail -20 <log_file>`  (read latest log lines)
+3. Analyze output, report status
+4. If anomaly → diagnose and act per operating mode
+5. Go to step 1
+</HARD-GATE>
+
 ## When to Use
 
 - User has pasted a Watchdog prompt from training-handoff
