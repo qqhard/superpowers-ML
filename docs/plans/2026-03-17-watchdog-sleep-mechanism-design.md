@@ -19,7 +19,7 @@ Three changes to `skills/watchdog/SKILL.md`:
 
 ### 1. New Hard Gate: Sleep Loop Mechanism
 
-Add a new `<HARD-GATE>` block before the Operating Modes section, ensuring all three modes (Monitor, Guardian, Autonomous) are bound by it.
+Add a new `<HARD-GATE>` block after the "When to Use" section and before the "Operating Modes" section, ensuring all three modes (Monitor, Guardian, Autonomous) are bound by it.
 
 ```markdown
 <HARD-GATE>
@@ -31,12 +31,12 @@ After each sleep returns, immediately proceed to the next check — do NOT wait 
 
 **Prohibited:**
 - Outputting "I'll check in N minutes" and then stopping
-- Writing a monitoring/watchdog script (Python, shell, or any other)
+- Writing a standalone monitoring/watchdog script that runs its own loop or scheduling (Python, shell, or any other). Inline one-liners for log parsing are fine.
 - Using /loop or any external scheduling mechanism
 - Asking the user to remind you to check
 
 **Required execution pattern:**
-1. Bash tool: `sleep 120`  (or appropriate interval)
+1. Bash tool: `sleep <interval>`  (see Monitoring Loop step 1 for interval values)
 2. Bash tool: `tail -20 <log_file>`  (read latest log lines)
 3. Analyze output, report status
 4. If anomaly → diagnose and act per operating mode
@@ -61,27 +61,31 @@ loop {
        b. No new lines → Bash tool: `ps aux | grep <training_script>`
           - Process dead → read exit code → classify problem tier → act
           - Process alive → compare silence duration vs step baseline
+            - Startup grace period (first 15 min or until 3 logged steps): do not classify silence as hang
             - Within baseline → continue (go to step 1)
             - Exceeds 10x baseline → kill process → classify as Tier 1
     4. Analyze metrics:
        a. Sanity: NaN, Inf, negative loss, zero gradient
        b. Baseline comparison vs VP ranges in experiment-context.md
        c. Trend: loss decreasing? grad_norm stable?
+       d. Anomaly patterns: spike, plateau, divergence, sudden shift
     5. Classify:
-       - NORMAL → output one-line progress, go to step 1
+       - NORMAL → update step time baseline, output one-line progress, go to step 1
        - ANOMALY → diagnose, classify tier, act per operating mode, record in experiment-context.md
        - COMPLETE → enter completion mode
+    6. After any restart → enter intensive observation (60s interval, 5 cycles)
 }
 ```
 
 ### 3. Delete "Polling and Hang Detection" Section
 
-The current standalone section (lines 129-142) is redundant — its content is now covered by:
+The current standalone "Polling and Hang Detection" section is redundant — its content is now covered by:
 - Sleep intervals → Hard Gate + Monitoring Loop step 1
 - Hang detection → Monitoring Loop step 3b
-- Step baseline → retained in Monitoring Loop context
+- Startup grace period → Monitoring Loop step 3b
+- Step baseline → Monitoring Loop step 5 (NORMAL updates baseline)
 
-The one-liner about `sleep` on line 136 ("Must use Bash tool `sleep` to implement intervals") is superseded by the Hard Gate.
+The sleep instruction ("Must use Bash tool `sleep` to implement intervals") is superseded by the Hard Gate.
 
 ## Non-Changes
 
