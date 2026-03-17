@@ -1,6 +1,6 @@
 ---
 name: subagent-dev
-description: Use when executing ML experiment plans with subagents - adapts subagent-driven-development with Validation Pyramid integration, experiment-aware reviews, and conclusion recording
+description: Use when executing ML experiment plans with subagents - adapts subagent-driven-development with 3-level Validation Pyramid (L0 static → L1 runtime → L2 E2E), experiment-aware reviews, and conclusion recording
 ---
 
 # ML Subagent-Driven Development
@@ -10,10 +10,15 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 **Core principle:** Fresh subagent per subtask + experiment-aware review + conclusion recording = correct implementations with trustworthy conclusions.
 
 **Adapted from:** subagent-driven-development. Key changes:
-- Implementer runs Validation Pyramid after implementation (not just unit tests)
+- Validation Pyramid runs AFTER code reviews as 3 separate orchestrator-dispatched stages (L0 → L1 → L2)
+- L0: ML Code Reviewer subagent checks static ML correctness
+- L1: Runtime validation (minutes-level training run with metrics collection)
+- L2: E2E pipeline validation (1-5 steps per stage)
 - Spec reviewer checks experiment design compliance (hypothesis, variable control)
-- Quality reviewer checks Validation Pyramid results + code quality
+- Quality reviewer checks code quality (VP results checked by orchestrator, not quality reviewer)
 - Each subtask records: metric data, conclusion, anomaly log
+- Shared fix loop: fail → Implementer fixes → re-run level → 5 failures → user intervention
+- Large fix rollback: fix > 50 lines → re-run all prior reviews + VP levels
 
 ## When to Use
 
@@ -30,15 +35,20 @@ digraph process {
     subgraph cluster_per_subtask {
         label="Per Subtask";
         "Dispatch ML implementer subagent" [shape=box];
-        "Implementer: unit tests + implement + Validation Pyramid" [shape=box];
-        "Validation Pyramid passed?" [shape=diamond];
-        "Trigger diagnostics" [shape=box style=filled fillcolor=lightyellow];
+        "Implementer: unit tests + implement" [shape=box];
         "Dispatch ML spec reviewer" [shape=box];
         "Spec reviewer: experiment design compliance?" [shape=diamond];
         "Implementer fixes spec gaps" [shape=box];
         "Dispatch ML quality reviewer" [shape=box];
-        "Quality reviewer: VP results + code quality?" [shape=diamond];
+        "Quality reviewer: code quality?" [shape=diamond];
         "Implementer fixes quality issues" [shape=box];
+        "L0: ML Code Reviewer" [shape=box style=filled fillcolor=lightyellow];
+        "L0 passed?" [shape=diamond];
+        "L1: ML Runtime Validator" [shape=box style=filled fillcolor=lightyellow];
+        "L1 passed?" [shape=diamond];
+        "L2: ML E2E Validator" [shape=box style=filled fillcolor=lightyellow];
+        "L2 passed?" [shape=diamond];
+        "Implementer fixes VP issues" [shape=box];
         "Record conclusion" [shape=box style=filled fillcolor=lightgreen];
     }
 
@@ -47,19 +57,26 @@ digraph process {
     "Invoke verification" [shape=box style=filled fillcolor=lightblue];
 
     "Read plan, extract subtasks, create TodoWrite" -> "Dispatch ML implementer subagent";
-    "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement + Validation Pyramid";
-    "Implementer: unit tests + implement + Validation Pyramid" -> "Validation Pyramid passed?";
-    "Validation Pyramid passed?" -> "Dispatch ML spec reviewer" [label="yes"];
-    "Validation Pyramid passed?" -> "Trigger diagnostics" [label="no"];
-    "Trigger diagnostics" -> "Implementer: unit tests + implement + Validation Pyramid" [label="fix and retry"];
+    "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement";
+    "Implementer: unit tests + implement" -> "Dispatch ML spec reviewer";
     "Dispatch ML spec reviewer" -> "Spec reviewer: experiment design compliance?";
     "Spec reviewer: experiment design compliance?" -> "Implementer fixes spec gaps" [label="no"];
     "Implementer fixes spec gaps" -> "Dispatch ML spec reviewer" [label="re-review"];
     "Spec reviewer: experiment design compliance?" -> "Dispatch ML quality reviewer" [label="yes"];
-    "Dispatch ML quality reviewer" -> "Quality reviewer: VP results + code quality?";
-    "Quality reviewer: VP results + code quality?" -> "Implementer fixes quality issues" [label="no"];
+    "Dispatch ML quality reviewer" -> "Quality reviewer: code quality?";
+    "Quality reviewer: code quality?" -> "Implementer fixes quality issues" [label="no"];
     "Implementer fixes quality issues" -> "Dispatch ML quality reviewer" [label="re-review"];
-    "Quality reviewer: VP results + code quality?" -> "Record conclusion" [label="yes"];
+    "Quality reviewer: code quality?" -> "L0: ML Code Reviewer" [label="yes"];
+    "L0: ML Code Reviewer" -> "L0 passed?";
+    "L0 passed?" -> "L1: ML Runtime Validator" [label="yes"];
+    "L0 passed?" -> "Implementer fixes VP issues" [label="no"];
+    "L1: ML Runtime Validator" -> "L1 passed?";
+    "L1 passed?" -> "L2: ML E2E Validator" [label="yes"];
+    "L1 passed?" -> "Implementer fixes VP issues" [label="no"];
+    "L2: ML E2E Validator" -> "L2 passed?";
+    "L2 passed?" -> "Record conclusion" [label="yes"];
+    "L2 passed?" -> "Implementer fixes VP issues" [label="no"];
+    "Implementer fixes VP issues" -> "L0: ML Code Reviewer" [label="re-run failed level\n(fix > 50 lines:\nrollback to spec review)"];
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
     "More subtasks?" -> "Invoke verification" [label="no"];
@@ -92,30 +109,17 @@ or toolkit. Validation scripts observe core code externally.
 2. **Run unit tests** — verify they fail (TDD red)
 3. **Implement core code** (no test/validation imports)
 4. **Run unit tests** — verify they pass (TDD green)
-5. **Write validation scripts** (may import from toolkit, use hooks/wrappers)
-6. **Run Validation Pyramid** — execute each enabled layer:
-   [List exact commands from plan with expected output ranges]
-7. **Record results** — actual metrics for each VP layer
-8. **Commit** with message: "experiment: [subtask description]"
+5. **Self-review** — check your own code before submission
+6. **Commit** with message: "experiment: [subtask description]"
 
-## Validation Pyramid Execution
-
-For each enabled layer, run the check and report:
-- L0: [exact command] — Expected: [thresholds from plan]
-- L1: [exact command] — Expected: [thresholds from plan]
-- L2: [exact command] — Expected: [thresholds from plan]
-- L3: [exact command] — Expected: [thresholds from plan]
-
-If ANY layer fails: STOP. Report which layer failed with actual vs expected.
-Do NOT proceed to the next layer.
+Note: Validation Pyramid (L0/L1/L2) is run by the orchestrator AFTER your code passes reviews. You do NOT run VP yourself.
 
 ## Report Format
 
 - What you implemented
 - Unit test results
-- Validation Pyramid results per layer (actual numbers)
 - Files changed
-- Any anomalies observed
+- Any concerns or questions
 ```
 
 ## ML Spec Reviewer Prompt
@@ -171,12 +175,6 @@ You are reviewing implementation quality for a completed ML subtask.
 
 ## Your Job
 
-**Validation Pyramid review:**
-- Did all enabled VP layers actually pass? (check numbers, not just claims)
-- Are the metrics within expected ranges from the plan?
-- Were any layers skipped that shouldn't have been?
-- Any anomalies in the metrics (even if "passing")?
-
 **Code quality (same as standard review):**
 - Clean, maintainable code?
 - Proper error handling at system boundaries?
@@ -230,6 +228,9 @@ Record this in the plan document or a separate experiment log.
 ## Integration
 
 - **spml:experiment-planning** — Creates the plan this skill executes
-- **spml:validation-pyramid** — Orchestrates VP execution within subtasks
+- **spml:validation-pyramid** — Defines the 3-level VP orchestration
+- **spml:ml-code-reviewer** — L0 static analysis (dispatched as subagent after quality review)
+- **spml:ml-runtime-validator** — L1 runtime validation (orchestrator invokes after L0)
+- **spml:ml-e2e-validator** — L2 E2E pipeline validation (orchestrator invokes after L1)
 - **spml:diagnostics** — Called when VP check fails
 - **spml:verification** — Called after all subtasks complete

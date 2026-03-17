@@ -1,17 +1,17 @@
 ---
 name: validation-pyramid
-description: Use when validating ML training code correctness - orchestrates layered checks from engineering efficiency through end-to-end pipeline, extending TDD for ML workflows
+description: Use when validating ML training code correctness - orchestrates 3-level checks from static analysis through end-to-end pipeline, integrated into the subagent-dev review workflow
 ---
 
 # Validation Pyramid
 
 ## Overview
 
-The Validation Pyramid extends TDD to ML workflows. Each layer follows the same RED-GREEN-REFACTOR rhythm: write the validation script first, watch it fail, implement until it passes. Since every layer runs in minutes on small data, TDD's fast feedback loop applies naturally. The Pyramid runs layered checks from cheap/fast (L0) to expensive/slow (L3), catching implementation errors before they waste GPU hours.
+The Validation Pyramid ensures ML code is correct before committing to expensive training. Three levels of validation, integrated into the subagent-driven-development workflow after standard code reviews. Each level catches a different class of errors, from cheap/fast (L0) to more thorough (L2).
 
-**Core principle:** In ML, code running without errors does NOT mean it's correct. The Validation Pyramid ensures the process is correct, so you can trust that "not working" means the strategy is ineffective — not that the implementation is wrong.
+**Core principle:** In ML, code running without errors does NOT mean it's correct. The Validation Pyramid catches implementation errors so you can trust that "not working" means the strategy is ineffective — not that the code is wrong.
 
-**This is a RIGID skill.** Follow exactly. Don't skip layers. Don't adapt away discipline.
+**This is a RIGID skill.** Follow exactly. Don't skip levels. Don't adapt away discipline.
 
 ## When to Use
 
@@ -19,135 +19,70 @@ The Validation Pyramid extends TDD to ML workflows. Each layer follows the same 
 - During each subtask in an experiment plan
 - When diagnostics identifies an issue and you need to re-validate after fixing
 
-## Orchestration Logic
+## Architecture
 
-```dot
-digraph validation_pyramid {
-    "Read validation scope from design doc" [shape=box];
-    "L0: Engineering Efficiency" [shape=box];
-    "L0 passed?" [shape=diamond];
-    "L1: Process Metrics" [shape=box];
-    "L1 passed?" [shape=diamond];
-    "L2: Overfitting Test" [shape=box];
-    "L2 passed?" [shape=diamond];
-    "L3: End-to-End Pipeline" [shape=box];
-    "L3 passed?" [shape=diamond];
-    "All enabled layers passed" [shape=doublecircle];
-    "Trigger diagnostics" [shape=box, style=filled, fillcolor="#ffcccc"];
+The VP runs as 3 stages after standard Superpowers code reviews in the `spml:subagent-dev` workflow:
 
-    "Read validation scope from design doc" -> "L0: Engineering Efficiency";
-    "L0: Engineering Efficiency" -> "L0 passed?";
-    "L0 passed?" -> "L1: Process Metrics" [label="yes"];
-    "L0 passed?" -> "Trigger diagnostics" [label="no"];
-    "L1: Process Metrics" -> "L1 passed?";
-    "L1 passed?" -> "L2: Overfitting Test" [label="yes"];
-    "L1 passed?" -> "Trigger diagnostics" [label="no"];
-    "L2: Overfitting Test" -> "L2 passed?";
-    "L2 passed?" -> "L3: End-to-End Pipeline" [label="yes"];
-    "L2 passed?" -> "Trigger diagnostics" [label="no"];
-    "L3: End-to-End Pipeline" -> "L3 passed?";
-    "L3 passed?" -> "All enabled layers passed" [label="yes"];
-    "L3 passed?" -> "Trigger diagnostics" [label="no"];
-}
+```
+Subagent-Driven-Development (per task)
+├─ Implementer writes code
+├─ Spec Reviewer (unchanged)
+├─ Code Quality Reviewer (unchanged)
+├─ L0: ML Code Reviewer (spml:ml-code-reviewer)       — static analysis
+├─ L1: ML Runtime Validator (spml:ml-runtime-validator) — minutes-level run
+├─ L2: ML E2E Validator (spml:ml-e2e-validator)        — pipeline flow check
+└─ All pass → task complete
 ```
 
-**Rules:**
-1. Execute layers in order: L0 -> L1 -> L2 -> L3
-2. Skip layers marked as "skip" in design doc
-3. Each layer must pass before proceeding to next
-4. Failure at any layer -> trigger **spml:diagnostics**
-5. After diagnostics fix -> re-run from the failed layer, not from L0
+Execution order: L0 must pass before L1. L1 must pass before L2.
 
-## TDD Rhythm: RED → GREEN → REFACTOR
+## Level Summary
 
-Every Pyramid layer follows TDD's core cycle:
+| Level | Skill | What it catches | Duration |
+|-------|-------|----------------|----------|
+| L0 | spml:ml-code-reviewer | Static config errors (device mismatch, precision, optimizer, DataLoader) | Seconds (code review) |
+| L1 | spml:ml-runtime-validator | Performance anomalies (low MFU, gradient NaN, loss not decreasing) | ~5 minutes |
+| L2 | spml:ml-e2e-validator | Pipeline flow errors (shape mismatch, checkpoint bug, eval crash) | ~2 minutes |
 
-### RED — Write validation script, watch it fail
+## Dispatch Model
 
-Write the validation assertion BEFORE writing or optimizing implementation code. Run it. It must fail. Failure proves the validation script has discriminating power.
+- **L0** runs as a **subagent** (the ml-code-reviewer agent, dispatched like spec-reviewer and code-quality-reviewer)
+- **L1 and L2** run as **skills invoked by the orchestrator** (execution tasks, not review tasks)
 
-```python
-# Example: L0 MFU check
-def test_mfu_meets_target():
-    result = calculate_mfu(model, input_shape, step_time)
-    assert result['mfu'] >= 0.4, f"MFU {result['mfu']} below target 0.4"
-# Run -> FAIL (MFU is 0.15, code not optimized yet)
+When any level fails, the orchestrator resumes the **same Implementer subagent** to fix the issue. After fixing, re-run only the failed level.
+
+## Shared Fix Loop
+
+All three levels share one mechanism. Each level has its own retry counter (resets when advancing to the next level):
+
+```
+Run validation
+    → Pass → proceed to next level (reset counter)
+    → Fail → send feedback to Implementer with specific issues
+        → Implementer fixes → re-run this level
+        → 5 consecutive failures at this level → pause, notify user
 ```
 
-### GREEN — Implement/optimize until validation passes
+Timeout counts as a failure. Timeouts and metric failures share the same per-level retry counter.
 
-Write or optimize implementation code. Re-run validation each iteration. Multiple iterations are expected.
+## Large Fix Rollback Rule
 
-### REFACTOR — Clean up, keep validation passing
-
-Clean up implementation code. Validation must stay green.
-
-### Per-layer RED examples
-
-| Layer | RED (write first) | GREEN (make it pass) |
-|---|---|---|
-| L0 Engineering Efficiency | `assert mfu >= target`, `assert fa_backend_enabled` | Optimize kernel selection, enable FA, adjust batch size |
-| L1 Process Metrics | `assert no_gradient_nan()`, `assert attention_entropy > threshold` | Fix initialization, adjust lr, fix attention mask |
-| L2 Overfitting Test | `assert loss_monotonically_decreasing(losses)` | Fix model/loss implementation bugs |
-| L3 E2E Pipeline | `assert pipeline_completes_without_error()` | Fix data flow, shape mismatches |
-
-### Validation passes immediately?
-
-If the validation script passes on the first run, investigate:
-- Is the threshold too lenient?
-- Is the implementation already correct?
-- Is the validation script actually testing what you intend?
-
-Just like in TDD: a test passing immediately means you may not be testing the right thing. Verify the validation has discriminating power before proceeding.
-
-## How to Use
-
-1. Read the validation scope from the brainstorm design doc
-2. For each enabled layer, invoke the corresponding vp-* skill:
-   - L0: **spml:vp-engineering-efficiency**
-   - L1: **spml:vp-process-metrics**
-   - L2: **spml:vp-overfitting-test**
-   - L3: **spml:vp-e2e-pipeline**
-3. The vp-* skill tells you what to check, what tools to use, how to interpret results
-4. Record pass/fail for each layer
-
-## Dynamic Selection Within Layers
-
-Each layer has universal checks and architecture-specific checks. See `decision-tree.md` for which sub-checks to load based on architecture type.
-
-## Hierarchical Decomposition on Failure
-
-When a layer fails:
-```
-Overall metric not meeting target
-    -> Decompose into substructures (defined in brainstorm)
-    -> Validate each substructure with mock data
-    -> Locate bottleneck substructure
-    -> Drill to operator level if needed
-```
-
-## Three Granularity Levels
-
-| Granularity | When | Method |
-|-------------|------|--------|
-| Function/operator | Custom loss, custom layer, single operator | Traditional unit test, deterministic |
-| Module/layer | Network substructure efficiency | Mock data, per-segment profiling |
-| Experiment | Full L0-L3 pyramid | Training process metrics |
-
-## Quick Reference
-
-See `layer-overview.md` for a compact table of all layers, metrics, and thresholds.
+If the Implementer's fix modifies more than 50 lines of code, the fix is considered a substantial change. Roll back and re-run all previous stages: Spec Review → Code Quality Review → L0 (and any passed levels before the current one). This prevents large fixes from introducing new problems.
 
 ## Red Flags
 
-- Skipping a layer because "it's probably fine"
-- Running L2 before L0/L1 pass
-- Ignoring a failed layer and proceeding
+- Skipping a level because "it's probably fine"
+- Running L1 before L0 passes
+- Ignoring a failed level and proceeding
 - Not re-running after a fix
 - "I'll validate later" — validate NOW
+- Letting a timeout run instead of killing the process
+- Accepting "pass" without checking actual numbers
+- Fix > 50 lines without rollback
 
 ## Integration
 
-- **spml:brainstorming** — Defines validation scope
-- **spml:diagnostics** — Triggered on failure
-- **spml:experiment-planning** — Each subtask specifies which layers apply
+- **spml:brainstorming** — Defines validation scope (which levels, baselines, data flow choice)
+- **spml:subagent-dev** — Orchestrates the VP as review stages
+- **spml:diagnostics** — Triggered on failure for root cause analysis
+- **spml:experiment-planning** — Each subtask specifies which levels apply
