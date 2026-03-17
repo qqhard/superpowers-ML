@@ -14,10 +14,11 @@ For long-running ML tasks (hours to days), this is impractical. Environment inst
 | Intervention model | Three-tier classification with mode-controlled execution | Matches natural problem severity hierarchy |
 | Restart mechanism | Direct `bash` execution of training script | Training scripts already support checkpoint resume; no indirection needed |
 | Complex problem handling (Autonomous mode) | Spawn sub-agent running training-resume flow | Protects Watchdog's context window from complex debugging |
-| Environment retry limit | No limit | Environment problems are environment problems; keep retrying |
+| Environment retry limit | No limit, but notify user after repeated crashes | Environment problems are environment problems; keep retrying, but keep human informed |
 | Mode selection timing | Configurable at training-handoff or Watchdog startup (startup can override) | Flexibility without complexity |
 | VP after auto-fix | Not required | VP already validated code during initial development; runtime fixes are incremental |
 | Log format | Human-readable text (not JSONL) | LLM Watchdog parses text natively; humans can read logs directly; simpler training scripts |
+| Execution mode | Always combined (Watchdog can launch/restart training) | Active intervention requires process control; separated mode is incompatible with Guardian/Autonomous |
 
 ## Design
 
@@ -45,7 +46,7 @@ Watchdog is an LLM — it uses judgment, not rigid rules. The following are guid
 - Disk full
 - SIGKILL / SIGTERM from external source
 
-Action: Restart training script from latest checkpoint. No code changes.
+Action: Restart training script from latest checkpoint. No code changes. No retry limit — keep restarting. After repeated crashes (e.g., 5+ in a short period), notify the user that environment instability is persisting but continue retrying.
 
 **Tier 2: Simple parameter problems** (needs numeric/config adjustment, no logic change)
 
@@ -108,12 +109,19 @@ Training complete → Write completion-prompt.md → Notify user
 
 ### 4. Polling and Hang Detection
 
-**Log as heartbeat:** Training scripts output one line per step/epoch with key metrics (loss, lr, grad norm, etc.). Each new log line is a heartbeat signal.
+**Log as heartbeat:** Training scripts output one line per step/epoch with key metrics. Each new log line is a heartbeat signal. The format is human-readable text — no JSONL required. Example:
+
+```
+step=100 loss=0.823 lr=0.0001 grad_norm=1.42 mfu=0.45 mem_mb=24531
+step=101 loss=0.819 lr=0.0001 grad_norm=1.38 mfu=0.44 mem_mb=24528
+```
+
+The exact format is flexible (key=value, tabular, or any readable layout). Training-handoff specifies which metrics to include based on what VP L1 validated. Watchdog, as an LLM, parses any consistent text format. Training scripts should also print to terminal (tqdm or similar) for human monitoring.
 
 **Polling interval:**
 - Normal: 2–5 minutes (sampling, not every step)
 - Post-anomaly / post-restart: 1 minute for 5 cycles, then back to normal
-- Watchdog must use `sleep` to implement intervals, ensuring it runs continuously and does not stall
+- Watchdog must use Bash tool `sleep` to implement intervals, ensuring it runs continuously and does not stall
 
 **Hang detection:** Watchdog observes step intervals during normal monitoring and builds a baseline. If no new log line appears for significantly longer than the baseline (e.g., 10x the typical step duration), and the process is still alive, Watchdog judges the process as hung. It then kills the process and classifies the problem:
 - Likely environment (deadlock, NCCL hang) → Tier 1, restart
@@ -140,9 +148,11 @@ When Watchdog identifies a Tier 3 problem in Autonomous mode:
 
 1. Write diagnosis to experiment-context.md
 2. Generate recovery-prompt.md (same format as current design)
-3. Spawn sub-agent with instructions: read recovery-prompt.md, follow training-resume flow, fix issue, restart training
+3. Spawn sub-agent using Claude Code's Agent tool with instructions: read recovery-prompt.md, follow training-resume flow, fix issue, restart training
 4. Sub-agent does NOT run VP — trusts that initial VP validation covers code correctness
-5. Watchdog waits for sub-agent to complete, then resumes monitoring loop
+5. Watchdog waits for the Agent tool call to return, then resumes monitoring loop
+
+Note: This introduces a Claude Code dependency for Autonomous mode. Monitor and Guardian modes remain framework-agnostic (only require bash access).
 
 ### 8. Logging and Audit Trail
 
@@ -159,20 +169,22 @@ This provides a complete history for the user to review and for training-resume 
 
 | Skill | Change scope |
 |-------|-------------|
-| `skills/watchdog/SKILL.md` | **Rewrite** — Remove read-only constraint, add three-tier classification, execution actions, mode control, human-readable log format |
-| `skills/training-handoff/SKILL.md` | **Modify** — Change log requirements from JSONL to human-readable; add `watchdog_mode` field to experiment-context.md template; update watchdog-prompt.md template |
-| `skills/training-resume/SKILL.md` | **Minor update** — Confirm behavior when spawned by Watchdog sub-agent (no VP, fix and restart) |
+| `skills/watchdog/SKILL.md` | **Rewrite** — Remove read-only constraint, add three-tier classification, execution actions, mode control, human-readable log format. Remove separated/combined execution mode distinction (now always combined). |
+| `skills/training-handoff/SKILL.md` | **Significant rewrite** — Change log requirements from JSONL to human-readable; add `watchdog_mode` field to experiment-context.md template; rewrite embedded watchdog-prompt.md template (currently says "DO NOT modify code, adjust hyperparameters" which contradicts new design). Remove separated execution mode. |
+| `skills/training-resume/SKILL.md` | **Modify** — Update `metrics.jsonl` references to human-readable log file; add behavior for when spawned by Watchdog sub-agent (no VP, fix and restart) |
 
 ### Unaffected skills
 
 - `skills/diagnostics/SKILL.md` — Diagnosis logic unchanged; training-resume invokes as needed
-- VP skills — Not affected
+- VP skills — Not directly affected by this spec
 - `skills/brainstorming/SKILL.md` — Not affected
 
-### Related spec adjustment
+### Related: VP logging & observability spec
 
-The VP logging & observability spec (`2026-03-17-vp-logging-observability-design.md`) references JSONL checks. Those checks should be updated to validate human-readable log format instead. This is a follow-up task, not part of this spec.
+The VP logging spec (`2026-03-17-vp-logging-observability-design.md`) defines L0 and L1 checks that reference structured log formats. Those checks need updating to validate human-readable log format. This is a follow-up task — the VP logging spec changes are out of scope for this spec but should be addressed before or during implementation.
 
-## Monitor Mode Compatibility
+## Execution Mode
 
-In Monitor mode, all intervention steps are replaced with: write diagnosis to experiment-context.md → generate recovery-prompt.md → notify user. This preserves backward compatibility with the original Watchdog behavior.
+The original Watchdog design offered "separated" (training runs independently, Watchdog only monitors) and "combined" (Watchdog launches training) modes. The new design **always operates in combined mode** — Watchdog must be able to launch and restart the training process. The separated/combined distinction is replaced by the monitor/guardian/autonomous mode system.
+
+Monitor mode preserves the _observation-only behavior_ of the original design (report but don't intervene), but still assumes Watchdog has access to the training process for liveness checks.
