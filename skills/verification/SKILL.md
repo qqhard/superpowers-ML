@@ -32,14 +32,13 @@ For each subtask, verify:
 - [ ] All enabled VP layers were executed (not skipped)
 - [ ] All enabled VP layers passed (check actual numbers, not claims)
 - [ ] Metric values are within expected ranges from the plan
-- [ ] No layers were added or removed without user approval
+- [ ] No levels were added or removed without user approval
 
 ```
 Subtask 1: [name]
-  L0 Engineering: ✅ MFU=0.45 (target ≥0.40)
-  L1 Process:     ✅ No NaN/Inf, gradient norm stable
-  L2 Overfit:     ✅ Loss < 0.01 after 8 epochs
-  L3 E2E:         ⏭️ Skipped (user decision in brainstorm)
+  L0 Static:   ✅ All mandatory checks passed
+  L1 Runtime:  ✅ MFU=0.45 (target ≥0.40), no NaN/Inf, loss decreasing
+  L2 E2E:      ✅ All 6 stages passed
 
 Subtask 2: [name]
   ...

@@ -27,7 +27,7 @@ Do NOT run full-scale data processing until:
 ## When NOT to Use
 
 - Dataset already exists and needs no processing
-- Training-time data loading performance issues (use L0 Engineering Efficiency)
+- Training-time data loading performance issues (use L1 ML Runtime Validator)
 - Data collection / crawling (separate concern)
 
 ## Checklist
