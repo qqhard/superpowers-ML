@@ -3,7 +3,7 @@
 Guide for using SPML with OpenAI Codex via native skill discovery.
 
 SPML extends `superpowers`; it does not replace it. Install `superpowers`
-first, then install SPML alongside it.
+first, then install SPML alongside it so Codex can discover both skill sets.
 
 ## Quick Install
 
@@ -22,11 +22,14 @@ Fetch and follow instructions from https://raw.githubusercontent.com/obra/superp
 
 ### Steps
 
-1. Install `superpowers` first:
+1. Install `superpowers` first by following the upstream Codex install guide:
+   <https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.codex/INSTALL.md>
+
+   That should leave you with:
    ```bash
    git clone https://github.com/obra/superpowers.git ~/.codex/superpowers
-   mkdir -p ~/.codex/skills
-   ln -s ~/.codex/superpowers/skills ~/.codex/skills/superpowers
+   mkdir -p ~/.agents/skills
+   ln -s ~/.codex/superpowers/skills ~/.agents/skills/superpowers
    ```
 
 2. Clone the SPML repo:
@@ -36,8 +39,8 @@ Fetch and follow instructions from https://raw.githubusercontent.com/obra/superp
 
 3. Create the skills symlink:
    ```bash
-   mkdir -p ~/.codex/skills
-   ln -s ~/.codex/spml/skills ~/.codex/skills/spml
+   mkdir -p ~/.agents/skills
+   ln -s ~/.codex/spml/skills ~/.agents/skills/spml
    ```
 
 4. Restart Codex.
@@ -47,40 +50,42 @@ Fetch and follow instructions from https://raw.githubusercontent.com/obra/superp
 Use junctions instead of symlinks:
 
 ```powershell
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\skills"
-cmd /c mklink /J "$env:USERPROFILE\.codex\skills\superpowers" "$env:USERPROFILE\.codex\superpowers\skills"
-cmd /c mklink /J "$env:USERPROFILE\.codex\skills\spml" "$env:USERPROFILE\.codex\spml\skills"
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills"
+cmd /c mklink /J "$env:USERPROFILE\.agents\skills\superpowers" "$env:USERPROFILE\.codex\superpowers\skills"
+cmd /c mklink /J "$env:USERPROFILE\.agents\skills\spml" "$env:USERPROFILE\.codex\spml\skills"
 ```
 
 ## How It Works
 
 Codex has native skill discovery. Keep each skill collection visible under
-`~/.codex/skills/` and Codex can discover the `SKILL.md` frontmatter at startup.
+`~/.agents/skills/` and Codex can discover the `SKILL.md` frontmatter at startup.
 
 ```
-~/.codex/skills/superpowers/ -> ~/.codex/superpowers/skills/
-~/.codex/skills/spml/ -> ~/.codex/spml/skills/
+~/.agents/skills/superpowers/ -> ~/.codex/superpowers/skills/
+~/.agents/skills/spml/ -> ~/.codex/spml/skills/
 ```
 
 `superpowers` provides the general software-development workflow.
-SPML provides the ML experiment workflow on top of that.
+SPML adds ML experiment workflow on top of it and continues to rely on
+`superpowers:*` skills for shared discipline such as TDD, planning,
+verification, code review, and development-branch handoff.
 
 ## Usage
 
 Skills are discovered automatically. Codex activates them when:
 - You mention a skill by name (e.g., "use brainstorming")
 - The task matches a skill's description
-- A bootstrap skill such as `using-superpowers` or `using-spml` directs Codex to use one
+- A bootstrap skill such as `using-superpowers` or `using-superpowers-ml` directs Codex to use one
 
 ### Personal Skills
 
-Create your own skills in `~/.codex/skills/`:
+Create your own skills in `~/.agents/skills/`:
 
 ```bash
-mkdir -p ~/.codex/skills/my-skill
+mkdir -p ~/.agents/skills/my-skill
 ```
 
-Create `~/.codex/skills/my-skill/SKILL.md`:
+Create `~/.agents/skills/my-skill/SKILL.md`:
 
 ```markdown
 ---
@@ -107,12 +112,12 @@ Skills update instantly through the symlinks.
 ## Uninstalling
 
 ```bash
-rm ~/.codex/skills/spml
+rm ~/.agents/skills/spml
 ```
 
 **Windows (PowerShell):**
 ```powershell
-Remove-Item "$env:USERPROFILE\.codex\skills\spml"
+Remove-Item "$env:USERPROFILE\.agents\skills\spml"
 ```
 
 Optionally delete the clone: `rm -rf ~/.codex/spml`
@@ -121,7 +126,7 @@ Optionally delete the clone: `rm -rf ~/.codex/spml`
 
 ### Skills not showing up
 
-1. Verify the symlinks: `ls -la ~/.codex/skills/superpowers ~/.codex/skills/spml`
+1. Verify the symlinks: `ls -la ~/.agents/skills/superpowers ~/.agents/skills/spml`
 2. Check skills exist: `ls ~/.codex/superpowers/skills ~/.codex/spml/skills`
 3. Restart Codex — skills are discovered at startup
 

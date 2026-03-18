@@ -39,9 +39,9 @@ Install `superpowers` first, then install SPML:
 ```bash
 git clone https://github.com/obra/superpowers.git ~/.codex/superpowers
 git clone https://github.com/qqhard/superpowers-ML.git ~/.codex/spml
-mkdir -p ~/.codex/skills
-ln -s ~/.codex/superpowers/skills ~/.codex/skills/superpowers
-ln -s ~/.codex/spml/skills ~/.codex/skills/spml
+mkdir -p ~/.agents/skills
+ln -s ~/.codex/superpowers/skills ~/.agents/skills/superpowers
+ln -s ~/.codex/spml/skills ~/.agents/skills/spml
 ```
 
 See [docs/README.codex.md](docs/README.codex.md) for the full Codex guide.
