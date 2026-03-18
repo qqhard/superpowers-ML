@@ -1,5 +1,15 @@
 # Superpowers Release Notes
 
+## v0.5.3 (2026-03-18)
+
+### Changed
+
+**Evaluation is now treated as a first-class subtask across the SPML workflow**
+
+Brainstorming, experiment planning, subagent execution, training handoff, and observability guidance now require evaluation to be designed explicitly instead of being treated as a final-epoch afterthought. The workflow now expects step-based evaluation cadence, `full validation` by default unless explicitly overridden, both checkpoint-based and in-memory evaluation entry modes, visible evaluation progress, and mode-aware runtime/error reporting.
+
+---
+
 ## v0.5.2 (2026-03-18)
 
 ### Fixed
