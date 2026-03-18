@@ -39,6 +39,7 @@ Before dispatching any implementer subagent, read the plan and fail fast if a tr
 - one shared evaluator core across both entry modes
 - evaluation progress visibility requirements
 - mode-aware failure-handling requirements at the evaluation boundary
+- runtime checks for cadence firing and evaluation mode reporting
 
 Do not treat these as advisory. Incomplete plans must be sent back for revision before implementation starts.
 
