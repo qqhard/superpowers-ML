@@ -57,6 +57,8 @@ The top-level directory name is flexible — use whatever fits the user's existi
 
 **Validation scope:** [Reference validation scope from brainstorm design doc — which levels enabled (L0/L1/L2), data flow choice, baselines, L2 step count]
 
+**Evaluation design:** [Whether evaluation is required, step-based cadence, default/full validation scope or explicit override, both entry modes, observability requirements, failure-handling expectations]
+
 **Architecture:** [2-3 sentences about approach]
 
 ---
@@ -97,6 +99,17 @@ Split by functional boundary (model, training loop, data pipeline), NOT by artif
 - Subtask 1: Rewrite model (tests + implementation)
 - Subtask 2: Rewrite training script (tests + implementation)
 
+If evaluation is part of the experiment, the plan should normally decompose into at least:
+- model core subtask
+- trainer subtask
+- evaluation subtask
+
+The evaluation subtask must cover both entry modes through one shared evaluator core:
+- standalone checkpoint-based evaluation
+- in-training evaluation from in-memory state
+
+Do not hide evaluation inside a generic trainer subtask. Trainer owns **when** evaluation fires. Evaluator owns **how** evaluation runs.
+
 ### Subtask Structure
 
 Each subtask goes through the Validation Pyramid.
@@ -108,6 +121,7 @@ Each subtask goes through the Validation Pyramid.
 **Implementation:** [What to change, which files]
 **Unit Tests:** [Which custom functions need traditional deterministic tests]
 **Validation Pyramid:** [Which levels apply (L0/L1/L2) + specific metrics + baselines from brainstorm]
+**Evaluation contract:** [Step-based cadence, default/full validation scope or explicit override, checkpoint-based + in-memory entry modes, observability requirements, failure-handling requirements]
 **Expected Conclusion:** [What success means / what failure means]
 
 ### Step 1: Write unit tests for custom functions
@@ -188,6 +202,32 @@ If the experiment includes a training script subtask AND will need a long-runnin
 - Checkpoint save with configurable interval
 - Resume from checkpoint support
 - Fixed random seeds
+
+## Evaluation Planning Requirements
+
+If the experiment has a validation or evaluation phase, plans are incomplete unless they explicitly state:
+
+- step-based evaluation cadence, e.g. `every 500 steps`
+- evaluation scope, defaulting to `full validation` unless explicitly overridden
+- both evaluation entry modes:
+  - checkpoint-based
+  - in-memory during training
+- one shared evaluator core across both modes
+- evaluation observability requirements:
+  - phase-start message
+  - dedicated progress bar
+  - phase-end message
+  - result summary
+  - efficiency summary
+- evaluation failure-handling expectations:
+  - checkpoint missing/unreadable
+  - checkpoint restore failure
+  - empty or misconfigured validation dataloader
+  - metric aggregation failure
+  - non-finite metrics
+  - long silent gaps or stalled evaluation
+
+Final-epoch-only evaluation is not an acceptable default for long-running training.
 
 These enable the Watchdog to monitor training and the user to track progress. Without them, training-handoff will flag gaps and potentially need to modify VP-validated code.
 

@@ -26,6 +26,22 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 - Subtasks are mostly independent
 - You want to stay in this session (vs. executing-plans in parallel session)
 
+## Plan Gate
+
+Before dispatching any implementer subagent, read the plan and fail fast if a training task with validation/evaluation is missing any of the following:
+
+- a dedicated evaluation subtask
+- step-based evaluation cadence
+- evaluation scope, defaulting to `full validation` unless explicitly overridden
+- both required evaluation entry modes:
+  - checkpoint-based
+  - in-memory during training
+- one shared evaluator core across both entry modes
+- evaluation progress visibility requirements
+- mode-aware failure-handling requirements at the evaluation boundary
+
+Do not treat these as advisory. Incomplete plans must be sent back for revision before implementation starts.
+
 ## The Process
 
 ```dot
@@ -122,6 +138,12 @@ or toolkit. Validation scripts observe core code externally.
 
 Note: Validation Pyramid (L0/L1/L2) is run by the orchestrator AFTER your code passes reviews. You do NOT run VP yourself.
 
+If this subtask includes evaluation work:
+- build one evaluator core shared by checkpoint-based and in-memory entry modes
+- keep cadence decisions in trainer code and evaluation execution logic in evaluator code
+- do not implement final-epoch-only evaluation as the default for long-running training
+- expose mode-aware start/end reporting and boundary errors
+
 ## Report Format
 
 - What you implemented
@@ -166,6 +188,11 @@ Read the actual code and verify:
 - Validation scripts observe externally? (hooks/wrappers, not modifying core)
 - Correct loss function for the task?
 - Data preprocessing matches training and evaluation?
+- If evaluation is in scope, does the plan/code preserve the split:
+  - trainer decides when evaluation runs
+  - evaluator decides how evaluation runs
+- If evaluation is in scope, are both entry modes present through one shared evaluator core?
+- If evaluation is in scope, is evaluation still observable during long runs?
 
 Report:
 - ✅ Spec compliant
@@ -191,6 +218,7 @@ Note: Validation Pyramid (L0/L1/L2) runs AFTER this quality review. You review c
 - Proper CUDA synchronization for timing?
 - No data leakage between train/eval?
 - Gradient computation correct (detach where needed)?
+- If evaluation is in scope, are mode-aware boundary errors and progress signals implemented where they belong?
 
 Report:
 - ✅ Approved
@@ -230,6 +258,13 @@ After all subtasks complete, before invoking verification, check:
 - **No** → Invoke `spml:verification` directly. The experiment is already complete within this session.
 
 **How to decide:** If VP validation (L1/L2) ran a shortened version of training (e.g., 1250 steps instead of 100K), and the experiment goal requires full-scale results, then a long-running phase is needed.
+
+When the long-running phase includes evaluation, downstream checks should confirm:
+- in-training evaluation fires at the planned step cadence
+- checkpoint-based evaluation reports checkpoint load behavior
+- in-training evaluation reports that it is using in-memory state
+- evaluation start/end messages and progress output appear as runtime checks, not optional niceties
+- evaluation errors surface with mode-aware context at the evaluation boundary
 
 ## Red Flags
 

@@ -133,6 +133,13 @@ The skill itself tells you which.
 
 **In ML, code running without errors does NOT mean it's correct.** "Not working" is reasonable, but the process must be correct. Always validate through the Validation Pyramid before concluding an experiment.
 
+When validation or evaluation is part of the task, plan it explicitly upstream. Treat evaluation as a first-class subtask with:
+- step-based cadence by default
+- `full validation` scope by default unless explicitly overridden
+- both checkpoint-based and in-memory entry modes
+- one shared evaluator core
+- visible progress and mode-aware error reporting during long-running evaluation
+
 ## User Instructions
 
 Instructions say WHAT, not HOW. "Train X" or "Fix convergence" doesn't mean skip workflows.
