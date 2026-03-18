@@ -61,6 +61,15 @@ The training script already exists — it was implemented during subagent-dev an
 - [ ] MFU in log (needed for efficiency monitoring)
 - [ ] Checkpoint support with configurable interval
 - [ ] Resumable from checkpoint
+- [ ] If evaluation is part of the experiment: a distinct evaluation capability, not only a final-epoch block
+- [ ] If evaluation is part of the experiment: both evaluation entry modes are available
+  - checkpoint-based evaluation
+  - in-memory evaluation during training
+- [ ] Long-running evaluation has explicit phase messages and a dedicated progress bar
+- [ ] Evaluation emits both result summary and efficiency/latency summary
+- [ ] Evaluation reports mode-aware status:
+  - checkpoint mode reports checkpoint path/load behavior
+  - in-training mode reports that evaluation used in-memory state
 
 **If gaps are found:**
 - Do NOT silently rewrite the script
@@ -78,6 +87,28 @@ These requirements should be part of the experiment plan so subagent-dev impleme
 - MFU calculation and logging
 - Terminal progress bar (tqdm)
 - Checkpoint save/resume support
+- Step-based evaluation cadence
+- `full validation` as the default evaluation scope unless explicitly overridden
+- One shared evaluator core across checkpoint-based and in-memory evaluation
+- Mode-aware evaluation errors and observability from the start
+
+### Evaluation Readiness Checks
+
+When the experiment includes evaluation, verify these explicitly during handoff:
+
+- in-training evaluation is configured to fire at the planned step cadence
+- checkpoint-based evaluation exists as an independent entrypoint
+- long-running evaluation does not go silent: phase-start message, progress updates, phase-end message
+- evaluation summary includes metrics plus efficiency details such as total duration, throughput, and checkpoint load latency where applicable
+- evaluation errors surface with mode-aware context at the boundary:
+  - checkpoint missing or unreadable
+  - checkpoint restore failure
+  - empty or misconfigured validation dataloader
+  - metric aggregation failure
+  - non-finite metrics
+  - stalled evaluation / long silent output gaps
+
+Treat cadence firing, evaluation mode reporting, progress visibility, and mode-aware boundary errors as runtime readiness checks. They are not stylistic suggestions.
 
 ## Step 4: Write experiment-context.md
 

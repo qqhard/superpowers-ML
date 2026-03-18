@@ -2,11 +2,11 @@
 
 **Date:** 2026-03-17
 **Status:** Implemented
-**Scope:** Add training log output validation to L0 (static) and L1 (runtime) of the Validation Pyramid
+**Scope:** Add training and evaluation log output validation to L0 (static) and L1 (runtime) of the Validation Pyramid
 
 ## Problem
 
-The Validation Pyramid currently checks ML code correctness and training health, but does not verify that the user's training code has proper logging and observability. Without these checks, training runs may complete with no retrievable loss history, no performance metrics on file, and no way to diagnose issues post-hoc.
+The Validation Pyramid currently checks ML code correctness and training health, but does not verify that the user's training and evaluation code has proper logging and observability. Without these checks, runs may complete with no retrievable loss history, no visible evaluation progress, no performance metrics on file, and no way to diagnose issues post-hoc.
 
 ## Design Decisions
 
@@ -52,7 +52,7 @@ Mandatory checks (19, 20, 24) are added to the existing **Mandatory (Critical)**
 
 ### 3. `ml-runtime-validator` (L1) — New Logging Output Validation Section
 
-Add a new **Logging Output Validation** section as a third category alongside the existing Performance and Training health sections in `ml-runtime-validator/SKILL.md`. Checks are prefixed with `L.` to distinguish from the existing metric categories. Each check validates three layers: **existence → frequency → value correctness**.
+Add a new **Logging Output Validation** section as a third category alongside the existing Performance and Training health sections in `ml-runtime-validator/SKILL.md`. Checks are prefixed with `L.` to distinguish from the existing metric categories. Each check validates three layers: **existence → frequency → value correctness** for both training output and evaluation-phase output where applicable.
 
 | #   | Check                                              | Severity          | Validation Method                                                                                                                                          |
 | --- | -------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,11 +63,20 @@ Add a new **Logging Output Validation** section as a third category alongside th
 | L.5 | Progress bar correctness                           | Advisory          | Progress bar total matches training target — 1 epoch → total = dataset size; N steps → total = N; T minutes → time-based estimate; advance rate matches actual run speed |
 | L.6 | Visualization tool output correctness (if enabled) | **Mandatory**     | Output directory/API has data; **frequency reasonable**; **values cross-validated against loss/speed files** for consistency; skip if not enabled            |
 
+**Evaluation-phase expectations:** When evaluation exists, L1 should also verify:
+- explicit evaluation phase start/end markers
+- dedicated evaluation progress output
+- no long silent gaps during long-running evaluation
+- checkpoint-based evaluation reports checkpoint load latency/behavior
+- in-training evaluation reports that it is using in-memory state
+- in-training evaluation fires at the planned step cadence
+- evaluation emits timing/throughput summaries after completion
+
 **Three-layer validation per check:** Each check internally verifies (1) the output **exists**, (2) the output **frequency** is reasonable, and (3) the output **values are correct**. The table describes the combined criteria. Check L.4 is the aggregate frequency check across all log outputs.
 
 **L0 vs L1 distinction:**
 - L0 checks "code has the logic" (static analysis of source files)
-- L1 verifies "running code actually produces correct output" (inspect files/stdout after training steps)
+- L1 verifies "running code actually produces correct output" (inspect files/stdout after training and evaluation steps)
 - L0 check 22 verifies interval-control logic exists in code; L1 check L.4 verifies actual timestamps are minute-level — they are complementary, not duplicative
 
 ### 4. Reference Updates (Rename Propagation)
