@@ -78,6 +78,11 @@ Ask about (one at a time, skip what's already clear):
 - **Scale** — Single GPU / multi-GPU / multi-node?
 - **Existing infra** — What's already built and tested? (data pipeline, training loop, checkpoint, evaluation)
   - Existing infra = don't touch, only advise if problems found
+- **Evaluation shape** — Is evaluation required? If yes, what is the step-based cadence (`every N steps`) and does evaluation need both checkpoint-based and in-memory entry modes?
+- **Evaluation scope** — Default to `full validation` unless the user explicitly wants a narrower scope
+- **Evaluation observability** — How should long-running evaluation show progress? Require explicit phase messages, a dedicated progress bar, and result/efficiency summaries
+- **Evaluation efficiency expectations** — What should be checked for checkpoint load latency, time-to-first-progress update, throughput, and long silent gaps?
+- **Evaluation failure expectations** — What should happen for checkpoint missing/unreadable, restore failure, empty or misconfigured validation dataloader, metric aggregation failure, non-finite metrics, or stalled evaluation?
 - **Custom components** — Any custom loss, custom layers, custom operators that need unit tests?
 - **Model structure decomposition** — For efficiency validation, what's a reasonable segmentation? (e.g., attention block / FFN block / MoE routing)
 
@@ -111,6 +116,26 @@ Walk through the Validation Pyramid levels. For each, ask: needed / skip / alrea
 
 **User can skip any level.** Record decisions in natural language in the design doc.
 
+### Confirming evaluation structure
+When the task includes validation or evaluation beyond a trivial final metric, confirm the evaluation design explicitly:
+
+- Evaluation is a dedicated subtask, not a tail block hidden inside trainer implementation
+- Trainer owns **when** evaluation fires; evaluator owns **how** evaluation runs
+- Plans should default evaluation cadence to step-based expressions such as `every 500 steps`
+- Plans should default evaluation scope to `full validation` unless the user explicitly overrides it
+- Evaluator must support both entry modes through one shared evaluator core:
+  - checkpoint-based evaluation
+  - in-memory evaluation during training
+- Final-epoch-only evaluation is not an acceptable default for long-running training
+- Long-running evaluation must stay observable: phase-start message, dedicated progress bar, phase-end message, result summary, efficiency summary
+- Failure handling is part of design completeness. Record expectations for:
+  - checkpoint missing/unreadable
+  - checkpoint restore failure
+  - empty or misconfigured validation dataloader
+  - metric aggregation failure
+  - non-finite metrics
+  - long silent gaps or stalled evaluation
+
 ### Dataset preparation (when applicable)
 If the task involves constructing or transforming datasets:
 - Invoke **spml:data-preparation** for TDD-first dataset processing
@@ -125,7 +150,7 @@ If the task involves constructing or transforming datasets:
 ### Presenting the design
 - Scale each section to its complexity
 - Ask after each section whether it looks right so far
-- Cover: experiment design, model/data architecture, validation scope, expected outcomes
+- Cover: experiment design, model/data architecture, evaluation structure, validation scope, expected outcomes
 - Be ready to go back and clarify
 
 ## After the Design
