@@ -11,8 +11,8 @@ In traditional software, code runs = result correct. In ML, code runs without er
 **"Not working" is reasonable in ML, but the process must be correct.** If an implementation error causes poor results, you may misjudge your experimental strategy as ineffective, wasting an entire research direction.
 
 SPML addresses this with:
-- **Validation Pyramid** — layered verification (engineering efficiency, process metrics, overfitting test, e2e pipeline) that separates "implementation bug" from "strategy doesn't work"
-- **Watchdog Agent** — read-only monitoring of long-running training through independent agent sessions
+- **Validation Pyramid** — 3-level verification (static analysis, runtime metrics, e2e pipeline) that separates "implementation bug" from "strategy doesn't work"
+- **Watchdog Agent** — active monitoring of long-running training with auto-restart, parameter fixing, and sub-agent spawning for complex issues
 - **Experiment-driven workflow** — hypothesis, independent/dependent/control variables, conclusion recording with metric evidence
 
 ## Installation
@@ -70,7 +70,7 @@ General software development:
   All skills from Superpowers, SPML not involved.
 
 ML experiments:
-  /spml:brainstorm → spml:experiment-planning → spml:subagent-dev
+  /spml:brainstorm → spml:experiment-planning → spml:ml-subagent-dev
   ML workflow from SPML, general discipline (TDD, code review) from Superpowers.
 ```
 
@@ -85,14 +85,14 @@ brainstorming
 experiment-planning
     Break into atomic subtasks with validation criteria
     |
-subagent-dev
+ml-subagent-dev
     Execute each subtask: unit test → implement → Validation Pyramid
     |
 training-handoff
     Generate training script + Watchdog prompt + experiment context
     |
 watchdog (independent session)
-    Read-only monitoring, anomaly detection, diagnosis reporting
+    Active monitoring: auto-restart, parameter fixing, anomaly diagnosis
     |
 training-resume (independent session)
     Analyze results or diagnose issues, decide next step
@@ -103,24 +103,25 @@ verification
 
 ### Validation Pyramid
 
-Each subtask passes through layered validation before claiming correctness:
+Each subtask passes through 3 levels of validation before claiming correctness:
 
-| Layer | What it checks | Time |
+| Level | What it checks | Time |
 |-------|---------------|------|
-| **L0: Engineering Efficiency** | Steady-state sample speed, TCA, MFU, backend verification, I/O bandwidth | Minutes |
-| **L1: Process Metrics** | Gradient health, activation patterns, architecture-specific signals | Minutes |
-| **L2: Overfitting Test** | Loss decreases on 100-1000 samples, fixed seed | ~10 min |
-| **L3: E2E Pipeline** | Full flow on tiny data: data → train → infer → evaluate | Minutes |
+| **L0: Static Analysis** | Device consistency, precision config, FlashAttention, optimizer, DataLoader, logging & observability + 15 advisory checks | Seconds |
+| **L1: Runtime Validation** | MFU, TCA, throughput, gradient health, loss trend, architecture-specific metrics | ~5 min |
+| **L2: E2E Pipeline** | Full flow on tiny data: data → train → checkpoint → infer → evaluate (1-5 steps per stage) | ~2 min |
 
-The pyramid dynamically loads checks based on architecture (Transformer, MoE, CNN) and task type.
+L0 runs as a subagent (code review style). L1 and L2 run as skills invoked by the orchestrator. Each level must pass before proceeding to the next.
 
 ### Watchdog Agent
 
-Long-running training is monitored by an independent agent session:
+Long-running training is monitored by an independent agent session with three operating modes:
 
-- **Read-only** — observes JSONL metrics log, never intervenes
-- **Adaptive frequency** — checks often at start, less in steady state, more near completion
-- **Session chain** — on anomaly, produces a recovery prompt; on completion, produces a completion prompt
+- **Monitor** — report only, no intervention
+- **Guardian** (default) — auto-restart on environment failures, auto-fix simple parameter problems, report complex issues
+- **Autonomous** — handle everything including complex issues via sub-agent spawning
+
+Problems are classified into 3 tiers: environment problems (restart), simple parameter problems (fix + restart), and complex problems (sub-agent or report). The watchdog produces a recovery or completion prompt for the next session.
 
 ## Skills
 
@@ -131,18 +132,18 @@ Long-running training is monitored by an independent agent session:
 | **brainstorming** | Experiment design, context collection, validation scope confirmation |
 | **experiment-planning** | Subtask decomposition with validation criteria |
 | **data-preparation** | TDD-first dataset processing: validate on small-scale, then full-scale |
-| **subagent-dev** | Execute subtasks with VP integration and experiment-aware review |
+| **ml-subagent-dev** | Execute subtasks with VP integration and experiment-aware review |
 | **diagnostics** | Systematic diagnosis: why not converging, early anomalies, efficiency bottlenecks |
 | **verification** | Evidence-based conclusion with experiment summary |
 | **training-handoff** | Generate training script + Watchdog prompt + experiment context |
-| **watchdog** | Read-only monitoring of long-running tasks |
+| **watchdog** | Active monitoring of long-running tasks with 3 operating modes |
 | **training-resume** | Recovery or completion entry point after long-running tasks |
 
 ### Validation Pyramid
 
 | Skill | Checks |
 |-------|--------|
-| **validation-pyramid** | 3-level validation orchestration integrated into subagent-dev workflow |
+| **validation-pyramid** | 3-level validation orchestration integrated into ml-subagent-dev workflow |
 | **ml-static-checks** | L0: Static analysis — device consistency, precision, FA, optimizer, DataLoader, logging & observability + 15 advisory checks |
 | **ml-runtime-validator** | L1: Minutes-level runtime — MFU, TCA, throughput, gradient health, loss trend, arch-specific metrics |
 | **ml-e2e-validator** | L2: End-to-end pipeline — data → train → checkpoint → infer → evaluate (1-5 steps per stage) |
@@ -152,7 +153,6 @@ Long-running training is monitored by an independent agent session:
 | Skill | Why modified |
 |-------|-------------|
 | **executing-plans** | Routes to `spml:experiment-planning` instead of `superpowers:writing-plans` |
-| **subagent-driven-development** | Routes to `spml:experiment-planning` instead of `superpowers:writing-plans` |
 
 ### From Superpowers (not included, used via cross-plugin reference)
 
@@ -164,7 +164,10 @@ Profiling tools that agents struggle to write correctly from scratch:
 
 | Tool | Purpose |
 |------|---------|
+| `toolkit/profiling/l0_runner.py` | L1 runtime validation entry point — orchestrates metric collection |
 | `toolkit/profiling/mfu_calculator.py` | Theoretical FLOPS + MFU/TCA calculation |
+| `toolkit/profiling/dcgm_profiler.py` | NVIDIA DCGM field 1004 profiling for TCA measurement |
+| `toolkit/profiling/gap_analyzer.py` | Hierarchical bottleneck decomposition |
 | `toolkit/profiling/layer_profiler.py` | Per-layer forward/backward timing |
 | `toolkit/profiling/memory_profiler.py` | Memory analysis and fragmentation |
 
