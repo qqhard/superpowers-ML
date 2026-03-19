@@ -72,7 +72,7 @@ In the numbered list under "How It Works", change step 1: `Orchestrator dispatch
 
 - [ ] **Step 5: Update Integration section**
 
-Change `**spml:subagent-dev** — dispatches this as a review stage` to keep as-is (no name reference).
+Change `**spml:ml-subagent-dev** — dispatches this as a review stage` to keep as-is (no name reference).
 Verify all self-references use `ml-static-checks`.
 
 - [ ] **Step 6: Verify the file reads correctly**

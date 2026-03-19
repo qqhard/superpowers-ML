@@ -115,7 +115,7 @@ When multiple skills could apply, use this order:
 
 1. **Process skills first** (`spml:ml-brainstorming`, `spml:diagnostics`) - these determine HOW to approach the task
 2. **Validation skills second** (`spml:validation-pyramid`, `spml:ml-static-checks`, `spml:ml-runtime-validator`, `spml:ml-e2e-validator`) - these verify correctness
-3. **Implementation skills third** (`spml:experiment-planning`, `spml:subagent-dev`) - these guide execution
+3. **Implementation skills third** (`spml:experiment-planning`, `spml:ml-subagent-dev`) - these guide execution
 
 "Let's train X" -> `spml:ml-brainstorming` first, then `spml:experiment-planning`.
 "Training isn't converging" -> `spml:diagnostics` first, then validation skills.

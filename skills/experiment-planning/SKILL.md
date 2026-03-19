@@ -49,7 +49,7 @@ The top-level directory name is flexible — use whatever fits the user's existi
 ```markdown
 # [Experiment Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use spml:subagent-dev to implement this plan task-by-task. (If subagent-dev is not yet available, use spml:executing-plans.)
+> **For Claude:** REQUIRED SUB-SKILL: Use spml:ml-subagent-dev to implement this plan task-by-task.
 
 **Goal:** [One sentence]
 
@@ -252,7 +252,7 @@ After saving the plan, offer execution choice:
 **Which approach?"**
 
 **If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use spml:subagent-dev (or spml:subagent-driven-development if subagent-dev not yet available)
+- **REQUIRED SUB-SKILL:** Use spml:ml-subagent-dev
 - Stay in this session
 
 **If Parallel Session chosen:**

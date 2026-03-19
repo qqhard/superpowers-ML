@@ -9,7 +9,7 @@ description: Use after VP passes when the task includes a long-running phase —
 
 Bridge between VP validation (minute-level) and long-running execution (hours/days). Generates monitoring artifacts (experiment-context.md + watchdog-prompt.md) for a training script that has already been built and validated by the upstream flow.
 
-**Core principle:** Do not rewrite VP-validated code. The training script was built by subagent-dev, tested by VP L1/L2, and reviewed by spec+quality reviewers. Handoff's job is to verify it's production-ready and set up monitoring — not to modify it.
+**Core principle:** Do not rewrite VP-validated code. The training script was built by ml-subagent-dev, tested by VP L1/L2, and reviewed by spec+quality reviewers. Handoff's job is to verify it's production-ready and set up monitoring — not to modify it.
 
 <HARD-GATE>
 Do NOT hand off without:
@@ -48,7 +48,7 @@ Check that the experiment follows the co-located layout convention from `spml:ex
 
 ## Step 3: Verify Training Script Readiness
 
-The training script already exists — it was implemented during subagent-dev and validated by VP. Do NOT rewrite it. Instead, verify it meets production requirements:
+The training script already exists — it was implemented during ml-subagent-dev and validated by VP. Do NOT rewrite it. Instead, verify it meets production requirements:
 
 **Required (block handoff if missing):**
 - [ ] Zero agent dependency — runs standalone (`python train.py` or `bash run.sh`)
@@ -81,7 +81,7 @@ The training script already exists — it was implemented during subagent-dev an
 
 ### Upstream: Production Script Requirements
 
-These requirements should be part of the experiment plan so subagent-dev implements them from the start. If you find yourself frequently patching scripts at handoff, the fix is in `spml:experiment-planning`, not here. Key requirements to include in plans:
+These requirements should be part of the experiment plan so ml-subagent-dev implements them from the start. If you find yourself frequently patching scripts at handoff, the fix is in `spml:experiment-planning`, not here. Key requirements to include in plans:
 
 - Human-readable log file output (one line per step with key metrics)
 - MFU calculation and logging
@@ -194,6 +194,6 @@ To start:
 
 ## Integration
 
-- **spml:subagent-dev** — Triggers handoff after VP passes (when long-running phase needed)
+- **spml:ml-subagent-dev** — Triggers handoff after VP passes (when long-running phase needed)
 - **spml:watchdog** — The Watchdog prompt references this skill's behavior
 - **spml:verification** — Skipped at handoff; entered later via resume

@@ -527,7 +527,7 @@ To start:
 
 ## Integration
 
-- **spml:subagent-dev** — Triggers handoff after VP passes (when long-running phase needed)
+- **spml:ml-subagent-dev** — Triggers handoff after VP passes (when long-running phase needed)
 - **spml:watchdog** — The Watchdog prompt references this skill's behavior
 - **spml:verification** — Skipped at handoff; entered later via resume
 ```

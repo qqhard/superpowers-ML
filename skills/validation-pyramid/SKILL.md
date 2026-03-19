@@ -1,13 +1,13 @@
 ---
 name: validation-pyramid
-description: Use when validating ML training code correctness - orchestrates 3-level checks from static analysis through end-to-end pipeline, integrated into the subagent-dev review workflow
+description: Use when validating ML training code correctness - orchestrates 3-level checks from static analysis through end-to-end pipeline, integrated into the ml-subagent-dev review workflow
 ---
 
 # Validation Pyramid
 
 ## Overview
 
-The Validation Pyramid ensures ML code is correct before committing to expensive training. Three levels of validation, integrated into the subagent-driven-development workflow after standard code reviews. Each level catches a different class of errors, from cheap/fast (L0) to more thorough (L2).
+The Validation Pyramid ensures ML code is correct before committing to expensive training. Three levels of validation, integrated into the ml-subagent-dev workflow after standard code reviews. Each level catches a different class of errors, from cheap/fast (L0) to more thorough (L2).
 
 **Core principle:** In ML, code running without errors does NOT mean it's correct. The Validation Pyramid catches implementation errors so you can trust that "not working" means the strategy is ineffective — not that the code is wrong.
 
@@ -21,7 +21,7 @@ The Validation Pyramid ensures ML code is correct before committing to expensive
 
 ## Architecture
 
-The VP runs as 3 stages after standard Superpowers code reviews in the `spml:subagent-dev` workflow:
+The VP runs as 3 stages after standard Superpowers code reviews in the `spml:ml-subagent-dev` workflow:
 
 ```
 Subagent-Driven-Development (per task)
@@ -83,6 +83,6 @@ If the Implementer's fix modifies more than 50 lines of code, the fix is conside
 ## Integration
 
 - **spml:ml-brainstorming** — Defines validation scope (which levels, baselines, data flow choice)
-- **spml:subagent-dev** — Orchestrates the VP as review stages
+- **spml:ml-subagent-dev** — Orchestrates the VP as review stages
 - **spml:diagnostics** — Triggered on failure for root cause analysis
 - **spml:experiment-planning** — Each subtask specifies which levels apply

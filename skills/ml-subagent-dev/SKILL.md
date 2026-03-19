@@ -1,6 +1,6 @@
 ---
-name: subagent-dev
-description: Use when executing ML experiment plans with subagents - adapts subagent-driven-development with 3-level Validation Pyramid (L0 static → L1 runtime → L2 E2E), experiment-aware reviews, and conclusion recording
+name: ml-subagent-dev
+description: Use when executing ML experiment plans with subagents - adapts superpowers:subagent-driven-development with 3-level Validation Pyramid (L0 static → L1 runtime → L2 E2E), experiment-aware reviews, and conclusion recording
 ---
 
 # ML Subagent-Driven Development
@@ -9,7 +9,7 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 
 **Core principle:** Fresh subagent per subtask + experiment-aware review + conclusion recording = correct implementations with trustworthy conclusions.
 
-**Adapted from:** subagent-driven-development. Key changes:
+**Adapted from:** `superpowers:subagent-driven-development`. Key changes:
 - Validation Pyramid runs AFTER code reviews as 3 separate orchestrator-dispatched stages (L0 → L1 → L2)
 - L0: VP Static Checks subagent checks static ML correctness
 - L1: Runtime validation (minutes-level training run with metrics collection)

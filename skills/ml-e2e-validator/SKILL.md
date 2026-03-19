@@ -14,7 +14,7 @@ Verify the full pipeline runs through, each stage running a small number of step
 ## When to Use
 
 - After L1 (spml:ml-runtime-validator) passes
-- Invoked by the orchestrator in `spml:subagent-dev`, not by the Implementer directly
+- Invoked by the orchestrator in `spml:ml-subagent-dev`, not by the Implementer directly
 - Skip only if explicitly marked "skip L2" in the experiment design doc
 
 ## 6 Stages
@@ -93,7 +93,7 @@ Common issues found at L2 that earlier levels miss:
 
 ## Integration
 
-- **spml:subagent-dev** — invokes this as a validation stage
+- **spml:ml-subagent-dev** — invokes this as a validation stage
 - **spml:validation-pyramid** — L2 in the 3-level pyramid
 - **spml:ml-runtime-validator** — must pass before L2 runs
 - **spml:diagnostics** — triggered on failure for root cause analysis

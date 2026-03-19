@@ -82,7 +82,7 @@ Based on the determined rollback level:
 **Task spec fix:**
 1. Explain the issue to the user
 2. Invoke `spml:experiment-planning` to revise the subtask
-3. Re-execute the revised subtask through `spml:subagent-dev`
+3. Re-execute the revised subtask through `spml:ml-subagent-dev`
 
 **Hypothesis revision:**
 1. Explain why the current hypothesis appears invalid

@@ -150,7 +150,7 @@ After presenting the summary, ask the user:
 
 ## Integration
 
-- **spml:subagent-dev** — Produces the subtask results this skill verifies
+- **spml:ml-subagent-dev** — Produces the subtask results this skill verifies
 - **spml:validation-pyramid** — VP checks referenced in verification
 - **spml:training-handoff** — Next step if experiment needs long-running training
 - **spml:ml-brainstorming** — Next step if new experiment needed

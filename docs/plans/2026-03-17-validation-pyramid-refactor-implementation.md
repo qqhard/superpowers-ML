@@ -1,6 +1,6 @@
 # Validation Pyramid Refactor Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use spml:subagent-dev to implement this plan task-by-task. (If subagent-dev is not yet available, use spml:executing-plans.)
+> **For Claude:** REQUIRED SUB-SKILL: Use spml:ml-subagent-dev to implement this plan task-by-task. (If subagent-dev is not yet available, use spml:executing-plans.)
 
 **Goal:** Refactor the Validation Pyramid from 4 complex layers to 3 integrated levels, embedded into the Superpowers subagent-driven-development review pipeline.
 
@@ -126,7 +126,7 @@ A specialized code-reviewer subagent that checks ML-specific static correctness.
 
 ## When to Use
 
-- Automatically dispatched by the orchestrator in `spml:subagent-dev` after code quality review passes
+- Automatically dispatched by the orchestrator in `spml:ml-subagent-dev` after code quality review passes
 - Only for tasks that involve ML code (model, training loop, data pipeline, optimizer config)
 - Skip for pure infrastructure tasks (CI, docs, config files)
 
@@ -157,7 +157,7 @@ See `checklist.md` for the full conditional checklist.
 
 ## Integration
 
-- **spml:subagent-dev** — dispatches this as a review stage
+- **spml:ml-subagent-dev** — dispatches this as a review stage
 - **spml:validation-pyramid** — L0 in the 3-level pyramid
 - **spml:ml-runtime-validator** — next level after L0 passes
 ```

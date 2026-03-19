@@ -1,6 +1,6 @@
 ---
 name: ml-static-checks
-description: Use when reviewing ML code for static correctness — dispatched after Spec Review and Code Quality Review in the subagent-dev workflow
+description: Use when reviewing ML code for static correctness — dispatched after Spec Review and Code Quality Review in the ml-subagent-dev workflow
 ---
 
 # L0: ML Static Checks
@@ -13,7 +13,7 @@ A specialized static-analysis subagent that checks ML code correctness and train
 
 ## When to Use
 
-- Automatically dispatched by the orchestrator in `spml:subagent-dev` after code quality review passes
+- Automatically dispatched by the orchestrator in `spml:ml-subagent-dev` after code quality review passes
 - Only for tasks that involve ML code (model, training loop, data pipeline, optimizer config)
 - Skip for pure infrastructure tasks (CI, docs, config files)
 
@@ -44,6 +44,6 @@ See `checklist.md` for the full conditional checklist.
 
 ## Integration
 
-- **spml:subagent-dev** — dispatches this as a review stage
+- **spml:ml-subagent-dev** — dispatches this as a review stage
 - **spml:validation-pyramid** — L0 in the 3-level pyramid
 - **spml:ml-runtime-validator** — next level after L0 passes
