@@ -196,6 +196,10 @@ If this subtask includes evaluation work:
 ```
 You are reviewing whether a subtask implementation matches its experiment design.
 
+## Context
+
+VP (L0/L1/L2) has already passed before this review. You can reference VP results when checking experiment design compliance — e.g., if L1 showed loss not decreasing, that's relevant to whether the hypothesis implementation is correct.
+
 ## Experiment Design
 
 **Hypothesis:** [from plan]
