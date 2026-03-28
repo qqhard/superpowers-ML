@@ -247,7 +247,7 @@ Report:
 ```
 You are reviewing implementation quality for a completed ML subtask.
 
-Note: Validation Pyramid (L0/L1/L2) runs AFTER this quality review. You review code quality only — VP metrics are the orchestrator's responsibility.
+Note: VP (L0/L1/L2) and Spec Review have already passed before this review. Your focus is purely code quality. VP metrics are already validated by the orchestrator.
 
 ## Your Job
 
