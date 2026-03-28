@@ -3,6 +3,42 @@ name: ml-subagent-dev
 description: Use when executing ML experiment plans with subagents - adapts superpowers:subagent-driven-development with 3-level Validation Pyramid (L0 static → L1 runtime → L2 E2E), experiment-aware reviews, and conclusion recording
 ---
 
+<HARD-GATE>
+Every subtask MUST complete ALL of the following before it can be marked complete.
+No exceptions. No "this is too simple". No "this is just a toy experiment".
+
+A subtask without VP results and Review results is NOT complete. Period.
+
+## Subtask Completion Gate
+
+Before marking ANY subtask as complete, you MUST have:
+
+- [ ] L0: VP Static Checks — passed (with actual numbers recorded)
+- [ ] L1: ML Runtime Validator — passed (with actual metrics recorded)
+- [ ] L2: ML E2E Validator — passed (with actual pipeline stages confirmed)
+- [ ] Spec Review — passed (experiment design compliance confirmed)
+- [ ] Quality Review — passed (code quality confirmed)
+- [ ] Conclusion recorded — with metric evidence from VP
+
+If ANY item is unchecked, the subtask is NOT complete.
+Do NOT proceed to the next subtask. Do NOT mark it as done.
+</HARD-GATE>
+
+## Anti-Pattern: "This Subtask Doesn't Need Full VP"
+
+This is the single most dangerous rationalization in ML experiments.
+
+| Thought | Reality |
+|---------|---------|
+| "This is just a toy experiment" | Toy experiments with wrong gradients waste days of debugging |
+| "The model code is simple" | Simple code with silent shape bugs produces plausible but wrong results |
+| "Unit tests already passed" | Unit tests check deterministic logic. VP checks training dynamics. They test different things. |
+| "L1/L2 is overkill for this subtask" | If this subtask is part of an ML experiment, it WILL be trained and evaluated. VP validates that. |
+| "I'll run VP at the end" | VP per subtask catches bugs early. VP at the end means debugging the entire codebase at once. |
+| "The user wants speed" | Skipping VP and debugging silent failures later is SLOWER. |
+
+ML experiments ALWAYS involve a training-evaluation pipeline. Even outputting "loss is decreasing" is evaluation. If there is a pipeline, there is a VP. No exceptions.
+
 # ML Subagent-Driven Development
 
 Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-adapted review criteria: spec compliance (does it match experiment design?), quality review (did Validation Pyramid pass?), and conclusion recording.
@@ -10,12 +46,12 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 **Core principle:** Fresh subagent per subtask + experiment-aware review + conclusion recording = correct implementations with trustworthy conclusions.
 
 **Adapted from:** `superpowers:subagent-driven-development`. Key changes:
-- Validation Pyramid runs AFTER code reviews as 3 separate orchestrator-dispatched stages (L0 → L1 → L2)
+- TDD = Validation Pyramid: unit tests → implement → L0 → L1 → L2, THEN Spec Review → Quality Review
 - L0: VP Static Checks subagent checks static ML correctness
 - L1: Runtime validation (minutes-level training run with metrics collection)
 - L2: E2E pipeline validation (1-5 steps per stage)
 - Spec reviewer checks experiment design compliance (hypothesis, variable control)
-- Quality reviewer checks code quality (VP results checked by orchestrator, not quality reviewer)
+- Quality reviewer checks code quality (VP results already validated by orchestrator)
 - Each subtask records: metric data, conclusion, anomaly log
 - Shared fix loop: fail → Implementer fixes → re-run level → 5 failures → user intervention
 - Large fix rollback: fix > 50 lines → re-run all prior reviews + VP levels
