@@ -31,7 +31,7 @@ You MUST create a task for each of these items and complete them in order:
 4. **Confirm validation scope** — which Validation Pyramid layers apply, which to skip
 5. **Propose 2-3 approaches** — with trade-offs and your recommendation
 6. **Present design** — in sections scaled to their complexity, get user approval after each section
-7. **Write design doc** — save to `docs/plans/YYYY-MM-DD-<topic>-design.md` and commit
+7. **Write design doc** — save to `<experiment_dir>/plans/YYYY-MM-DD-<topic>-design.md` and commit
 8. **Transition to implementation** — invoke `spml:experiment-planning` skill to create implementation plan
 
 ## Process Flow
@@ -73,6 +73,7 @@ digraph ml_brainstorming {
 
 ### Collecting ML context
 Ask about (one at a time, skip what's already clear):
+- **Experiment directory** — Where should experiment artifacts (plans, docs, logs) be stored? Ask for an explicit path relative to the project root (e.g., `experiments/my-experiment/`). All generated plans and docs will be saved under this directory.
 - **Model architecture** — Transformer / MoE / CNN / RNN / other? Custom layers?
 - **Task type** — RecSys / LLM pretraining / LLM fine-tuning / CV / RL / other?
 - **Scale** — Single GPU / multi-GPU / multi-node?
@@ -156,7 +157,7 @@ If the task involves constructing or transforming datasets:
 ## After the Design
 
 **Documentation:**
-- Write the validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
+- Write the validated design to `<experiment_dir>/plans/YYYY-MM-DD-<topic>-design.md`
 - Include validation scope decisions in the doc
 - Commit the design document to git
 

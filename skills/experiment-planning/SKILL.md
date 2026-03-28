@@ -13,7 +13,7 @@ Assume the implementer is a skilled developer but may not recognize when ML code
 
 **Announce at start:** "I'm using the experiment-planning skill to create the implementation plan."
 
-**Save plans to:** `docs/plans/YYYY-MM-DD-<experiment-name>.md`
+**Save plans to:** `<experiment_dir>/plans/YYYY-MM-DD-<experiment-name>.md` (use the experiment directory from the brainstorm design doc)
 
 ## Code Separation Principle
 
@@ -243,7 +243,7 @@ These enable the Watchdog to monitor training and the user to track progress. Wi
 
 After saving the plan, offer execution choice:
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:**
+**"Plan complete and saved to `<experiment_dir>/plans/<filename>.md`. Two execution options:**
 
 **1. Subagent-Driven (this session)** — I dispatch fresh subagent per subtask, review between subtasks, fast iteration
 
