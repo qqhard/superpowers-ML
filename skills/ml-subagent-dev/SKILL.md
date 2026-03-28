@@ -175,7 +175,7 @@ or toolkit. Validation scripts observe core code externally.
 5. **Self-review** — check your own code before submission
 6. **Commit** with message: "experiment: [subtask description]"
 
-Note: Validation Pyramid (L0/L1/L2) is run by the orchestrator AFTER your code passes reviews. You do NOT run VP yourself.
+Note: After your code passes unit tests, the orchestrator will run Validation Pyramid (L0/L1/L2) as part of TDD, THEN Spec Review and Quality Review. You do NOT run VP or reviews yourself.
 
 If this subtask includes evaluation work:
 - build one evaluator core shared by checkpoint-based and in-memory entry modes
