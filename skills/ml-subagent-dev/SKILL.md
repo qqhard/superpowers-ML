@@ -86,15 +86,9 @@ digraph process {
     rankdir=TB;
 
     subgraph cluster_per_subtask {
-        label="Per Subtask";
+        label="Per Subtask (TDD = Validation Pyramid)";
         "Dispatch ML implementer subagent" [shape=box];
         "Implementer: unit tests + implement" [shape=box];
-        "Dispatch ML spec reviewer" [shape=box];
-        "Spec reviewer: experiment design compliance?" [shape=diamond];
-        "Implementer fixes spec gaps" [shape=box];
-        "Dispatch ML quality reviewer" [shape=box];
-        "Quality reviewer: code quality?" [shape=diamond];
-        "Implementer fixes quality issues" [shape=box];
         "L0: VP Static Checks" [shape=box style=filled fillcolor=lightyellow];
         "L0 passed?" [shape=diamond];
         "Implementer fixes L0 issues" [shape=box];
@@ -104,18 +98,37 @@ digraph process {
         "L2: ML E2E Validator" [shape=box style=filled fillcolor=lightyellow];
         "L2 passed?" [shape=diamond];
         "Implementer fixes L2 issues" [shape=box];
+        "Dispatch ML spec reviewer" [shape=box];
+        "Spec reviewer: experiment design compliance?" [shape=diamond];
+        "Implementer fixes spec gaps" [shape=box];
+        "Dispatch ML quality reviewer" [shape=box];
+        "Quality reviewer: code quality?" [shape=diamond];
+        "Implementer fixes quality issues" [shape=box];
+        "Completion Gate\n(all 6 items checked?)" [shape=diamond style=filled fillcolor=red fontcolor=white];
         "Record conclusion" [shape=box style=filled fillcolor=lightgreen];
     }
 
     "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" [shape=box];
     "More subtasks?" [shape=diamond];
-    "Needs long-running training?" [shape=diamond style=filled fillcolor=lightyellow];
+    "Post-Completion Gate:\nAsk user Train or Done" [shape=diamond style=filled fillcolor=orange fontcolor=white];
     "Invoke spml:training-handoff" [shape=box style=filled fillcolor=orange];
     "Invoke spml:verification" [shape=box style=filled fillcolor=lightblue];
 
     "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" -> "Dispatch ML implementer subagent";
     "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement";
-    "Implementer: unit tests + implement" -> "Dispatch ML spec reviewer";
+    "Implementer: unit tests + implement" -> "L0: VP Static Checks";
+    "L0: VP Static Checks" -> "L0 passed?";
+    "L0 passed?" -> "L1: ML Runtime Validator" [label="yes"];
+    "L0 passed?" -> "Implementer fixes L0 issues" [label="no"];
+    "Implementer fixes L0 issues" -> "L0: VP Static Checks" [label="re-run\n(fix>50 lines: rollback)"];
+    "L1: ML Runtime Validator" -> "L1 passed?";
+    "L1 passed?" -> "L2: ML E2E Validator" [label="yes"];
+    "L1 passed?" -> "Implementer fixes L1 issues" [label="no"];
+    "Implementer fixes L1 issues" -> "L1: ML Runtime Validator" [label="re-run\n(fix>50 lines: rollback)"];
+    "L2: ML E2E Validator" -> "L2 passed?";
+    "L2 passed?" -> "Dispatch ML spec reviewer" [label="yes"];
+    "L2 passed?" -> "Implementer fixes L2 issues" [label="no"];
+    "Implementer fixes L2 issues" -> "L2: ML E2E Validator" [label="re-run\n(fix>50 lines: rollback)"];
     "Dispatch ML spec reviewer" -> "Spec reviewer: experiment design compliance?";
     "Spec reviewer: experiment design compliance?" -> "Implementer fixes spec gaps" [label="no"];
     "Implementer fixes spec gaps" -> "Dispatch ML spec reviewer" [label="re-review"];
@@ -123,24 +136,13 @@ digraph process {
     "Dispatch ML quality reviewer" -> "Quality reviewer: code quality?";
     "Quality reviewer: code quality?" -> "Implementer fixes quality issues" [label="no"];
     "Implementer fixes quality issues" -> "Dispatch ML quality reviewer" [label="re-review"];
-    "Quality reviewer: code quality?" -> "L0: VP Static Checks" [label="yes"];
-    "L0: VP Static Checks" -> "L0 passed?";
-    "L0 passed?" -> "L1: ML Runtime Validator" [label="yes"];
-    "L0 passed?" -> "Implementer fixes L0 issues" [label="no"];
-    "Implementer fixes L0 issues" -> "L0: VP Static Checks" [label="re-run L0\n(fix>50 lines: rollback)"];
-    "L1: ML Runtime Validator" -> "L1 passed?";
-    "L1 passed?" -> "L2: ML E2E Validator" [label="yes"];
-    "L1 passed?" -> "Implementer fixes L1 issues" [label="no"];
-    "Implementer fixes L1 issues" -> "L1: ML Runtime Validator" [label="re-run L1\n(fix>50 lines: rollback)"];
-    "L2: ML E2E Validator" -> "L2 passed?";
-    "L2 passed?" -> "Record conclusion" [label="yes"];
-    "L2 passed?" -> "Implementer fixes L2 issues" [label="no"];
-    "Implementer fixes L2 issues" -> "L2: ML E2E Validator" [label="re-run L2\n(fix>50 lines: rollback)"];
+    "Quality reviewer: code quality?" -> "Completion Gate\n(all 6 items checked?)" [label="yes"];
+    "Completion Gate\n(all 6 items checked?)" -> "Record conclusion" [label="all checked"];
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
-    "More subtasks?" -> "Needs long-running training?" [label="no"];
-    "Needs long-running training?" -> "Invoke spml:training-handoff" [label="yes\n(hours/days)"];
-    "Needs long-running training?" -> "Invoke spml:verification" [label="no\n(already complete)"];
+    "More subtasks?" -> "Post-Completion Gate:\nAsk user Train or Done" [label="no"];
+    "Post-Completion Gate:\nAsk user Train or Done" -> "Invoke spml:training-handoff" [label="Train"];
+    "Post-Completion Gate:\nAsk user Train or Done" -> "Invoke spml:verification" [label="Done"];
 }
 ```
 
