@@ -286,21 +286,28 @@ After each subtask completes all reviews:
 
 Record this in the plan document or a separate experiment log.
 
-## Training Handoff Decision
+## Post-Completion Gate
 
-After all subtasks complete, before invoking verification, check:
+<HARD-GATE>
+After ALL subtasks are complete (all Completion Gates passed), you MUST pause and present the following to the user. Do NOT decide this yourself. Do NOT skip this question. Do NOT proceed to verification or training-handoff without asking.
+</HARD-GATE>
 
-**Does this experiment need a long-running execution phase?** (training for hours/days, large-scale data processing, full evaluation sweep)
+Present to the user:
 
-- **Yes** → Invoke `spml:training-handoff`. This generates:
+> All subtasks complete. VP passed. Next step:
+>
+> 1. **Train** — needs long-running training (hours/days). I will invoke spml:training-handoff to generate experiment-context.md + watchdog-prompt.md for a new monitoring session.
+> 2. **Done** — experiment is already complete within this session. I will invoke spml:verification.
+>
+> Which one?
+
+- **User chooses Train** → Invoke `spml:training-handoff`. This generates:
   - Production training script with human-readable logging (including MFU, gradient norms, etc.)
   - `experiment-context.md` with VP baseline metrics
   - `watchdog-prompt.md` for monitoring in a separate session
   - Verification happens LATER, after training completes (via `spml:training-resume`)
 
-- **No** → Invoke `spml:verification` directly. The experiment is already complete within this session.
-
-**How to decide:** If VP validation (L1/L2) ran a shortened version of training (e.g., 1250 steps instead of 100K), and the experiment goal requires full-scale results, then a long-running phase is needed.
+- **User chooses Done** → Invoke `spml:verification` directly. The experiment is already complete within this session.
 
 When the long-running phase includes evaluation, downstream checks should confirm:
 - in-training evaluation fires at the planned step cadence
