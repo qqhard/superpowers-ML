@@ -47,6 +47,8 @@ Use the mechanism that matches your host:
 - Observe outcome → SPML
 - Ship software → Superpowers (even if the software is ML-related)
 
+**Experiment directory override:** If an upstream brainstorm has already established an experiment directory, ALL downstream artifacts (plans, docs, design docs) MUST be saved under that experiment directory — even when deferring to `superpowers:*` skills like `superpowers:writing-plans`. Never fall back to the default `docs/plans/` path when an experiment directory has been set.
+
 ## The Rule
 
 **Load relevant or requested skills BEFORE any response or action.** Even a 1%

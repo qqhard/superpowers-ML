@@ -33,7 +33,7 @@ The top-level directory name (`experiments/`) is a default — use whatever fits
 
 **Scope:** This convention applies to new experiments only. Existing experiments are not migrated.
 
-**Plan documents** remain in `docs/plans/` — they are planning artifacts, not experiment runtime artifacts.
+**Plan documents** are saved under `[experiment-dir]/plans/` — co-located with the experiment they belong to, keeping each experiment fully self-contained.
 
 ## Changes
 

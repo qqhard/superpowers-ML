@@ -27,6 +27,9 @@ Each experiment lives in a single directory. All artifacts — core code, tests,
 
 ```
 [experiment-dir]/
+├── plans/
+│   ├── YYYY-MM-DD-<topic>-design.md       # brainstorm design doc
+│   └── YYYY-MM-DD-<experiment-name>.md    # implementation plan
 ├── train.py                  # training script
 ├── model.py                  # model code (if separate)
 ├── data.py                   # data loading (if separate)
@@ -52,6 +55,8 @@ The top-level directory name is flexible — use whatever fits the user's existi
 > **For Claude:** REQUIRED SUB-SKILL: Use spml:ml-subagent-dev to implement this plan task-by-task.
 
 **Goal:** [One sentence]
+
+**Experiment directory:** [Path from brainstorm design doc, e.g. `experiments/my-experiment/`]
 
 **Hypothesis:** [Doing X is expected to cause Y] (if applicable)
 
