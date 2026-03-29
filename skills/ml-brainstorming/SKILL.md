@@ -34,10 +34,54 @@ You MUST create a task for each of these items and complete them in order:
 7. **Write design doc** — save to `<experiment_dir>/plans/YYYY-MM-DD-<topic>-design.md` and commit
 8. **Transition to implementation** — invoke `spml:experiment-planning` skill to create implementation plan
 
+## Revision Mode
+
+When the orchestrator passes existing design doc content (from directory state detection), you are in revision mode.
+
+<HARD-GATE>
+In revision mode, you MUST edit the existing design doc in place. Do NOT create a new design file. Do NOT re-ask questions that are already answered in the existing design.
+</HARD-GATE>
+
+### What changes in revision mode:
+- Read and present the existing design summary first:
+  > "Current design: [1-3 sentence summary of hypothesis, approach, validation scope]. What do you want to change?"
+- Skip "Collecting ML Context" questions that already have answers (hypothesis, variables, dataset, architecture, scale, etc.)
+- Only ask questions about the **delta** — what's changing and why
+- Edit the existing design doc in place
+- Commit: `"experiment: revise design — [what changed]"`
+
+### What stays the same:
+- User approval required before proceeding
+- Spec self-review still runs
+- Transitions to `spml:experiment-planning` (which will also be in revision mode)
+
+### Impact tracking:
+After revision, append an Impact section to the design doc:
+
+```markdown
+## Impact on Plan
+- Subtask N: [needs update because X changed]
+- Subtask M: [unaffected]
+- New subtask needed: [description]
+```
+
+This Impact section guides downstream plan revision.
+
+### Checklist (revision mode):
+1. **Read existing design** — present summary to user
+2. **Ask delta questions** — only what's changing
+3. **Confirm validation scope changes** — if any VP levels need re-evaluation
+4. **Present revised design sections** — only changed sections, get approval
+5. **Edit design doc in place** — with Impact on Plan section
+6. **Transition** — invoke `spml:experiment-planning` (revision mode)
+
 ## Process Flow
 
 ```dot
 digraph ml_brainstorming {
+    "Revision mode?" [shape=diamond style=filled fillcolor=lightyellow];
+    "Read existing design\nPresent summary" [shape=box];
+    "Ask delta questions" [shape=box];
     "Explore project context" [shape=box];
     "Collect ML context" [shape=box];
     "Ask clarifying questions" [shape=box];
@@ -45,9 +89,13 @@ digraph ml_brainstorming {
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
-    "Write design doc" [shape=box];
+    "Write/edit design doc" [shape=box];
     "Invoke spml:experiment-planning" [shape=doublecircle];
 
+    "Revision mode?" -> "Read existing design\nPresent summary" [label="yes"];
+    "Revision mode?" -> "Explore project context" [label="no"];
+    "Read existing design\nPresent summary" -> "Ask delta questions";
+    "Ask delta questions" -> "Confirm validation scope";
     "Explore project context" -> "Collect ML context";
     "Collect ML context" -> "Ask clarifying questions";
     "Ask clarifying questions" -> "Confirm validation scope";
@@ -55,8 +103,8 @@ digraph ml_brainstorming {
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc" [label="yes"];
-    "Write design doc" -> "Invoke spml:experiment-planning";
+    "User approves design?" -> "Write/edit design doc" [label="yes"];
+    "Write/edit design doc" -> "Invoke spml:experiment-planning";
 }
 ```
 
