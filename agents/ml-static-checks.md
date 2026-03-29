@@ -47,8 +47,9 @@ Any mandatory check failure is a **Critical** issue — Implementer must fix bef
 | 17 | MoE backend | MoE architecture | Expert parallel, routing optimization, aux loss |
 | 18 | CUDA kernel selection | Uses CUDA | Optimized kernels, not fallback |
 | 21 | Data loading duration log | Has DataLoader | Code records data loading start/end/duration |
-| 22 | Output frequency control | Has file logging | Log output has interval control; not triggered every step |
-| 23 | Progress bar | Always | Code uses a progress bar library (tqdm, rich.progress, etc.) |
+| 22 | Output frequency control | Has file logging or console output | **Console**: tqdm (preferred) or print has minute-level frequency control. **File**: log output has interval control; not every step |
+| 23 | Console metrics display | Always | Console output (tqdm or print) carries key runtime metrics (at least loss) — via tqdm `set_postfix` or formatted print string |
+| 25 | Checkpoint interval configurability | Has checkpoint saving | Checkpoint save interval is configurable (via argument/config, not hardcoded) and default value is reasonable |
 
 Advisory failures are reported as **Important** or **Suggestions** — Implementer may fix or acknowledge.
 
