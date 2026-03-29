@@ -15,6 +15,36 @@ Assume the implementer is a skilled developer but may not recognize when ML code
 
 **Save plans to:** `<experiment_dir>/plans/YYYY-MM-DD-<experiment-name>.md` (use the experiment directory from the brainstorm design doc)
 
+## Revision Mode
+
+When the orchestrator passes existing plan content AND a revised design with "## Impact on Plan" section, you are in revision mode.
+
+<HARD-GATE>
+In revision mode, you MUST edit the existing plan file in place. Do NOT create a new plan file. Preserve subtask numbering for unaffected subtasks.
+</HARD-GATE>
+
+### Flow:
+1. Read existing plan fully
+2. Read design's "Impact on Plan" section — which subtasks are affected
+3. For each affected subtask: rewrite steps to match revised design, preserve subtask number
+4. For new subtasks: append to end of plan (Task N+1, N+2, ...)
+5. For removed subtasks: mark as `REMOVED: [reason]` (don't delete — human needs to see what was dropped)
+6. Edit existing plan file in place
+7. Commit: `"experiment: revise plan — [what changed]"`
+
+### Marking subtask status:
+Unchanged subtasks that already passed VP keep their results:
+```
+- [x] Task 1: ... (unchanged, VP passed)
+- [ ] Task 2: ... (REVISED — needs re-execution)
+- [ ] Task 5: ... (NEW)
+```
+
+### What stays the same:
+- Plan Gate still applies (evaluation subtask, cadence, etc.)
+- Self-review still runs
+- Transitions to `spml:ml-subagent-dev` for execution of changed/new subtasks only
+
 ## Code Separation Principle
 
 **CRITICAL:** Core code (model, training, data) must never import from test/validation code or toolkit. Validation scripts observe core code externally via hooks/wrappers. After development, core code can be extracted and deployed to production as-is.
@@ -262,4 +292,4 @@ After saving the plan, offer execution choice:
 
 **If Parallel Session chosen:**
 - Guide them to open new session
-- **REQUIRED SUB-SKILL:** New session uses spml:executing-plans
+- **REQUIRED SUB-SKILL:** New session uses superpowers:executing-plans
