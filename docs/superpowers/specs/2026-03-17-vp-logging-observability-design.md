@@ -1,3 +1,5 @@
+> **Note:** L2/ml-e2e-validator references in this document are stale — L2 has been merged into L1 as of v0.9.0. See `docs/superpowers/specs/2026-03-29-vp-l1-l2-merge-design.md`.
+
 # VP Logging & Observability Checks
 
 **Date:** 2026-03-17

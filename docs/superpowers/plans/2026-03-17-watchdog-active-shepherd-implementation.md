@@ -1,3 +1,5 @@
+> **Note:** L2/ml-e2e-validator references in this document are stale — L2 has been merged into L1 as of v0.9.0. See `docs/superpowers/specs/2026-03-29-vp-l1-l2-merge-design.md`.
+
 # Watchdog Active Shepherd Implementation Plan
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
