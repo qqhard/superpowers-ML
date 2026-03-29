@@ -20,7 +20,7 @@ Failure blocks progress. Implementer must fix before proceeding.
 | 20 | Step speed / throughput file output | Always | Code writes step time or throughput to a file |
 | 24 | Visualization tool correctness | Enabled in experiment design doc | Selected tool has init + log calls + frequency control; skip if not enabled |
 
-## Advisory (Warning) — checks 7-18, 21-23
+## Advisory (Warning) — checks 7-18, 21-23, 25
 
 Do not block progress. Report as warnings. Implementer may fix or acknowledge and proceed.
 
@@ -39,8 +39,9 @@ Do not block progress. Report as warnings. Implementer may fix or acknowledge an
 | 17 | MoE backend | MoE architecture | Expert parallel, routing optimization, aux loss |
 | 18 | CUDA kernel selection | Uses CUDA | Optimized kernels, not fallback |
 | 21 | Data loading duration log | Has DataLoader | Code records data loading start/end/duration |
-| 22 | Output frequency control | Has file logging | Log output has interval control (e.g., `if step % N == 0`, time-based gating); not every step |
-| 23 | Progress bar | Always | Code uses a progress bar library (tqdm, rich.progress, etc.); tool not restricted |
+| 22 | Output frequency control | Has file logging or console output | **Console**: tqdm (preferred) or print has minute-level frequency control — tqdm via `mininterval`, print via `if step % N == 0` with time-based gating. **File**: log output has interval control; not every step |
+| 23 | Console metrics display | Always | Console output (tqdm or print) carries key runtime metrics (at least loss) — via tqdm `set_postfix` or formatted print string |
+| 25 | Checkpoint interval configurability | Has checkpoint saving | Checkpoint save interval is configurable (via argument/config, not hardcoded) and default value is reasonable |
 
 ## Adding New Checks
 
