@@ -49,6 +49,45 @@ Use the mechanism that matches your host:
 
 **Experiment directory override:** If an upstream brainstorm has already established an experiment directory, ALL downstream artifacts (plans, docs, design docs) MUST be saved under that experiment directory — even when deferring to `superpowers:*` skills like `superpowers:writing-plans`. Never fall back to the default `docs/plans/` path when an experiment directory has been set.
 
+## Experiment Directory Detection
+
+Before routing to any skill, check if the user's request references an existing experiment directory.
+
+**Detection:**
+1. **Explicit path** — user mentions a directory like "experiments/xxx" or "modify the gumbel experiment"
+2. **Implicit** — user references an experiment and there's only one experiment directory
+
+**If an experiment directory is identified, scan it:**
+
+<HARD-GATE>
+When an experiment directory with existing artifacts is detected, you MUST read all existing design docs and plans BEFORE invoking any skill. Pass their content as context to the invoked skill.
+
+Do NOT create new design/plan files when existing ones can be revised.
+Do NOT let any skill skip reading existing artifacts.
+</HARD-GATE>
+
+**State detection:**
+
+```
+Scan <experiment-dir>/plans/:
+  - *-design.md exists? → has_design = true
+  - non-design *.md exists? → has_plan = true
+
+Scan <experiment-dir>/:
+  - *.py exists? → has_code = true
+```
+
+**Routing based on state:**
+
+| has_design | has_plan | has_code | Action |
+|------------|----------|----------|--------|
+| false | false | false | New experiment: invoke `spml:ml-brainstorming` (new mode) |
+| true | false | false | Read design → invoke `spml:experiment-planning` |
+| true | true | false | Read plan → invoke `spml:ml-subagent-dev` |
+| true | true | true | Read design → invoke `spml:ml-brainstorming` (revision mode) |
+
+**Last row is critical:** When a full experiment exists and the user wants changes, ALWAYS start from the design. Changes propagate top-down: design → plan → code. Direct code changes without design/plan updates are forbidden.
+
 ## The Rule
 
 **Load relevant or requested skills BEFORE any response or action.** Even a 1%
