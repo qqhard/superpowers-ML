@@ -94,9 +94,6 @@ training-handoff
 watchdog (independent session)
     Active monitoring: auto-restart, parameter fixing, anomaly diagnosis
     |
-training-resume (independent session)
-    Analyze results or diagnose issues, decide next step
-    |
 verification
     Evidence-based conclusion: effective / ineffective / inconclusive
 ```
@@ -120,7 +117,7 @@ Long-running training is monitored by an independent agent session with three op
 - **Guardian** (default) — auto-restart on environment failures, auto-fix simple parameter problems, report complex issues
 - **Autonomous** — handle everything including complex issues via sub-agent spawning
 
-Problems are classified into 3 tiers: environment problems (restart), simple parameter problems (fix + restart), and complex problems (sub-agent or report). The watchdog produces a recovery or completion prompt for the next session.
+Problems are classified into 3 tiers: environment problems (restart), simple parameter problems (fix + restart), and complex problems (sub-agent or report). When training completes, the user starts a new session on the experiment directory to analyze results.
 
 ## Skills
 
@@ -136,7 +133,6 @@ Problems are classified into 3 tiers: environment problems (restart), simple par
 | **verification** | Evidence-based conclusion with experiment summary |
 | **training-handoff** | Generate training script + Watchdog prompt + experiment context |
 | **watchdog** | Active monitoring of long-running tasks with 3 operating modes |
-| **training-resume** | Recovery or completion entry point after long-running tasks |
 
 ### Validation Pyramid
 
@@ -145,12 +141,6 @@ Problems are classified into 3 tiers: environment problems (restart), simple par
 | **validation-pyramid** | 2-level validation orchestration integrated into ml-subagent-dev workflow |
 | **ml-static-checks** | L0: Static analysis — device consistency, precision, FA, optimizer, DataLoader, logging & observability + 15 advisory checks |
 | **ml-runtime-validator** | L1: Runtime validation — train ~5 min with metrics, then verify full pipeline (checkpoint, inference, evaluation) |
-
-### Shared Infrastructure (modified from Superpowers)
-
-| Skill | Why modified |
-|-------|-------------|
-| **executing-plans** | Routes to `spml:experiment-planning` instead of `superpowers:writing-plans` |
 
 ### From Superpowers (not included, used via cross-plugin reference)
 
