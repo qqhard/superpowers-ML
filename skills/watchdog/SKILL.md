@@ -135,6 +135,19 @@ loop {
             - Startup grace period (first 15 min or until 3 logged steps): do not classify silence as hang
             - Within baseline → continue (go to step 1)
             - Exceeds 10x baseline → kill process → classify problem tier (environment hang → Tier 1; possible code issue → Tier 2/3)
+    3.5. Async evaluation check (skip entirely if no eval_command in experiment-context.md):
+         a. Check if background eval subagent has returned:
+            - Returned → read summary, append to experiment-context.md Evaluation History
+            - Set eval_subagent_running=false, update last_evaluated_checkpoint
+         b. Scan checkpoint directory for newest checkpoint (Bash: `ls -t <checkpoint_dir> | head -1`)
+         c. Compare with last_evaluated_checkpoint:
+            - Same → skip
+            - Newer → check all preconditions:
+              (1) eval_subagent_running = false
+              (2) eval_paused = false
+              (3) Free GPU available (Bash: `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader` — at least one GPU below 90%)
+            - All met → spawn eval subagent (see Async Evaluation section), set eval_subagent_running=true
+            - Any failed → log reason ("eval busy" / "eval paused" / "no free GPU"), continue
     4. Analyze metrics:
        a. Sanity: NaN, Inf, negative loss, zero gradient
        b. Baseline comparison vs VP ranges in experiment-context.md
@@ -153,6 +166,48 @@ loop {
 Obtain the training script path and launch command from experiment-context.md (written by training-handoff). Restart = re-run the same command via Bash tool. The training script's built-in checkpoint resume handles continuation from the latest saved state.
 
 After restart, enter **intensive observation** (1-minute interval, 5 cycles) to confirm training resumes normally.
+
+## Async Evaluation
+
+Watchdog spawns background evaluation subagents when new checkpoints are detected. This keeps training uninterrupted and the Watchdog's context clean.
+
+**Preconditions (all must be true to spawn):**
+1. `eval_command` exists in experiment-context.md (otherwise evaluation is disabled)
+2. New checkpoint detected (newer than last_evaluated_checkpoint)
+3. eval_subagent_running = false (previous eval finished)
+4. eval_paused = false (user hasn't paused)
+5. Free GPU available (at least one GPU below 90% utilization via nvidia-smi)
+
+**Eval subagent prompt template:**
+
+```
+Run evaluation on a training checkpoint.
+
+Checkpoint path: <checkpoint_path>
+Command: <eval_command from experiment-context.md>
+
+Replace {checkpoint_path} in the command with the actual checkpoint path.
+Replace {output_dir} with the evaluation output directory if present in the command.
+
+Execute the command. When it completes, return a one-line summary in this format:
+  step=N metric1=val1 metric2=val2 duration=Xm
+
+Do NOT modify any training code or training data.
+Do NOT modify checkpoints.
+If the command fails, return: step=N status=FAILED error=<brief error description>
+```
+
+**Dispatch:** Use Agent tool with `run_in_background: true`.
+
+**On return:** Watchdog reads the summary, appends to experiment-context.md Evaluation History, sets eval_subagent_running=false, updates last_evaluated_checkpoint.
+
+**State variables (transient, not persisted):**
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| last_evaluated_checkpoint | string | null | Path/identifier of last evaluated checkpoint |
+| eval_subagent_running | bool | false | Whether an eval subagent is currently running |
+| eval_paused | bool | false | User has paused evaluation |
 
 ## Progress Reports
 
@@ -211,6 +266,7 @@ Read the training log and summarize:
 - Total training time
 - Any anomalies that occurred and resolved during training
 - All interventions taken (restarts, parameter changes, sub-agent fixes)
+- Evaluation results summary (from Evaluation History in experiment-context.md)
 
 ### Step 2: Compare Against Expectations
 
@@ -268,6 +324,7 @@ Start a new session on the experiment directory to analyze results and conclude 
 - Record ALL interventions in experiment-context.md with before/after values
 - Escalate upward when uncertain about problem classification
 - Stay responsive to user commands ("check now", "change frequency", "what's the status", "switch to autonomous mode")
+- Respond to evaluation commands ("pause eval", "resume eval", "eval status") — pause/resume sets eval_paused flag; status reports last evaluated checkpoint, whether eval is running, and skipped checkpoint count
 
 ## Integration
 
