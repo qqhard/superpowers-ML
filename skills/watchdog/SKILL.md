@@ -77,7 +77,7 @@ Examples:
 
 **Action (Guardian/Autonomous):** Restart training script from latest checkpoint. No code changes. No retry limit — keep restarting. After repeated crashes (e.g., 5+ within 30 minutes), notify the user that environment instability is persisting but continue retrying.
 
-**Action (Monitor):** Write diagnosis to experiment-context.md, generate recovery-prompt.md, notify user.
+**Action (Monitor):** Write diagnosis to experiment-context.md. Notify user: "Training issue: [description]. Start a new session on the experiment directory to continue."
 
 ### Tier 2: Simple Parameter Problems
 
@@ -95,7 +95,7 @@ Examples:
 3. Record new value and rationale in experiment-context.md (after)
 4. Restart from checkpoint
 
-**Action (Monitor):** Write diagnosis to experiment-context.md, generate recovery-prompt.md, notify user.
+**Action (Monitor):** Write diagnosis to experiment-context.md. Notify user: "Training issue: [description]. Start a new session on the experiment directory to continue."
 
 ### Tier 3: Complex Problems
 
@@ -109,12 +109,11 @@ Examples:
 
 **Action (Autonomous):**
 1. Write diagnosis to experiment-context.md
-2. Generate recovery-prompt.md
-3. Spawn sub-agent using Claude Code's Agent tool with instructions: read recovery-prompt.md, follow training-resume flow, fix issue, restart training
-4. Sub-agent does NOT run VP — trusts that initial VP validation covers code correctness
+2. Spawn sub-agent using Claude Code's Agent tool with instructions: read experiment-context.md diagnosis, fix the identified issue, restart training
+3. Sub-agent does NOT run VP — trusts that initial VP validation covers code correctness
 5. Wait for Agent tool call to return, then resume monitoring loop
 
-**Action (Guardian):** Write diagnosis to experiment-context.md, generate recovery-prompt.md, notify user. Wait for user to handle the issue.
+**Action (Guardian):** Write diagnosis to experiment-context.md. Notify user: "Training issue: [description]. Start a new session on the experiment directory to continue." Wait for user to handle the issue.
 
 **Action (Monitor):** Same as Guardian.
 
@@ -231,27 +230,14 @@ Read the training log and summarize:
 - Interventions: [count and types — restarts, parameter changes, sub-agent fixes]
 ```
 
-### Step 4: Produce completion-prompt.md
-
-```markdown
-A long-running ML task has completed successfully. Please analyze results and conclude the experiment.
-
-Read `[experiment-dir]/experiment-context.md` for the full context including:
-- Original experiment design and hypothesis
-- VP baseline metrics
-- Watchdog monitoring summary and interventions
-- Final training metrics
-
-Your job: compare results against the hypothesis, run verification, and present conclusions to the user.
-```
-
-### Step 5: Notify User
+### Step 4: Notify User
 
 ```
 Training complete. [total_steps] steps in [duration].
 Final loss: [val].
 Interventions: [N restarts, N parameter changes, N sub-agent fixes].
-To analyze results: open a new agent session and paste the contents of completion-prompt.md.
+
+Start a new session on the experiment directory to analyze results and conclude the experiment.
 ```
 
 ## Common Anomaly Patterns
@@ -286,5 +272,4 @@ To analyze results: open a new agent session and paste the contents of completio
 ## Integration
 
 - **spml:training-handoff** — Produces the context and prompt that starts this skill
-- **spml:training-resume** — Invoked by sub-agents in Autonomous mode; consumes recovery/completion prompts in Monitor/Guardian mode
 - **spml:diagnostics** — Sub-agents in Autonomous mode may invoke this for deeper analysis
