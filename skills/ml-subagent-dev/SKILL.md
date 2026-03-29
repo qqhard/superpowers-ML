@@ -122,13 +122,13 @@ digraph process {
         "Record conclusion" [shape=box style=filled fillcolor=lightgreen];
     }
 
-    "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" [shape=box];
+    "Read plan, extract subtasks\nTaskCreate per subtask" [shape=box];
     "More subtasks?" [shape=diamond];
     "Post-Completion Gate:\nAsk user Train or Done" [shape=diamond style=filled fillcolor=orange fontcolor=white];
     "Invoke spml:training-handoff" [shape=box style=filled fillcolor=orange];
     "Invoke spml:verification" [shape=box style=filled fillcolor=lightblue];
 
-    "Read plan, extract subtasks, create tracker\n(TodoWrite / update_plan)" -> "Dispatch ML implementer subagent";
+    "Read plan, extract subtasks\nTaskCreate per subtask" -> "Dispatch ML implementer subagent";
     "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement";
     "Implementer: unit tests + implement" -> "L0: VP Static Checks";
     "L0: VP Static Checks" -> "L0 passed?";
@@ -160,10 +160,60 @@ digraph process {
 }
 ```
 
+## Progress Reporting
+
+The orchestrator MUST use TaskCreate/TaskUpdate to give the user real-time visibility into subagent progress. Without this, the user sees only a spinner and has no idea what each subagent is doing.
+
+### Orchestrator Responsibilities
+
+1. **Create one Task per subtask** before dispatching the implementer:
+   ```
+   TaskCreate(
+     subject: "Subtask N: [name]",
+     activeForm: "Implementing [name]",
+     description: "Phase: Implementation — starting"
+   )
+   ```
+
+2. **Update the Task before each phase transition** (use the task ID from step 1):
+
+   | Phase | activeForm | description |
+   |-------|-----------|-------------|
+   | Implementation | `Implementing [name]` | _(subagent updates internally)_ |
+   | L0 Static | `Running L0 static checks on [name]` | `Phase: L0 VP Static Checks` |
+   | L1 Runtime | `Running L1 runtime validation on [name]` | `Phase: L1 Runtime Validation` |
+   | L2 E2E | `Running L2 E2E validation on [name]` | `Phase: L2 E2E Validation` |
+   | Spec Review | `Spec reviewing [name]` | `Phase: Spec Review` |
+   | Quality Review | `Quality reviewing [name]` | `Phase: Quality Review` |
+   | Fix loop | `Fixing [level] issues in [name]` | `Phase: Fix loop ([level], attempt N/5)` |
+   | Done | _(mark completed)_ | Conclusion summary |
+
+3. **Pass `TASK_ID: [id]`** in every subagent prompt so subagents can call TaskUpdate.
+
+### Subagent Responsibilities
+
+Every subagent receives a `TASK_ID` and MUST call TaskUpdate at each milestone to update the task's `description` field. This is the user's only window into what the subagent is doing.
+
+Milestone updates should be concise, one-line status strings. Example progression for the implementer:
+
+```
+"Phase: Implementation — writing unit tests (3 test cases)"
+"Phase: Implementation — TDD red confirmed, implementing core code"
+"Phase: Implementation — TDD green, all 3 tests passing"
+"Phase: Implementation — self-review complete, ready for VP"
+```
+
 ## ML Implementer Subagent Prompt
 
 ```
 You are implementing Subtask N: [subtask name]
+
+TASK_ID: [id from orchestrator's TaskCreate]
+
+## Progress Reporting
+
+You MUST call TaskUpdate(taskId=TASK_ID, description="...") at each milestone
+below. This is how the user tracks your progress. Do NOT skip this.
 
 ## Experiment Context
 
@@ -183,10 +233,14 @@ or toolkit. Validation scripts observe core code externally.
 ## Your Job
 
 1. **Write unit tests** for any custom functions (deterministic code only)
+   → TaskUpdate: "Phase: Implementation — writing unit tests (N test cases)"
 2. **Run unit tests** — verify they fail (TDD red)
+   → TaskUpdate: "Phase: Implementation — TDD red confirmed, implementing core code"
 3. **Implement core code** (no test/validation imports)
 4. **Run unit tests** — verify they pass (TDD green)
+   → TaskUpdate: "Phase: Implementation — TDD green, all N tests passing"
 5. **Self-review** — check your own code before submission
+   → TaskUpdate: "Phase: Implementation — self-review complete, ready for VP"
 6. **Commit** with message: "experiment: [subtask description]"
 
 Note: After your code passes unit tests, the orchestrator will run Validation Pyramid (L0/L1/L2) as part of TDD, THEN Spec Review and Quality Review. You do NOT run VP or reviews yourself.
@@ -209,6 +263,14 @@ If this subtask includes evaluation work:
 
 ```
 You are reviewing whether a subtask implementation matches its experiment design.
+
+TASK_ID: [id from orchestrator]
+
+## Progress Reporting
+
+Call TaskUpdate(taskId=TASK_ID, description="...") at start and end:
+- Start: "Phase: Spec Review — checking experiment design compliance"
+- End:   "Phase: Spec Review — [✅ compliant | ❌ N issues found]"
 
 ## Context
 
@@ -260,6 +322,14 @@ Report:
 
 ```
 You are reviewing implementation quality for a completed ML subtask.
+
+TASK_ID: [id from orchestrator]
+
+## Progress Reporting
+
+Call TaskUpdate(taskId=TASK_ID, description="...") at start and end:
+- Start: "Phase: Quality Review — checking code quality"
+- End:   "Phase: Quality Review — [✅ approved | ❌ N issues found]"
 
 Note: VP (L0/L1/L2) and Spec Review have already passed before this review. Your focus is purely code quality. VP metrics are already validated by the orchestrator.
 
