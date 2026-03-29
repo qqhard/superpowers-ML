@@ -90,7 +90,7 @@ The top-level directory name is flexible — use whatever fits the user's existi
 
 **Hypothesis:** [Doing X is expected to cause Y] (if applicable)
 
-**Validation scope:** [Reference validation scope from brainstorm design doc — which levels enabled (L0/L1/L2), data flow choice, baselines, L2 step count]
+**Validation scope:** [Reference validation scope from brainstorm design doc — which levels enabled (L0/L1), data flow choice, baselines]
 
 **Evaluation design:** [Whether evaluation is required, step-based cadence, default/full validation scope or explicit override, both entry modes, observability requirements, failure-handling expectations]
 
@@ -155,7 +155,7 @@ Each subtask goes through the Validation Pyramid.
 **Hypothesis:** [Specific hypothesis for this subtask]
 **Implementation:** [What to change, which files]
 **Unit Tests:** [Which custom functions need traditional deterministic tests]
-**Validation Pyramid:** [Which levels apply (L0/L1/L2) + specific metrics + baselines from brainstorm]
+**Validation Pyramid:** [Which levels apply (L0/L1) + specific metrics + baselines from brainstorm]
 **Evaluation contract:** [Step-based cadence, default/full validation scope or explicit override, checkpoint-based + in-memory entry modes, observability requirements, failure-handling requirements]
 **Expected Conclusion:** [What success means / what failure means]
 
@@ -196,11 +196,7 @@ L0 (static analysis) is handled by code review — no separate command needed.
 
 L1 (runtime validation):
 Run: `[project-specific training command with monitoring]`
-Expected: MFU >= [baseline from brainstorm], no NaN/Inf, loss decreasing
-
-L2 (E2E pipeline):
-Run: `[project-specific E2E validation command]`
-Expected: All 6 stages complete without error
+Expected: MFU >= [baseline from brainstorm], no NaN/Inf, loss decreasing, all 6 pipeline stages pass
 
 ### Step 7: Record conclusion
 
