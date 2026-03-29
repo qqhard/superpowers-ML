@@ -173,7 +173,7 @@ Use the spml:watchdog skill. It will guide you through:
 - Monitoring the training log for anomalies
 - Taking action based on the operating mode and problem classification (Tier 1/2/3)
 - Recording all interventions in experiment-context.md
-- Producing completion-prompt.md when training finishes
+- Notifying you when training finishes or encounters issues
 ```
 
 ## Step 6: Present Launch Instructions
@@ -196,4 +196,4 @@ To start:
 
 - **spml:ml-subagent-dev** — Triggers handoff after VP passes (when long-running phase needed)
 - **spml:watchdog** — The Watchdog prompt references this skill's behavior
-- **spml:verification** — Skipped at handoff; entered later via resume
+- **spml:verification** — Skipped at handoff; entered later via re-entry on experiment directory
