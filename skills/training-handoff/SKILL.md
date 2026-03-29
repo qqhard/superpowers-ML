@@ -60,6 +60,7 @@ The training script already exists — it was implemented during ml-subagent-dev
 - [ ] Detailed metrics written to file: loss, gradient norm, learning rate, step time
 - [ ] MFU in file log (needed for efficiency monitoring)
 - [ ] Checkpoint save with configurable interval
+- [ ] If evaluation is part of the experiment: eval_command defined for Watchdog async evaluation
 - [ ] Resumable from checkpoint
 - [ ] If evaluation is part of the experiment: a distinct evaluation capability, not only a final-epoch block
 - [ ] If evaluation is part of the experiment: both evaluation entry modes are available
@@ -137,6 +138,7 @@ Treat cadence firing, evaluation mode reporting, progress visibility, and mode-a
 - Expected total steps: [N]
 - Estimated duration: [hours]
 - Key hyperparameters: [lr, batch_size, etc.]
+- Eval command: [command with {checkpoint_path} placeholder, e.g., python eval.py --checkpoint={checkpoint_path}; leave empty if no evaluation]
 
 ## Watchdog Configuration
 - watchdog_mode: guardian
@@ -153,6 +155,9 @@ Treat cadence firing, evaluation mode reporting, progress visibility, and mode-a
 
 ## Diagnosis History
 (empty)
+
+## Evaluation History
+(populated by Watchdog during training)
 ```
 
 ## Step 5: Write watchdog-prompt.md
