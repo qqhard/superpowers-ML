@@ -1,3 +1,5 @@
+> **Superseded:** The 3-level VP described here has been merged to 2 levels (L0/L1). See `docs/superpowers/specs/2026-03-29-vp-l1-l2-merge-design.md`.
+
 # Validation Pyramid Refactor Design
 
 ## Problem

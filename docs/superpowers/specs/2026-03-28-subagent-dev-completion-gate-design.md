@@ -1,3 +1,5 @@
+> **Partially superseded:** The 6-item completion gate described here has been reduced to 5 items (L2 merged into L1). See `docs/superpowers/specs/2026-03-29-vp-l1-l2-merge-design.md`.
+
 # Fix: ml-subagent-dev Subtask Completion Gate
 
 ## Problem

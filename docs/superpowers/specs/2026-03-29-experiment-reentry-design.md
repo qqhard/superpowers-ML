@@ -1,3 +1,5 @@
+> **Note:** References to L2/ml-e2e-validator in this doc are stale — L2 has been merged into L1. See `docs/superpowers/specs/2026-03-29-vp-l1-l2-merge-design.md`.
+
 # Experiment Re-entry: Maintainable Experiment Directories
 
 ## Problem

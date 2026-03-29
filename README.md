@@ -11,7 +11,7 @@ In traditional software, code runs = result correct. In ML, code runs without er
 **"Not working" is reasonable in ML, but the process must be correct.** If an implementation error causes poor results, you may misjudge your experimental strategy as ineffective, wasting an entire research direction.
 
 SPML addresses this with:
-- **Validation Pyramid** — 3-level verification (static analysis, runtime metrics, e2e pipeline) that separates "implementation bug" from "strategy doesn't work"
+- **Validation Pyramid** — 2-level verification (static analysis, runtime + pipeline validation) that separates "implementation bug" from "strategy doesn't work"
 - **Watchdog Agent** — active monitoring of long-running training with auto-restart, parameter fixing, and sub-agent spawning for complex issues
 - **Experiment-driven workflow** — hypothesis, independent/dependent/control variables, conclusion recording with metric evidence
 
@@ -103,15 +103,14 @@ verification
 
 ### Validation Pyramid
 
-Each subtask passes through 3 levels of validation before claiming correctness:
+Each subtask passes through 2 levels of validation before claiming correctness:
 
 | Level | What it checks | Time |
 |-------|---------------|------|
 | **L0: Static Analysis** | Device consistency, precision config, FlashAttention, optimizer, DataLoader, logging & observability + 15 advisory checks | Seconds |
-| **L1: Runtime Validation** | MFU, TCA, throughput, gradient health, loss trend, architecture-specific metrics | ~5 min |
-| **L2: E2E Pipeline** | Full flow on tiny data: data → train → checkpoint → infer → evaluate (1-5 steps per stage) | ~2 min |
+| **L1: Runtime Validation** | Train ~5 min collecting MFU, TCA, throughput, gradient health, loss trend, then verify full pipeline: checkpoint → inference → evaluation | ~5-15 min |
 
-L0 runs as a subagent (code review style). L1 and L2 run as skills invoked by the orchestrator. Each level must pass before proceeding to the next.
+L0 runs as a subagent (code review style). L1 runs as a skill invoked by the orchestrator. L0 must pass before L1.
 
 ### Watchdog Agent
 
@@ -143,10 +142,9 @@ Problems are classified into 3 tiers: environment problems (restart), simple par
 
 | Skill | Checks |
 |-------|--------|
-| **validation-pyramid** | 3-level validation orchestration integrated into ml-subagent-dev workflow |
+| **validation-pyramid** | 2-level validation orchestration integrated into ml-subagent-dev workflow |
 | **ml-static-checks** | L0: Static analysis — device consistency, precision, FA, optimizer, DataLoader, logging & observability + 15 advisory checks |
-| **ml-runtime-validator** | L1: Minutes-level runtime — MFU, TCA, throughput, gradient health, loss trend, arch-specific metrics |
-| **ml-e2e-validator** | L2: End-to-end pipeline — data → train → checkpoint → infer → evaluate (1-5 steps per stage) |
+| **ml-runtime-validator** | L1: Runtime validation — train ~5 min with metrics, then verify full pipeline (checkpoint, inference, evaluation) |
 
 ### Shared Infrastructure (modified from Superpowers)
 

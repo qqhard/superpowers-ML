@@ -1,3 +1,5 @@
+> **Partially superseded:** The 6-item completion gate described here has been reduced to 5 items (L2 merged into L1). See `docs/superpowers/specs/2026-03-29-vp-l1-l2-merge-design.md`.
+
 # ml-subagent-dev Completion Gate Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

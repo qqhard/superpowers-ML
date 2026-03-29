@@ -1,3 +1,5 @@
+> **Superseded:** The 3-level VP described here has been merged to 2 levels (L0/L1). See `docs/superpowers/specs/2026-03-29-vp-l1-l2-merge-design.md`.
+
 # Validation Pyramid Refactor Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use spml:ml-subagent-dev to implement this plan task-by-task. (If subagent-dev is not yet available, use spml:executing-plans.)
