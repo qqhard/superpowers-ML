@@ -58,7 +58,7 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 
 - You have an ML experiment plan (from experiment-planning)
 - Subtasks are mostly independent
-- You want to stay in this session (vs. executing-plans in parallel session)
+- You want to stay in this session (vs. superpowers:executing-plans in parallel session)
 
 ## Plan Gate
 

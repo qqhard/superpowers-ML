@@ -278,7 +278,7 @@ After saving the plan, offer execution choice:
 
 **1. Subagent-Driven (this session)** — I dispatch fresh subagent per subtask, review between subtasks, fast iteration
 
-**2. Parallel Session (separate)** — Open new session with executing-plans, batch execution with checkpoints
+**2. Parallel Session (separate)** — Open new session with superpowers:executing-plans, batch execution with checkpoints
 
 **Which approach?"**
 
