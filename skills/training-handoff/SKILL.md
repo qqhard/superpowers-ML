@@ -9,7 +9,7 @@ description: Use after VP passes when the task includes a long-running phase —
 
 Bridge between VP validation (minute-level) and long-running execution (hours/days). Generates monitoring artifacts (experiment-context.md + watchdog-prompt.md) for a training script that has already been built and validated by the upstream flow.
 
-**Core principle:** Do not rewrite VP-validated code. The training script was built by ml-subagent-dev, tested by VP L1/L2, and reviewed by spec+quality reviewers. Handoff's job is to verify it's production-ready and set up monitoring — not to modify it.
+**Core principle:** Do not rewrite VP-validated code. The training script was built by ml-subagent-dev, tested by VP L0/L1, and reviewed by spec+quality reviewers. Handoff's job is to verify it's production-ready and set up monitoring — not to modify it.
 
 <HARD-GATE>
 Do NOT hand off without:

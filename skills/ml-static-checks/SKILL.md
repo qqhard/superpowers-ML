@@ -45,5 +45,5 @@ See `checklist.md` for the full conditional checklist.
 ## Integration
 
 - **spml:ml-subagent-dev** — dispatches this as a review stage
-- **spml:validation-pyramid** — L0 in the 3-level pyramid
+- **spml:validation-pyramid** — L0 in the 2-level pyramid
 - **spml:ml-runtime-validator** — next level after L0 passes

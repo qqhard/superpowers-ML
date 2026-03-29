@@ -95,7 +95,7 @@ After completing the checklist, present this summary to the user:
 | Subtask | Hypothesis | Result | Key Metric | VP Status |
 |---------|-----------|--------|------------|-----------|
 | 1. [name] | [hypothesis] | ✅ effective | [metric=value] | All passed |
-| 2. [name] | [hypothesis] | ❌ ineffective | [metric=value] | L2 failed |
+| 2. [name] | [hypothesis] | ❌ ineffective | [metric=value] | L1 failed |
 | 3. [name] | [hypothesis] | ⚠️ inconclusive | [metric=value] | All passed |
 
 ## Key Findings

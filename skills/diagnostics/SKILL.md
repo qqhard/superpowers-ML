@@ -183,7 +183,7 @@ def diagnostic_snapshot(model, loss_history, step):
 
 ```
 Validation Pyramid check fails
-    -> Identify which check failed (L0/L1/L2)
+    -> Identify which check failed (L0/L1)
     -> Map to core question (Q1/Q2/Q3)
     -> Enter Phase 1 with relevant metrics already collected
     -> After fix: re-run the failed Validation Pyramid check
