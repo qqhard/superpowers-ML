@@ -93,9 +93,10 @@ Checks that the training code's logging actually produces correct output at runt
 | L.1 | Loss file output correctness | **Mandatory** | File exists, non-empty, parseable format; values reasonable (no all-NaN/Inf/zero, trend consistent with gradient behavior) |
 | L.2 | Step speed output correctness | **Mandatory** | File exists, non-empty; values match wall clock (step count × reported step time ≈ actual elapsed time) |
 | L.3 | Data loading duration correctness | Advisory | Duration record exists; values reasonable (non-zero, non-negative, consistent with actual time window) |
-| L.4 | Output frequency reasonableness | Advisory | Actual log entry timestamps have intervals approximately minute-level (complements L0 check 22 which verifies interval-control logic in code) |
-| L.5 | Progress bar correctness | Advisory | Progress bar total matches training target — 1 epoch → dataset size; N steps → total = N; T minutes → time-based estimate; advance rate matches actual speed |
+| L.4 | Output frequency reasonableness | Advisory | **Console**: tqdm refresh interval or print output interval is approximately minute-level. **File**: actual log entry timestamps have intervals approximately minute-level. Complements L0 check 22 |
+| L.5 | Console metrics correctness | Advisory | Progress bar total matches training target; advance rate matches actual speed. Console output (tqdm postfix or print) includes key runtime metrics (at least loss); metric values are consistent with those recorded in file logs |
 | L.6 | Visualization tool output correctness (if enabled) | **Mandatory** | Output directory/API has data; frequency reasonable; values cross-validated against loss/speed files for consistency; skip if not enabled |
+| L.7 | Checkpoint periodic saving | Advisory | During L1 training (~5 min), at least one checkpoint file is produced (if configured interval should trigger within 5 min); checkpoint file is non-empty and loadable (reuse Stage 4 verification logic) |
 
 ## Failure Detection
 
