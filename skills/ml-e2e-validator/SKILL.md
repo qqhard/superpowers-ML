@@ -62,7 +62,19 @@ Default: 1 step per stage. Configurable to 3-5 steps per stage (declared during 
 
 ## Timeout Protection
 
-Each stage has a default timeout of 2 minutes (configurable). Single stage hanging beyond timeout is killed and counts as a failure. The entire L2 run has an overall timeout of 10 minutes.
+**Per-stage timeout:** 2 minutes (configurable). Single stage hanging beyond timeout is killed and counts as a failure.
+
+**Overall timeout:** 15 minutes for the entire L2 run.
+
+**Background execution liveness check:**
+When L2 dispatches pipeline stages to background execution, the orchestrator MUST monitor them:
+
+1. Start a check loop at **30-second intervals**
+2. Each check: is the process still running? Has per-stage or overall timeout been exceeded?
+3. **Timeout exceeded** → kill the background process → report which stage timed out → enter fix loop (same as any VP failure)
+4. **Process completes within timeout** → read output → continue to next stage
+
+**Critical:** Do NOT dispatch to background and then wait indefinitely. A hung process with no timeout detection will stall the entire VP flow.
 
 ## Difference from L1
 
