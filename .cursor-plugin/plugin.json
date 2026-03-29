@@ -2,7 +2,7 @@
   "name": "spml",
   "displayName": "MLSP",
   "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "author": {
     "name": "spml contributors"
   },

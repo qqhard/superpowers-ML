@@ -94,21 +94,14 @@ These requirements should be part of the experiment plan so ml-subagent-dev impl
 
 ### Evaluation Readiness Checks
 
-When the experiment includes evaluation, verify these explicitly during handoff:
+When the experiment includes evaluation, verify these handoff-specific items:
 
-- in-training evaluation is configured to fire at the planned step cadence
-- checkpoint-based evaluation exists as an independent entrypoint
-- long-running evaluation does not go silent: phase-start message, progress updates, phase-end message
-- evaluation summary includes metrics plus efficiency details such as total duration, throughput, and checkpoint load latency where applicable
-- evaluation errors surface with mode-aware context at the boundary:
-  - checkpoint missing or unreadable
-  - checkpoint restore failure
-  - empty or misconfigured validation dataloader
-  - metric aggregation failure
-  - non-finite metrics
-  - stalled evaluation / long silent output gaps
+- eval_command is defined and runnable (required for Watchdog async evaluation)
+- checkpoint_dir is configured and accessible
+- In-training evaluation fires at the planned step cadence (test by inspecting early log output or config)
+- Checkpoint-based evaluation exists as an independent entrypoint
 
-Treat cadence firing, evaluation mode reporting, progress visibility, and mode-aware boundary errors as runtime readiness checks. They are not stylistic suggestions.
+For the full evaluation requirements (observability, failure handling, mode-aware errors), see `experiment-planning` → Evaluation Planning Requirements. Gaps found here mean the upstream plan was incomplete — flag to user, do NOT silently rewrite VP-validated code.
 
 ## Step 4: Write experiment-context.md
 
