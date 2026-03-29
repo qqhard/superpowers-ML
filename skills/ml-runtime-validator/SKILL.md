@@ -1,17 +1,17 @@
 ---
 name: ml-runtime-validator
-description: Use when running L1 runtime validation — performance metrics, training health, and timeout protection during minutes-level training run
+description: Use when running L1 runtime validation — trains for ~5 minutes collecting performance/health metrics, then verifies the full pipeline (checkpoint, inference, evaluation) in one sequential run
 ---
 
 # L1: ML Runtime Validation
 
 ## Overview
 
-Run training for a **limited number of steps** (not the full experiment), collecting performance and training health metrics simultaneously. Catches issues that static analysis cannot detect: slow performance, numerical instability, gradient problems, and architecture-specific anomalies.
+Run a sequential 6-stage pipeline: load data, instantiate model, train for an estimated 5 minutes of training volume (collecting performance and health metrics), then verify checkpoint save/load, inference, and evaluation. One run, one unified report.
 
 **L1 is validation, not the experiment.** The full training run happens later via `spml:training-handoff` → `spml:watchdog`.
 
-**This is a RIGID skill.** Run all applicable checks. Don't skip metrics collection.
+**This is a RIGID skill.** Run all 6 stages. Don't skip stages. Don't skip metrics collection.
 
 ## When to Use
 
@@ -25,7 +25,42 @@ User declares during brainstorming which data flow to use:
 - **Real data flow** — when the dataset is meaningful and overfitting test has no reference value
 - **Mock overfit data flow** — small dataset with repeated sampling, for verifying model can fit
 
-## Metrics Collected (one run, simultaneous)
+## The 6-Stage Pipeline
+
+```
+Stage 1: Data Loading
+  - Load N batches, verify shapes, no NaN/Inf in inputs
+  - Verify DataLoader iterator doesn't crash or hang
+
+Stage 2: Model Instantiation
+  - Create model with training config
+  - Pass one batch through forward pass
+  - Verify output shape correct, no errors
+
+Stage 3: Training (~5 min estimated training volume)
+  - forward + backward + optimizer.step
+  - Collect simultaneously:
+    · Performance: MFU, TCA, throughput, memory
+    · Health: loss trend, gradient health, parameter drift
+    · Architecture-specific checks (see below)
+    · Logging output validation (see below)
+
+Stage 4: Checkpoint
+  - Save model state_dict and optimizer state_dict
+  - Load into fresh model instance
+  - Verify all parameters match (torch.allclose), optimizer state restored
+
+Stage 5: Inference
+  - Switch to eval mode
+  - Run N forward passes
+  - Verify no NaN/Inf in outputs, deterministic (if seeds set)
+
+Stage 6: Evaluation
+  - Compute evaluation metrics on N batches
+  - Verify metrics are finite numbers, metric function doesn't crash
+```
+
+## Stage 3: Metrics Collected (one run, simultaneous)
 
 | Category | Metric | Source |
 |----------|--------|--------|
@@ -84,46 +119,45 @@ Catches obvious problems regardless of baselines:
 - Memory fragmentation extreme
 - Architecture-specific metrics degenerate
 - Logging outputs missing or empty (L.1, L.2 checks)
+- Pipeline stage crash or timeout (stages 1-6)
 
-## Training Duration Limiting
+## Training Volume Control
 
 L1 is a **validation step**, not the experiment itself. You MUST limit training to a short run.
 
-**Default:** 3 epochs or 10 steps (whichever is fewer). User can override during brainstorming.
+**Default:** An estimated 5 minutes of training volume. User can override during brainstorming.
 
 **How to limit — in order of preference:**
 
-1. **Config/CLI override** (preferred) — pass `--max_steps=10` or `--epochs=3` or equivalent flag directly to the training script. This is the most reliable method.
+1. **Config/CLI override** (preferred) — pass `--max_steps=N` or `--epochs=M` or equivalent flag directly to the training script. Estimate step count to yield ~5 minutes of training. This is the most reliable method.
 2. **Create an L1-specific config file** — copy the training config, modify `epochs`/`max_steps`, and pass it to the script. Keep this config file next to the training script for traceability.
 3. **Wrapper script** — write a thin wrapper that modifies the config before calling the training script.
 
 **Do NOT monkey-patch** runtime objects (e.g., patching `trainer.max_epochs` after construction). Monkey-patches fail silently when internal APIs change, causing L1 to run the full experiment.
 
-**Verification (mandatory):** Within the first 30 seconds of L1 execution, confirm that the training process reports the expected limited total (e.g., "Training for 3 epochs" or "Total steps: 10" in the log). If the log shows the full experiment total (e.g., 80 epochs), **kill immediately** — the limiting didn't work. This counts as a failure and enters the fix loop.
+**Verification (mandatory):** Within the first 30 seconds of L1 execution, confirm that the training process reports the expected limited total (e.g., "Training for M epochs" or "Total steps: N" in the log). If the log shows the full experiment total (e.g., 80 epochs), **kill immediately** — the limiting didn't work. This counts as a failure and enters the fix loop.
 
 ## Timeout Protection
 
-L1 default runtime: 5 minutes. User can override during brainstorming.
+**Total timeout:** 15 minutes for the entire L1 run (all 6 stages).
 
-**Total timeout:** 10 minutes (configured runtime x 2, minimum 10 minutes).
-
-**Timeout is a safety net, not the limiting mechanism.** If L1 hits timeout, it likely means duration limiting failed. Treat timeout as a bug to investigate, not an expected path.
+**Timeout is a safety net, not the limiting mechanism.** If L1 hits timeout, it likely means training volume estimation was wrong or a stage hung. Treat timeout as a bug to investigate, not an expected path.
 
 **Background execution liveness check:**
-When L1 dispatches training to background execution, the orchestrator MUST monitor it:
+When L1 dispatches stages to background execution, the orchestrator MUST monitor:
 
 1. Start a check loop at **30-second intervals**
 2. Each check: is the process still running? Has total timeout been exceeded?
 3. **Timeout exceeded** → kill the background process → report as timeout failure → enter fix loop (same as any VP failure)
-4. **Process completes within timeout** → read output → continue normal L1 metric analysis
+4. **Process completes within timeout** → read output → continue normal L1 analysis
 
 ```
-Start runtime validation
+Start runtime validation (6 stages)
     -> Background execution with 30s liveness checks
-    -> Total timeout: 10 minutes
-    -> Normal completion -> check metrics
+    -> Total timeout: 15 minutes
+    -> Normal completion -> check all metrics + stage results
     -> Timeout -> kill process
-        -> Analyze hang cause (deadlock, communication block, data loading stuck)
+        -> Analyze hang cause (deadlock, communication block, data loading stuck, stage hung)
         -> Send to Implementer for fix
         -> Counts toward 5-retry limit
 ```
@@ -133,7 +167,7 @@ Start runtime validation
 ## Toolkit Usage
 
 Reuse existing `toolkit/profiling/` for performance metrics:
-- `l0_runner.py` — main entry for performance collection (named after old L0, used by new L1)
+- `l0_runner.py` — main entry for performance collection (named after old L0, used by L1)
 - `mfu_calculator.py`, `dcgm_profiler.py`, `gap_analyzer.py` — unchanged
 - `memory_profiler.py`, `layer_profiler.py` — unchanged
 
@@ -153,18 +187,48 @@ Overall metric not meeting target
 
 Example: MFU low -> per-layer profiling -> attention layer 3x slower than expected -> missing FlashAttention on that layer.
 
+## Output Report (Unified)
+
+```
+=== L1 Runtime Validation Report ===
+
+[Data Loading]     PASS  5 batches loaded, shapes correct
+[Model Init]       PASS  output shape [B, C] matches expected
+[Training]         PASS  150 steps, 4m52s
+  MFU:             38.2%
+  Throughput:      12.4k tokens/sec
+  Peak Memory:     24.3 GB
+  Loss:            2.41 -> 1.87 (down 23%)
+  Gradients:       healthy (no NaN/Inf)
+  Param Drift:     normal
+[Checkpoint]       PASS  save/load match (max diff: 1e-7)
+[Inference]        PASS  5 passes, deterministic
+[Evaluation]       PASS  metrics computed (acc: 0.34)
+
+RESULT: PASS (6/6 stages)
+Total time: 5m38s
+```
+
 ## Fix Loop
 
 Uses the shared fix loop from `spml:validation-pyramid`:
-- Metric fails -> send to Implementer with specific diagnosis and fix instructions
-- Implementer fixes -> re-run L1
+- Stage/metric fails -> send to Implementer with specific diagnosis and fix instructions
+- Implementer fixes -> re-run entire L1 (from stage 1)
 - 5 consecutive failures -> pause, notify user
 - If fix modifies > 50 lines -> rollback: re-run Spec Review + Code Quality Review + L0 + L1
+
+## What This Catches
+
+Issues found across the 6 stages:
+- **Stages 1-2:** Shape errors, path errors, preprocessing bugs, config errors
+- **Stage 3:** Performance anomalies (low MFU, gradient NaN, loss not decreasing), numerical instability
+- **Stage 4:** Checkpoint save/load dropping optimizer state or custom buffers, serialization bugs
+- **Stage 5:** Eval mode changing behavior unexpectedly (dropout, batch norm), output NaN
+- **Stage 6:** Metric function bugs, label format errors, data iterator exhaustion
 
 ## Integration
 
 - **spml:ml-subagent-dev** — invokes this as a validation stage
-- **spml:validation-pyramid** — L1 in the 3-level pyramid
+- **spml:validation-pyramid** — L1 in the 2-level pyramid
 - **spml:ml-static-checks** — must pass before L1 runs
-- **spml:ml-e2e-validator** — next level after L1 passes
 - **spml:diagnostics** — triggered on failure for root cause analysis
