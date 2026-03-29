@@ -154,14 +154,10 @@ Walk through the Validation Pyramid levels. For each, ask: needed / skip / alrea
 **L1: ML Runtime Validation (spml:ml-runtime-validator)**
 - Default: enabled
 - Ask: "Real data flow or mock overfit data flow?"
-- Ask: "Runtime duration? (default 5 minutes)"
+- Ask: "Training volume estimate? (default ~5 minutes — I'll estimate the step count to yield roughly this duration)"
 - Ask: "Project-specific baselines? (e.g., minimum MFU, max step time, min throughput)"
   - If user provides baselines, record them in the design doc
   - If not, L1 uses anomaly detection only
-
-**L2: ML E2E Pipeline (spml:ml-e2e-validator)**
-- Default: enabled
-- Ask: "Steps per stage? (default 1, recommend 3-5 for better coverage)"
 
 **User can skip any level.** Record decisions in natural language in the design doc.
 
