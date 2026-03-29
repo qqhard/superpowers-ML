@@ -178,6 +178,10 @@ Use the spml:watchdog skill. It will guide you through:
 
 ## Step 6: Present Launch Instructions
 
+Show the artifact summary, then **print the full watchdog-prompt.md content directly in the conversation** so the user can copy-paste it into a new session without opening any files.
+
+Format:
+
 ```
 Handoff complete. All artifacts generated:
 - Training script: [experiment-dir]/train.py
@@ -186,11 +190,10 @@ Handoff complete. All artifacts generated:
 - Watchdog prompt: [experiment-dir]/watchdog-prompt.md
 - Watchdog mode: [mode] (configurable in experiment-context.md)
 
-To start:
-  1. Open a new agent session
-  2. Paste the contents of watchdog-prompt.md
-  3. The Watchdog will launch training and begin monitoring
+To start — copy the prompt below into a new agent session:
 ```
+
+Then output the **full content** of the generated watchdog-prompt.md in a fenced code block so it is directly copy-pasteable. Do NOT just say "paste the contents of watchdog-prompt.md" — the user should never need to open that file manually.
 
 ## Integration
 
