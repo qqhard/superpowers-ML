@@ -7,7 +7,9 @@ description: Use when running L2 end-to-end pipeline validation — verifies eac
 
 ## Overview
 
-Verify the full pipeline runs through, each stage running a small number of steps. Not testing performance or result quality — testing that the flow is correct. If the flow is broken, it surfaces here before wasting hours on full training.
+Verify the full pipeline runs through, each stage running a small number of steps (1-5). Not testing performance or result quality — testing that the **flow** is correct. If the flow is broken, it surfaces here before wasting hours on full training.
+
+**L2 is validation, not the experiment.** L2 runs 1-5 steps per stage to verify pipeline connectivity. The full training run (all epochs/iterations) happens later via `spml:training-handoff` → `spml:watchdog`. Do NOT run L2 with full experiment settings (e.g., 80 epochs).
 
 **This is a RIGID skill.** Run all 6 stages. Don't skip stages.
 

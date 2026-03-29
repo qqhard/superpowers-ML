@@ -11,6 +11,8 @@ The Validation Pyramid ensures ML code is correct before committing to expensive
 
 **Core principle:** In ML, code running without errors does NOT mean it's correct. The Validation Pyramid catches implementation errors so you can trust that "not working" means the strategy is ineffective — not that the code is wrong.
 
+**VP is validation, not the experiment.** All three levels (L0, L1, L2) run with limited steps/data to verify correctness cheaply. The full training run happens AFTER VP passes, via `spml:training-handoff` → `spml:watchdog`. Never run VP levels with full experiment settings (full epochs, full dataset iterations).
+
 **This is a RIGID skill.** Follow exactly. Don't skip levels. Don't adapt away discipline.
 
 ## When to Use
@@ -79,6 +81,9 @@ If the Implementer's fix modifies more than 50 lines of code, the fix is conside
 - Letting a timeout run instead of killing the process
 - Accepting "pass" without checking actual numbers
 - Fix > 50 lines without rollback
+- **Running VP with full experiment settings** (e.g., 80 epochs) — VP is validation, not the experiment
+- **Monkey-patching to limit training** instead of using config/CLI flags — monkey-patches fail silently
+- **L1/L2 running longer than expected** without investigating — likely means duration limiting failed
 
 ## Integration
 

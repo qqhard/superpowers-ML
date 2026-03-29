@@ -7,7 +7,9 @@ description: Use when running L1 runtime validation — performance metrics, tra
 
 ## Overview
 
-Run training for a few minutes, collecting performance and training health metrics simultaneously. Catches issues that static analysis cannot detect: slow performance, numerical instability, gradient problems, and architecture-specific anomalies.
+Run training for a **limited number of steps** (not the full experiment), collecting performance and training health metrics simultaneously. Catches issues that static analysis cannot detect: slow performance, numerical instability, gradient problems, and architecture-specific anomalies.
+
+**L1 is validation, not the experiment.** The full training run happens later via `spml:training-handoff` → `spml:watchdog`.
 
 **This is a RIGID skill.** Run all applicable checks. Don't skip metrics collection.
 
@@ -83,11 +85,29 @@ Catches obvious problems regardless of baselines:
 - Architecture-specific metrics degenerate
 - Logging outputs missing or empty (L.1, L.2 checks)
 
+## Training Duration Limiting
+
+L1 is a **validation step**, not the experiment itself. You MUST limit training to a short run.
+
+**Default:** 3 epochs or 10 steps (whichever is fewer). User can override during brainstorming.
+
+**How to limit — in order of preference:**
+
+1. **Config/CLI override** (preferred) — pass `--max_steps=10` or `--epochs=3` or equivalent flag directly to the training script. This is the most reliable method.
+2. **Create an L1-specific config file** — copy the training config, modify `epochs`/`max_steps`, and pass it to the script. Keep this config file next to the training script for traceability.
+3. **Wrapper script** — write a thin wrapper that modifies the config before calling the training script.
+
+**Do NOT monkey-patch** runtime objects (e.g., patching `trainer.max_epochs` after construction). Monkey-patches fail silently when internal APIs change, causing L1 to run the full experiment.
+
+**Verification (mandatory):** Within the first 30 seconds of L1 execution, confirm that the training process reports the expected limited total (e.g., "Training for 3 epochs" or "Total steps: 10" in the log). If the log shows the full experiment total (e.g., 80 epochs), **kill immediately** — the limiting didn't work. This counts as a failure and enters the fix loop.
+
 ## Timeout Protection
 
 L1 default runtime: 5 minutes. User can override during brainstorming.
 
 **Total timeout:** 10 minutes (configured runtime x 2, minimum 10 minutes).
+
+**Timeout is a safety net, not the limiting mechanism.** If L1 hits timeout, it likely means duration limiting failed. Treat timeout as a bug to investigate, not an expected path.
 
 **Background execution liveness check:**
 When L1 dispatches training to background execution, the orchestrator MUST monitor it:
