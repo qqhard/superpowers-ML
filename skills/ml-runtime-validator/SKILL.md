@@ -85,17 +85,30 @@ Catches obvious problems regardless of baselines:
 
 ## Timeout Protection
 
-L1 default runtime: 5 minutes. User can override during brainstorming. Timeout = configured runtime x 1.5.
+L1 default runtime: 5 minutes. User can override during brainstorming.
+
+**Total timeout:** 10 minutes (configured runtime x 2, minimum 10 minutes).
+
+**Background execution liveness check:**
+When L1 dispatches training to background execution, the orchestrator MUST monitor it:
+
+1. Start a check loop at **30-second intervals**
+2. Each check: is the process still running? Has total timeout been exceeded?
+3. **Timeout exceeded** → kill the background process → report as timeout failure → enter fix loop (same as any VP failure)
+4. **Process completes within timeout** → read output → continue normal L1 metric analysis
 
 ```
-Start runtime validation (default 5 min, configurable)
-    -> Timeout = runtime x 1.5 (e.g., 5 min -> timeout 7.5 min)
+Start runtime validation
+    -> Background execution with 30s liveness checks
+    -> Total timeout: 10 minutes
     -> Normal completion -> check metrics
     -> Timeout -> kill process
         -> Analyze hang cause (deadlock, communication block, data loading stuck)
         -> Send to Implementer for fix
         -> Counts toward 5-retry limit
 ```
+
+**Critical:** Do NOT dispatch to background and then wait indefinitely. A hung process with no timeout detection will stall the entire VP flow.
 
 ## Toolkit Usage
 
