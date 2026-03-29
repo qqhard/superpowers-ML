@@ -127,7 +127,7 @@ Treat cadence firing, evaluation mode reporting, progress visibility, and mode-a
 - MFU: [value]
 - Gradient norm range: [min-max observed]
 - Initial loss: [value]
-- Overfit test result: [if L2 was run]
+- Pipeline stages: [all 6 passed / which failed]
 - [Architecture-specific metrics]
 
 ## Training Configuration

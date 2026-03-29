@@ -37,8 +37,7 @@ For each subtask, verify:
 ```
 Subtask 1: [name]
   L0 Static:   ✅ All mandatory checks passed
-  L1 Runtime:  ✅ MFU=0.45 (target ≥0.40), no NaN/Inf, loss decreasing
-  L2 E2E:      ✅ All 6 stages passed
+  L1 Runtime:  ✅ MFU=0.45 (target ≥0.40), no NaN/Inf, loss decreasing, all 6 pipeline stages passed
 
 Subtask 2: [name]
   ...
