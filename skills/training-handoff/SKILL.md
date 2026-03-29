@@ -56,10 +56,10 @@ The training script already exists — it was implemented during ml-subagent-dev
 - [ ] Fixed seeds — for reproducibility
 
 **Expected (flag gap if missing, ask user whether to quick-fix or proceed):**
-- [ ] Terminal progress indicator (tqdm or similar)
-- [ ] Key metrics in log: loss, gradient norm, learning rate
-- [ ] MFU in log (needed for efficiency monitoring)
-- [ ] Checkpoint support with configurable interval
+- [ ] Console output uses tqdm (preferred) or controlled print, minute-level, carrying key metrics
+- [ ] Detailed metrics written to file: loss, gradient norm, learning rate, step time
+- [ ] MFU in file log (needed for efficiency monitoring)
+- [ ] Checkpoint save with configurable interval
 - [ ] Resumable from checkpoint
 - [ ] If evaluation is part of the experiment: a distinct evaluation capability, not only a final-epoch block
 - [ ] If evaluation is part of the experiment: both evaluation entry modes are available
@@ -83,10 +83,9 @@ The training script already exists — it was implemented during ml-subagent-dev
 
 These requirements should be part of the experiment plan so ml-subagent-dev implements them from the start. If you find yourself frequently patching scripts at handoff, the fix is in `spml:experiment-planning`, not here. Key requirements to include in plans:
 
-- Human-readable log file output (one line per step with key metrics)
-- MFU calculation and logging
-- Terminal progress bar (tqdm)
-- Checkpoint save/resume support
+- Console output: tqdm (preferred) or controlled print, minute-level frequency, carrying key metrics (loss, lr, etc.)
+- File output: detailed metrics written to file (loss, grad_norm, lr, mfu, memory, step_time), for Agent exploration
+- Checkpoint: periodic save with configurable interval, resume support
 - Step-based evaluation cadence
 - `full validation` as the default evaluation scope unless explicitly overridden
 - One shared evaluator core across checkpoint-based and in-memory evaluation
