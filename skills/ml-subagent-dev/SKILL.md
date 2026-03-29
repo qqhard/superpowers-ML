@@ -1,6 +1,6 @@
 ---
 name: ml-subagent-dev
-description: Use when executing ML experiment plans with subagents - adapts superpowers:subagent-driven-development with 3-level Validation Pyramid (L0 static → L1 runtime → L2 E2E), experiment-aware reviews, and conclusion recording
+description: Use when executing ML experiment plans with subagents - adapts superpowers:subagent-driven-development with 2-level Validation Pyramid (L0 static → L1 runtime), experiment-aware reviews, and conclusion recording
 ---
 
 <HARD-GATE>
@@ -14,8 +14,7 @@ A subtask without VP results and Review results is NOT complete. Period.
 Before marking ANY subtask as complete, you MUST have:
 
 - [ ] L0: VP Static Checks — passed (with actual numbers recorded)
-- [ ] L1: ML Runtime Validator — passed (with actual metrics recorded)
-- [ ] L2: ML E2E Validator — passed (with actual pipeline stages confirmed)
+- [ ] L1: ML Runtime Validation — passed (with actual metrics and pipeline stages confirmed)
 - [ ] Spec Review — passed (experiment design compliance confirmed)
 - [ ] Quality Review — passed (code quality confirmed)
 - [ ] Conclusion recorded — with metric evidence from VP
@@ -33,7 +32,7 @@ This is the single most dangerous rationalization in ML experiments.
 | "This is just a toy experiment" | Toy experiments with wrong gradients waste days of debugging |
 | "The model code is simple" | Simple code with silent shape bugs produces plausible but wrong results |
 | "Unit tests already passed" | Unit tests check deterministic logic. VP checks training dynamics. They test different things. |
-| "L1/L2 is overkill for this subtask" | If this subtask is part of an ML experiment, it WILL be trained and evaluated. VP validates that. |
+| "L1 is overkill for this subtask" | If this subtask is part of an ML experiment, it WILL be trained and evaluated. VP validates that. |
 | "I'll run VP at the end" | VP per subtask catches bugs early. VP at the end means debugging the entire codebase at once. |
 | "The user wants speed" | Skipping VP and debugging silent failures later is SLOWER. |
 
@@ -46,10 +45,9 @@ Execute ML experiment plans by dispatching fresh subagent per subtask, with ML-a
 **Core principle:** Fresh subagent per subtask + experiment-aware review + conclusion recording = correct implementations with trustworthy conclusions.
 
 **Adapted from:** `superpowers:subagent-driven-development`. Key changes:
-- TDD = Validation Pyramid: unit tests → implement → L0 → L1 → L2, THEN Spec Review → Quality Review
+- TDD = Validation Pyramid: unit tests → implement → L0 → L1, THEN Spec Review → Quality Review
 - L0: VP Static Checks subagent checks static ML correctness
-- L1: Runtime validation (minutes-level training run with metrics collection)
-- L2: E2E pipeline validation (1-5 steps per stage)
+- L1: Runtime validation (training with metrics + full pipeline verification in one run)
 - Spec reviewer checks experiment design compliance (hypothesis, variable control)
 - Quality reviewer checks code quality (VP results already validated by orchestrator)
 - Each subtask records: metric data, conclusion, anomaly log
@@ -87,7 +85,7 @@ When the plan contains revision markers (`[x]`, `REVISED`, `NEW`), apply these r
 - **`[ ] REVISED`** — Re-execute on existing code:
   - Implementer subagent receives the old code file paths as context
   - Implementer modifies existing code (not from scratch)
-  - VP must fully re-run (L0 → L1 → L2) — old VP results are voided
+  - VP must fully re-run (L0 → L1) — old VP results are voided
   - Spec Review + Quality Review must re-run
 - **`[ ] NEW`** — Normal fresh flow, same as non-revision mode
 
@@ -106,19 +104,16 @@ digraph process {
         "L0: VP Static Checks" [shape=box style=filled fillcolor=lightyellow];
         "L0 passed?" [shape=diamond];
         "Implementer fixes L0 issues" [shape=box];
-        "L1: ML Runtime Validator" [shape=box style=filled fillcolor=lightyellow];
+        "L1: ML Runtime Validation" [shape=box style=filled fillcolor=lightyellow];
         "L1 passed?" [shape=diamond];
         "Implementer fixes L1 issues" [shape=box];
-        "L2: ML E2E Validator" [shape=box style=filled fillcolor=lightyellow];
-        "L2 passed?" [shape=diamond];
-        "Implementer fixes L2 issues" [shape=box];
         "Dispatch ML spec reviewer" [shape=box];
         "Spec reviewer: experiment design compliance?" [shape=diamond];
         "Implementer fixes spec gaps" [shape=box];
         "Dispatch ML quality reviewer" [shape=box];
         "Quality reviewer: code quality?" [shape=diamond];
         "Implementer fixes quality issues" [shape=box];
-        "Completion Gate\n(all 6 items checked?)" [shape=diamond style=filled fillcolor=red fontcolor=white];
+        "Completion Gate\n(all 5 items checked?)" [shape=diamond style=filled fillcolor=red fontcolor=white];
         "Record conclusion" [shape=box style=filled fillcolor=lightgreen];
     }
 
@@ -132,17 +127,13 @@ digraph process {
     "Dispatch ML implementer subagent" -> "Implementer: unit tests + implement";
     "Implementer: unit tests + implement" -> "L0: VP Static Checks";
     "L0: VP Static Checks" -> "L0 passed?";
-    "L0 passed?" -> "L1: ML Runtime Validator" [label="yes"];
+    "L0 passed?" -> "L1: ML Runtime Validation" [label="yes"];
     "L0 passed?" -> "Implementer fixes L0 issues" [label="no"];
     "Implementer fixes L0 issues" -> "L0: VP Static Checks" [label="re-run\n(fix>50 lines: rollback)"];
-    "L1: ML Runtime Validator" -> "L1 passed?";
-    "L1 passed?" -> "L2: ML E2E Validator" [label="yes"];
+    "L1: ML Runtime Validation" -> "L1 passed?";
+    "L1 passed?" -> "Dispatch ML spec reviewer" [label="yes"];
     "L1 passed?" -> "Implementer fixes L1 issues" [label="no"];
-    "Implementer fixes L1 issues" -> "L1: ML Runtime Validator" [label="re-run\n(fix>50 lines: rollback)"];
-    "L2: ML E2E Validator" -> "L2 passed?";
-    "L2 passed?" -> "Dispatch ML spec reviewer" [label="yes"];
-    "L2 passed?" -> "Implementer fixes L2 issues" [label="no"];
-    "Implementer fixes L2 issues" -> "L2: ML E2E Validator" [label="re-run\n(fix>50 lines: rollback)"];
+    "Implementer fixes L1 issues" -> "L1: ML Runtime Validation" [label="re-run\n(fix>50 lines: rollback)"];
     "Dispatch ML spec reviewer" -> "Spec reviewer: experiment design compliance?";
     "Spec reviewer: experiment design compliance?" -> "Implementer fixes spec gaps" [label="no"];
     "Implementer fixes spec gaps" -> "Dispatch ML spec reviewer" [label="re-review"];
@@ -150,8 +141,8 @@ digraph process {
     "Dispatch ML quality reviewer" -> "Quality reviewer: code quality?";
     "Quality reviewer: code quality?" -> "Implementer fixes quality issues" [label="no"];
     "Implementer fixes quality issues" -> "Dispatch ML quality reviewer" [label="re-review"];
-    "Quality reviewer: code quality?" -> "Completion Gate\n(all 6 items checked?)" [label="yes"];
-    "Completion Gate\n(all 6 items checked?)" -> "Record conclusion" [label="all checked"];
+    "Quality reviewer: code quality?" -> "Completion Gate\n(all 5 items checked?)" [label="yes"];
+    "Completion Gate\n(all 5 items checked?)" -> "Record conclusion" [label="all checked"];
     "Record conclusion" -> "More subtasks?";
     "More subtasks?" -> "Dispatch ML implementer subagent" [label="yes"];
     "More subtasks?" -> "Post-Completion Gate:\nAsk user Train or Done" [label="no"];
@@ -182,7 +173,6 @@ The orchestrator MUST use TaskCreate/TaskUpdate to give the user real-time visib
    | Implementation | `Implementing [name]` | _(subagent updates internally)_ |
    | L0 Static | `Running L0 static checks on [name]` | `Phase: L0 VP Static Checks` |
    | L1 Runtime | `Running L1 runtime validation on [name]` | `Phase: L1 Runtime Validation` |
-   | L2 E2E | `Running L2 E2E validation on [name]` | `Phase: L2 E2E Validation` |
    | Spec Review | `Spec reviewing [name]` | `Phase: Spec Review` |
    | Quality Review | `Quality reviewing [name]` | `Phase: Quality Review` |
    | Fix loop | `Fixing [level] issues in [name]` | `Phase: Fix loop ([level], attempt N/5)` |
@@ -243,7 +233,7 @@ or toolkit. Validation scripts observe core code externally.
    → TaskUpdate: "Phase: Implementation — self-review complete, ready for VP"
 6. **Commit** with message: "experiment: [subtask description]"
 
-Note: After your code passes unit tests, the orchestrator will run Validation Pyramid (L0/L1/L2) as part of TDD, THEN Spec Review and Quality Review. You do NOT run VP or reviews yourself.
+Note: After your code passes unit tests, the orchestrator will run Validation Pyramid (L0/L1) as part of TDD, THEN Spec Review and Quality Review. You do NOT run VP or reviews yourself.
 
 If this subtask includes evaluation work:
 - build one evaluator core shared by checkpoint-based and in-memory entry modes
@@ -274,7 +264,7 @@ Call TaskUpdate(taskId=TASK_ID, description="...") at start and end:
 
 ## Context
 
-VP (L0/L1/L2) has already passed before this review. You can reference VP results when checking experiment design compliance — e.g., if L1 showed loss not decreasing, that's relevant to whether the hypothesis implementation is correct.
+VP (L0/L1) has already passed before this review. You can reference VP results when checking experiment design compliance — e.g., if L1 showed loss not decreasing, that's relevant to whether the hypothesis implementation is correct.
 
 ## Experiment Design
 
@@ -331,7 +321,7 @@ Call TaskUpdate(taskId=TASK_ID, description="...") at start and end:
 - Start: "Phase: Quality Review — checking code quality"
 - End:   "Phase: Quality Review — [✅ approved | ❌ N issues found]"
 
-Note: VP (L0/L1/L2) and Spec Review have already passed before this review. Your focus is purely code quality. VP metrics are already validated by the orchestrator.
+Note: VP (L0/L1) and Spec Review have already passed before this review. Your focus is purely code quality. VP metrics are already validated by the orchestrator.
 
 ## Your Job
 
@@ -419,10 +409,9 @@ When the long-running phase includes evaluation, downstream checks should confir
 ## Integration
 
 - **spml:experiment-planning** — Creates the plan this skill executes
-- **spml:validation-pyramid** — Defines the 3-level VP orchestration
+- **spml:validation-pyramid** — Defines the 2-level VP orchestration
 - **spml:ml-static-checks** — L0 static analysis (dispatched as subagent after implementation, before reviews)
 - **spml:ml-runtime-validator** — L1 runtime validation (orchestrator invokes after L0)
-- **spml:ml-e2e-validator** — L2 E2E pipeline validation (orchestrator invokes after L1)
 - **spml:diagnostics** — Called when VP check fails
 - **spml:training-handoff** — Called after Post-Completion Gate if user chooses Train
 - **spml:verification** — Called after Post-Completion Gate if user chooses Done
