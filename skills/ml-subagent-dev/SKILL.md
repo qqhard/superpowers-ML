@@ -79,6 +79,20 @@ Before dispatching any implementer subagent, read the plan and fail fast if a tr
 
 Do not treat these as advisory. Incomplete plans must be sent back for revision before implementation starts.
 
+## Revision Mode Adaptation
+
+When the plan contains revision markers (`[x]`, `REVISED`, `NEW`), apply these rules:
+
+- **`[x]` (unchanged, VP passed)** — Skip entirely. VP results preserved, no re-execution needed.
+- **`[ ] REVISED`** — Re-execute on existing code:
+  - Implementer subagent receives the old code file paths as context
+  - Implementer modifies existing code (not from scratch)
+  - VP must fully re-run (L0 → L1 → L2) — old VP results are voided
+  - Spec Review + Quality Review must re-run
+- **`[ ] NEW`** — Normal fresh flow, same as non-revision mode
+
+Completion Gate is unchanged — all re-executed subtasks must pass the full gate before marking complete.
+
 ## The Process
 
 ```dot
@@ -305,7 +319,7 @@ Present to the user:
   - Production training script with human-readable logging (including MFU, gradient norms, etc.)
   - `experiment-context.md` with VP baseline metrics
   - `watchdog-prompt.md` for monitoring in a separate session
-  - Verification happens LATER, after training completes (via `spml:training-resume`)
+  - Verification happens LATER, after training completes (re-enter experiment directory in new session)
 
 - **User chooses Done** → Invoke `spml:verification` directly. The experiment is already complete within this session.
 
