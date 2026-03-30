@@ -57,6 +57,7 @@ claude -p "$PROMPT" \
     --dangerously-skip-permissions \
     --max-turns 100 \
     --add-dir "$TEST_PROJECT" \
+    --verbose \
     --output-format stream-json \
     > "$LOG_FILE" 2>&1 || true
 
