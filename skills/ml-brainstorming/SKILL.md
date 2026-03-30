@@ -145,7 +145,9 @@ For experiment/ablation tasks, clarify:
 <HARD-GATE>
 ### Autoresearch Detection
 
-If the user mentions ANY of these keywords: **"auto research"**, **"autoresearch"**, **"automated research"**, **"automated experiment"**, **"auto optimize"**, **"自动研究"**, **"自动实验"** — you MUST immediately enter the autoresearch protocol definition flow below. Do NOT continue with normal brainstorming questions until the autoresearch protocol is fully defined.
+If the user mentions ANY of these keywords: **"auto research"**, **"autoresearch"**, **"automated research"**, **"automated experiment"**, **"auto optimize"**, **"自动研究"**, **"自动实验"** — you MUST immediately enter the autoresearch protocol definition flow below.
+
+**Do NOT explore the project first.** Do NOT dispatch Explore agents or read code before asking the user. Ask the user questions first — they know what they want to research. Only explore specific directories AFTER the user tells you where the experiment is.
 
 Also detect these patterns even without explicit keywords:
 - Goal is to search/optimize rather than validate a single hypothesis
@@ -153,17 +155,18 @@ Also detect these patterns even without explicit keywords:
 - "Find the best X" rather than "test whether X works"
 </HARD-GATE>
 
-When detected, ask:
-> "This sounds like it could benefit from autoresearch — automated iteration where an agent tries strategies, evaluates them, and learns from the results. The agent would iterate autonomously within constraints you define. Want to set this up?"
+When autoresearch is detected, ask the following questions **one at a time, in order**. Do NOT batch questions. Wait for each answer before asking the next.
 
-If the user agrees, ask the following additional questions (one at a time, in order):
+0. **Experiment directory** — "Do you already have an experiment directory with code, or do we need to create one from scratch? If existing, what's the path?"
+1. **Research question** — "What are you trying to optimize or find? Describe the research goal."
+2. **Fixed Conditions** — "What must NOT change between iterations?" (model architecture, dataset, specific code modules, etc.)
+3. **Pressure Conditions** — "What limits each iteration for fairness? (e.g., 5 minutes per round, 1 epoch per round)"
+4. **Variable Conditions** — "What can the agent freely adjust?" (learning rate, optimizer, augmentation, loss function, etc.)
+5. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
+6. **Termination** — "When should the loop stop?" (max rounds, target metric value)
+7. **Agent Boundary** — "Default: Agent A designs+codes+trains, Agent B evaluates+reviews+records. Want to adjust?" (has default, user can skip)
 
-1. **Fixed Conditions** — "What must NOT change between iterations?" (model architecture, dataset, specific code modules, etc.)
-2. **Pressure Conditions** — "What limits each iteration for fairness? (e.g., 5 minutes per round, 1 epoch per round)"
-3. **Variable Conditions** — "What can the agent freely adjust?" (learning rate, optimizer, augmentation, loss function, etc.)
-4. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
-5. **Termination** — "When should the loop stop?" (max rounds, target metric value)
-6. **Agent Boundary** — "Default: Agent A designs+codes+trains, Agent B evaluates+reviews+records. Want to adjust?" (has default, user can skip)
+Only AFTER collecting these answers, explore the experiment directory (if existing) to understand the base code.
 
 ### Confirming validation scope
 Walk through the Validation Pyramid levels. For each, ask: needed / skip / already covered by existing infra?
