@@ -142,11 +142,16 @@ For experiment/ablation tasks, clarify:
 - **Dependent variable:** What metrics to observe
 - **Control variable:** What stays the same
 
-### Autoresearch detection (when applicable)
-If the user's need matches these patterns, suggest autoresearch as an option:
+<HARD-GATE>
+### Autoresearch Detection
+
+If the user mentions ANY of these keywords: **"auto research"**, **"autoresearch"**, **"automated research"**, **"automated experiment"**, **"auto optimize"**, **"自动研究"**, **"自动实验"** — you MUST immediately enter the autoresearch protocol definition flow below. Do NOT continue with normal brainstorming questions until the autoresearch protocol is fully defined.
+
+Also detect these patterns even without explicit keywords:
 - Goal is to search/optimize rather than validate a single hypothesis
 - Multiple iterative attempts expected
 - "Find the best X" rather than "test whether X works"
+</HARD-GATE>
 
 When detected, ask:
 > "This sounds like it could benefit from autoresearch — automated iteration where an agent tries strategies, evaluates them, and learns from the results. The agent would iterate autonomously within constraints you define. Want to set this up?"
