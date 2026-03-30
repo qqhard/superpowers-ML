@@ -35,6 +35,7 @@ Use the mechanism that matches your host:
 - Evaluating a trained model's performance on a dataset
 - Debugging a live training run (convergence failures, NaN losses, gradient issues)
 - Preparing a dataset **for an imminent experiment** (not building a reusable data pipeline)
+- Setting up automated research iteration (autoresearch) — designing the protocol, creating baseline code, or running the autoresearch loop
 
 **Is NOT an ML experiment** (→ skip ALL `spml:*` skills, defer to `superpowers:*` equivalents):
 - Building or refactoring ML frameworks, toolkits, or scaffolding
@@ -161,6 +162,7 @@ When multiple skills could apply, use this order:
 "Let's train X" -> `spml:ml-brainstorming` first, then `spml:experiment-planning`.
 "Training isn't converging" -> `spml:diagnostics` first, then validation skills.
 "MFU is too low" -> `spml:diagnostics` first, then `spml:ml-runtime-validator`.
+"Find the best X" / "auto research" / "optimize X automatically" -> `spml:ml-brainstorming` (which detects autoresearch scenarios and guides protocol definition), then after VP: `spml:autoresearch-handoff` → `spml:autoresearch`.
 
 ## Skill Types
 
