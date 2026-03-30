@@ -142,6 +142,24 @@ For experiment/ablation tasks, clarify:
 - **Dependent variable:** What metrics to observe
 - **Control variable:** What stays the same
 
+### Autoresearch detection (when applicable)
+If the user's need matches these patterns, suggest autoresearch as an option:
+- Goal is to search/optimize rather than validate a single hypothesis
+- Multiple iterative attempts expected
+- "Find the best X" rather than "test whether X works"
+
+When detected, ask:
+> "This sounds like it could benefit from autoresearch — automated iteration where an agent tries strategies, evaluates them, and learns from the results. The agent would iterate autonomously within constraints you define. Want to set this up?"
+
+If the user agrees, ask the following additional questions (one at a time, in order):
+
+1. **Fixed Conditions** — "What must NOT change between iterations?" (model architecture, dataset, specific code modules, etc.)
+2. **Pressure Conditions** — "What limits each iteration for fairness? (e.g., 5 minutes per round, 1 epoch per round)"
+3. **Variable Conditions** — "What can the agent freely adjust?" (learning rate, optimizer, augmentation, loss function, etc.)
+4. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
+5. **Termination** — "When should the loop stop?" (max rounds, target metric value)
+6. **Agent Boundary** — "Default: Agent A designs+codes+trains, Agent B evaluates+reviews+records. Want to adjust?" (has default, user can skip)
+
 ### Confirming validation scope
 Walk through the Validation Pyramid levels. For each, ask: needed / skip / already covered by existing infra?
 
@@ -204,6 +222,37 @@ If the task involves constructing or transforming datasets:
 - Write the validated design to `<experiment_dir>/plans/YYYY-MM-DD-<topic>-design.md`
 - Include validation scope decisions in the doc
 - Commit the design document to git
+
+When autoresearch is detected, the design doc includes an additional section:
+
+```markdown
+## Autoresearch Protocol
+
+### Fixed Conditions
+<from user answers>
+
+### Pressure Conditions
+- time_limit: <from user>
+- epoch_limit: <from user>
+
+### Variable Conditions
+<from user answers>
+
+### Evaluation
+- metric: <from user>
+- direction: maximize / minimize
+- eval_command: <from user or derived from base code>
+
+### Termination
+- max_rounds: <from user>
+- target: <from user, optional>
+
+### Agent Boundary
+- agent_a: ["design", "code", "train"]
+- agent_b: ["evaluate", "review", "record"]
+```
+
+This section is the routing signal: downstream `ml-subagent-dev` will present the "Research" option at Post-Completion Gate when it detects this section.
 
 **Implementation:**
 - Invoke the `spml:experiment-planning` skill to create a detailed implementation plan
