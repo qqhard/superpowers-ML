@@ -32,7 +32,9 @@ check "autoresearch skill invoked" "$([ "$SKILL_TRIGGERED" = "0" ] && echo true 
 
 # 2. Subagents dispatched
 echo "2. Subagent dispatching"
-AGENT_COUNT=$(grep -c '"name":"Agent"' "$LOG_FILE" 2>/dev/null || echo "0")
+AGENT_COUNT=$(grep -c '"name":"Agent"' "$LOG_FILE" 2>/dev/null || true)
+AGENT_COUNT=${AGENT_COUNT:-0}
+AGENT_COUNT=$(echo "$AGENT_COUNT" | tr -d '[:space:]')
 check "subagents dispatched (need ≥2, got $AGENT_COUNT)" "$([ "$AGENT_COUNT" -ge 2 ] && echo true || echo false)"
 
 # 3. Git state
@@ -55,7 +57,9 @@ if [ -f "$TEST_DIR/experiences.md" ]; then
     check "Summary section exists" "$HAS_SUMMARY"
 
     # Check at least one Round entry
-    ROUND_COUNT=$(grep -c "^## Round" "$TEST_DIR/experiences.md" || echo "0")
+    ROUND_COUNT=$(grep -c "^## Round" "$TEST_DIR/experiences.md" 2>/dev/null || true)
+    ROUND_COUNT=${ROUND_COUNT:-0}
+    ROUND_COUNT=$(echo "$ROUND_COUNT" | tr -d '[:space:]')
     check "round entries exist ($ROUND_COUNT)" "$([ "$ROUND_COUNT" -gt 0 ] && echo true || echo false)"
 
     # Check rounds have required fields

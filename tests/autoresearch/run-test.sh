@@ -52,7 +52,7 @@ echo "Running Claude with autoresearch skill..."
 echo "Plugin dir: $PLUGIN_DIR"
 
 cd "$PLUGIN_DIR"
-timeout 1800 claude -p "$PROMPT" \
+claude -p "$PROMPT" \
     --plugin-dir "$PLUGIN_DIR" \
     --dangerously-skip-permissions \
     --max-turns 100 \
