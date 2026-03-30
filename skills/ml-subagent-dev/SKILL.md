@@ -366,7 +366,19 @@ Record this in the plan document or a separate experiment log.
 After ALL subtasks are complete (all Completion Gates passed), you MUST pause and present the following to the user. Do NOT decide this yourself. Do NOT skip this question. Do NOT proceed to verification or training-handoff without asking.
 </HARD-GATE>
 
-Present to the user:
+First, check if the brainstorm design doc contains a `## Autoresearch Protocol` section.
+
+**If Autoresearch Protocol section exists**, present to the user:
+
+> All subtasks complete. VP passed. Next step:
+>
+> 1. **Research** — automated experiment iteration. I will invoke spml:autoresearch-handoff to generate the research protocol and startup prompt for autonomous exploration.
+> 2. **Train** — needs long-running training (hours/days). I will invoke spml:training-handoff to generate experiment-context.md + watchdog-prompt.md for a new monitoring session.
+> 3. **Done** — experiment is already complete within this session. I will invoke spml:verification.
+>
+> Which one?
+
+**If no Autoresearch Protocol section**, present the original two options:
 
 > All subtasks complete. VP passed. Next step:
 >
@@ -382,6 +394,12 @@ Present to the user:
   - Verification happens LATER, after training completes (re-enter experiment directory in new session)
 
 - **User chooses Done** → Invoke `spml:verification` directly. The experiment is already complete within this session.
+
+- **User chooses Research** → Invoke `spml:autoresearch-handoff`. This generates:
+  - `autoresearch-protocol.md` with research constraints and evaluation criteria
+  - `autoresearch-prompt.md` for starting the research loop in a new session
+  - `experiences.md` initialized with baseline
+  - Verification happens LATER, after autoresearch completes (review experiences.md and git HEAD in new session)
 
 When the long-running phase includes evaluation, downstream checks should confirm:
 - in-training evaluation fires at the planned step cadence
@@ -415,3 +433,4 @@ When the long-running phase includes evaluation, downstream checks should confir
 - **spml:diagnostics** — Called when VP check fails
 - **spml:training-handoff** — Called after Post-Completion Gate if user chooses Train
 - **spml:verification** — Called after Post-Completion Gate if user chooses Done
+- **spml:autoresearch-handoff** — Called after Post-Completion Gate if user chooses Research
