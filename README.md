@@ -88,11 +88,18 @@ experiment-planning
 ml-subagent-dev
     Execute each subtask: unit test → implement → Validation Pyramid
     |
-training-handoff
-    Generate training script + Watchdog prompt + experiment context
-    |
-watchdog (independent session)
-    Active monitoring: auto-restart, parameter fixing, anomaly diagnosis
+    ├── training-handoff (single long-running task)
+    │   Generate training script + Watchdog prompt + experiment context
+    │   |
+    │   watchdog (independent session)
+    │   Active monitoring: auto-restart, parameter fixing, anomaly diagnosis
+    │
+    └── autoresearch-handoff (automated iteration)
+        Generate research protocol + startup prompt + experience log
+        |
+        autoresearch (independent session)
+        Autonomous loop: Agent A designs+codes → Agent B evaluates+reviews
+        Git commit on improvement, rollback on failure, experience accumulation
     |
 verification
     Evidence-based conclusion: effective / ineffective / inconclusive
@@ -133,6 +140,8 @@ Problems are classified into 3 tiers: environment problems (restart), simple par
 | **verification** | Evidence-based conclusion with experiment summary |
 | **training-handoff** | Generate training script + Watchdog prompt + experiment context |
 | **watchdog** | Active monitoring of long-running tasks with 3 operating modes |
+| **autoresearch-handoff** | Generate research protocol and startup prompt for autonomous iteration |
+| **autoresearch** | Supervisor loop: dispatch designer/evaluator agents, manage git, accumulate experience |
 
 ### Validation Pyramid
 
