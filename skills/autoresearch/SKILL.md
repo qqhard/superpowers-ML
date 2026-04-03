@@ -17,6 +17,7 @@ Automated research supervisor. Reads a research protocol, then iterates: dispatc
 You MUST be the ONLY entity that performs git write operations (commit, checkout, reset).
 Agent A and Agent B have file read/write and bash permissions but NO git write permissions.
 All git state changes go through the Supervisor.
+All git operations happen in the worktree — NEVER in the main working directory.
 </HARD-GATE>
 
 <HARD-GATE>
@@ -37,17 +38,25 @@ Experience transfer happens through files (experiences.md, git history), not age
 ## Startup
 
 1. **Read `autoresearch-protocol.md`** — understand research question, fixed/variable/pressure conditions, evaluation method, termination criteria, agent boundary
-2. **Verify worktree state:**
+2. **Create or reuse worktree** — all autoresearch operations happen in an isolated worktree, never in the main working directory.
+   - **Fresh start:** Create a new worktree from the current HEAD:
+     ```bash
+     git worktree add ../autoresearch-{experiment_name} HEAD
+     ```
+     Record the worktree path. All subsequent `{worktree_path}` references point here.
+   - **Resume:** Check if the worktree already exists (from a previous session). If so, reuse it — do NOT create a new one. Verify with `git worktree list`.
+   - Copy `autoresearch-protocol.md` and `experiences.md` into the worktree if they aren't already there (they live in the experiment directory within the worktree).
+3. **Verify worktree state** (inside the worktree):
    - Base code commit exists (`git log --oneline -1`)
    - `experiences.md` exists and has Summary section
-3. **Check for resume:**
+4. **Check for resume:**
    - Read `experiences.md` Summary → extract `Total rounds` and `Status`
    - If Status is `running` and Total rounds > 0: resuming from interruption
      - Current round = Total rounds + 1
      - Verify git HEAD matches latest committed improvement (or baseline if no improvements yet)
    - If Status is `not_started`: fresh start, round = 1
-4. **Announce:** "Starting autoresearch: {research_question}. Round {current} / {max_rounds}. Baseline: {metric} = {baseline}."
-5. **Set up watchdog cron** — create a durable recurring CronCreate that fires every 5 minutes:
+5. **Announce:** "Starting autoresearch: {research_question}. Round {current} / {max_rounds}. Baseline: {metric} = {baseline}. Worktree: {worktree_path}."
+6. **Set up watchdog cron** — create a durable recurring CronCreate that fires every 5 minutes:
    ```
    CronCreate(
      cron: "*/5 * * * *",
@@ -58,7 +67,7 @@ Experience transfer happens through files (experiences.md, git history), not age
    Save the returned job ID — you need it for cleanup.
    
    **Why:** The in-memory loop can die from session timeout, context overflow, or model error. The cron only fires when the REPL is idle — if the loop is running normally, the cron never triggers. If the loop dies for any reason, REPL becomes idle, cron fires, and resumes from where experiences.md left off.
-6. **Enter main loop**
+7. **Enter main loop**
 
 <HARD-GATE>
 ## Main Loop
@@ -258,6 +267,10 @@ If 5 consecutive rounds are "not_improved":
 When the loop terminates (target reached or max rounds):
 1. **Delete the watchdog cron** — use `CronDelete` with the job ID saved during startup
 2. Update experiences.md Summary — set Status to `target_reached` or `completed`
+3. **Merge worktree results** — the best code is in the worktree's HEAD. Present the user with options:
+   - Merge the worktree branch into main
+   - Keep the worktree for manual review
+   - Remove the worktree (user will handle results manually)
 
 Then output the final report:
 
