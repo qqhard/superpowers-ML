@@ -67,12 +67,28 @@ The loop is autonomous. After each round, IMMEDIATELY proceed to the next round.
 ```
 for round in current_round..max_rounds:
 
+  0. CREATE ROUND TASK LIST
   1. DISPATCH AGENT A
   2. DISPATCH AGENT B
   3. ACT ON VERDICT
   4. CHECK TERMINATION
   5. REPORT PROGRESS
 ```
+
+### Step 0: Create Round Task List
+
+At the start of each round, create a task list so the user can track progress:
+
+```
+TaskCreate: "Round {round}/{max_rounds}"
+  subtasks:
+    - "Agent A: design + code + train"
+    - "Agent B: evaluate + review + record"
+    - "Git: commit or rollback based on verdict"
+    - "Check termination"
+```
+
+Mark each subtask as completed when the corresponding step finishes.
 
 ### Step 1: Dispatch Agent A
 
