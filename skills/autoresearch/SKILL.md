@@ -25,6 +25,8 @@ All git state changes go through the Supervisor.
 You MUST use subagents (Agent tool) as the ONLY way to dispatch Agent A and Agent B.
 Each agent is a fresh subagent per round — no shared context between rounds.
 Experience transfer happens through files (experiences.md, git history), not agent memory.
+
+**Non-blocking dispatch:** Always use `run_in_background: true` for Agent A and Agent B. The Supervisor stays idle while agents work — this prevents session timeout during long training runs and keeps the REPL responsive. You will be automatically notified when each agent completes. Do NOT poll or sleep-wait for agents.
 </HARD-GATE>
 
 ## When to Use
@@ -115,11 +117,11 @@ This is Round {round} of {max_rounds}.
 - When training completes, report "Training complete" as your final message
 ```
 
-Wait for Agent A to complete. If Agent A times out or crashes, see Anomaly Recovery.
+Dispatch with `run_in_background: true`. The Supervisor does NOT block — REPL stays idle until notified that Agent A has completed. If Agent A times out or crashes, see Anomaly Recovery.
 
 ### Step 2: Dispatch Agent B
 
-Dispatch a fresh subagent with the following prompt structure. Agent B has full file read/write and bash access but NO git write access.
+After receiving Agent A's completion notification, dispatch a fresh subagent. Agent B has full file read/write and bash access but NO git write access.
 
 ```
 You are an ML experiment evaluator and reviewer. Your task is to independently evaluate Round {round}'s result and audit Agent A's strategy for protocol compliance.
@@ -159,7 +161,7 @@ You are an ML experiment evaluator and reviewer. Your task is to independently e
     VERDICT: not_improved {metric}={value}
 ```
 
-Wait for Agent B to complete. Parse the VERDICT line from Agent B's response.
+Dispatch with `run_in_background: true`. After receiving Agent B's completion notification, parse the VERDICT line from its response.
 
 ### Step 3: Act on Verdict
 
