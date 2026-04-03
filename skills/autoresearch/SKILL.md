@@ -45,9 +45,24 @@ Experience transfer happens through files (experiences.md, git history), not age
      - Verify git HEAD matches latest committed improvement (or baseline if no improvements yet)
    - If Status is `not_started`: fresh start, round = 1
 4. **Announce:** "Starting autoresearch: {research_question}. Round {current} / {max_rounds}. Baseline: {metric} = {baseline}."
-5. **Enter main loop**
+5. **Set up watchdog cron** — create a durable recurring CronCreate that fires every 5 minutes:
+   ```
+   CronCreate(
+     cron: "*/5 * * * *",
+     durable: true,
+     prompt: "Autoresearch watchdog: read {experiences_path}. If Status is 'running' and Total rounds < {max_rounds}, resume the autoresearch loop — invoke spml:autoresearch-run for {experiment_dir}. If Status is 'completed' or 'target_reached', delete this cron job."
+   )
+   ```
+   Save the returned job ID — you need it for cleanup.
+   
+   **Why:** The in-memory loop can die from session timeout, context overflow, or model error. The cron only fires when the REPL is idle — if the loop is running normally, the cron never triggers. If the loop dies for any reason, REPL becomes idle, cron fires, and resumes from where experiences.md left off.
+6. **Enter main loop**
 
+<HARD-GATE>
 ## Main Loop
+
+The loop is autonomous. After each round, IMMEDIATELY proceed to the next round. Do NOT wait for user input. Do NOT ask the user questions. Do NOT stop to summarize or suggest options. The only reasons to exit the loop are the termination conditions in Step 4.
+</HARD-GATE>
 
 ```
 for round in current_round..max_rounds:
@@ -73,11 +88,13 @@ This is Round {round} of {max_rounds}.
 - Codebase: {worktree_path}
 
 ## Instructions
-- Read the protocol first to understand what you can and cannot change
+- Read the protocol FIRST. Pay close attention to:
+  - **Fixed Conditions**: things you MUST NOT change. Violating these invalidates the round.
+  - **Variable Conditions**: things you CAN change. Your creativity is limited to this space.
 - Read experiences.md to learn from past rounds — decide yourself how much to read
 - Git history contains successful strategies as commits — use git log / git diff to study what code changes worked
-- Do NOT modify termination logic or evaluation logic (these are Fixed Conditions in the protocol)
-- Write your strategy description to strategy.md BEFORE modifying any code
+- Do NOT modify termination logic, evaluation logic, or anything listed as Fixed Conditions
+- Write your strategy description to strategy.md BEFORE modifying any code. Explicitly state which Variable Conditions you are changing and why.
 - After modifying code, run training: the pressure conditions will auto-terminate at the limit
 - When training completes, report "Training complete" as your final message
 ```
@@ -89,26 +106,41 @@ Wait for Agent A to complete. If Agent A times out or crashes, see Anomaly Recov
 Dispatch a fresh subagent with the following prompt structure. Agent B has full file read/write and bash access but NO git write access.
 
 ```
-You are an ML experiment evaluator. Your task is to evaluate Round {round}'s result and record experience.
+You are an ML experiment evaluator and reviewer. Your task is to independently evaluate Round {round}'s result and audit Agent A's strategy for protocol compliance.
 
 ## File Paths
-- Protocol: {protocol_path}  — read this for evaluation method and metric details
+- Protocol: {protocol_path}  — read this for evaluation method, metric details, Fixed Conditions, and Variable Conditions
 - Experience log: {experiences_path}  — read this for current best result in Summary section
-- Strategy: {worktree_path}/strategy.md  — read this for what Agent A tried this round
+- Strategy: {worktree_path}/strategy.md  — read this for what Agent A claims to have done
+- Codebase: {worktree_path}
 
 ## Instructions
-1. Read the protocol's Evaluation section for the eval_command and metric details
-2. Run the evaluation command from the protocol
-3. Read the current best result from experiences.md Summary section
-4. Compare this round's result against the best result
-5. Append a new Round entry to experiences.md:
+
+### Part 1: Protocol Compliance Audit
+1. Read the protocol's Fixed Conditions and Variable Conditions
+2. Read Agent A's strategy.md
+3. Review the actual code changes (use git diff HEAD~1 or compare against known baseline) to verify:
+   - Agent A did NOT violate any Fixed Conditions
+   - Agent A only modified things listed in Variable Conditions
+   - The strategy described in strategy.md matches the actual code changes
+4. If Agent A violated Fixed Conditions, your verdict MUST be not_improved regardless of metrics, and your Insight must explain the violation
+
+### Part 2: Independent Evaluation
+5. Run the evaluation command from the protocol's Evaluation section — do NOT read training logs as a substitute
+6. Record the metric value from YOUR evaluation run, not from Agent A's training output
+
+### Part 3: Record Experience
+7. Read the current best result from experiences.md Summary section
+8. Compare this round's result against the best result
+9. Append a new Round entry to experiences.md:
    - **Strategy**: (from strategy.md)
+   - **Compliance**: ✅ protocol respected / ❌ Fixed Condition violated: {detail}
    - **Result**: {metric} = {value}
    - **Verdict**: ✅ committed or ❌ rolled back
-   - **Insight**: what worked or didn't and why
-6. Your final message MUST be exactly one of these two formats:
-   VERDICT: improved {metric}={value}
-   VERDICT: not_improved {metric}={value}
+   - **Insight**: what worked or didn't and why (include compliance issues if any)
+10. Your final message MUST be exactly one of these two formats:
+    VERDICT: improved {metric}={value}
+    VERDICT: not_improved {metric}={value}
 ```
 
 Wait for Agent B to complete. Parse the VERDICT line from Agent B's response.
@@ -144,13 +176,17 @@ cp /tmp/experiences_backup.md experiences.md
 # (edit experiences.md: increment Total rounds only, keep Status as running)
 ```
 
+<HARD-GATE>
 ### Step 4: Check Termination
 
-- Parse the metric value from Agent B's VERDICT line
-- If `direction == minimize` and `metric_value <= target`: terminate with reason `target_reached`
-- If `direction == maximize` and `metric_value >= target`: terminate with reason `target_reached`
+The Supervisor terminates ONLY for these exact reasons. No exceptions, no early stops based on judgment.
+
+- If `target` is set AND (`direction == minimize` and `metric_value <= target`, or `direction == maximize` and `metric_value >= target`): terminate with reason `target_reached`
 - If `round == max_rounds`: terminate with reason `completed`
-- Otherwise: continue to next round
+- Otherwise: **continue to next round**
+
+If target is "none" or unset, the ONLY termination condition is reaching max_rounds. The Supervisor does NOT decide "the metric can't improve further" or "we've hit a theoretical ceiling." That is the researcher's judgment to make after reviewing all rounds. The protocol said how many rounds to run — run them.
+</HARD-GATE>
 
 ### Step 5: Report Progress
 
@@ -201,8 +237,9 @@ If 5 consecutive rounds are "not_improved":
 
 ## Final Report
 
-When the loop terminates (target reached or max rounds), update experiences.md Summary:
-- Set Status to `target_reached` or `completed`
+When the loop terminates (target reached or max rounds):
+1. **Delete the watchdog cron** — use `CronDelete` with the job ID saved during startup
+2. Update experiences.md Summary — set Status to `target_reached` or `completed`
 
 Then output the final report:
 

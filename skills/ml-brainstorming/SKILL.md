@@ -187,7 +187,7 @@ Walk through the Validation Pyramid levels. For each, ask: needed / skip / alrea
   - If user provides baselines, record them in the design doc
   - If not, L1 uses anomaly detection only
 
-**User can skip any level.** Record decisions in natural language in the design doc.
+**User can skip any level — EXCEPT when autoresearch is detected.** Autoresearch requires a verified baseline before the iteration loop can start; skipping L1 means the baseline code was never proven to run, and the autonomous loop will fail from round 1. When autoresearch is detected, L1 is mandatory and non-negotiable regardless of task simplicity. Record decisions in natural language in the design doc.
 
 ### Confirming evaluation structure
 When the task includes validation or evaluation beyond a trivial final metric, confirm the evaluation design explicitly:

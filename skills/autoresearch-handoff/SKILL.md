@@ -13,10 +13,11 @@ Bridge between VP validation and automated research iteration. Generates researc
 
 <HARD-GATE>
 Do NOT hand off without:
-1. All enabled VP layers passed
-2. Base code runs under pressure conditions (VP L1 verified this)
-3. Pressure condition termination code exists and works (part of Fixed Conditions)
-4. Design doc contains "## Autoresearch Protocol" section
+1. VP L1 Runtime Validation passed — this is mandatory for autoresearch, not optional. If L1 was skipped during brainstorming, STOP and run it now before proceeding. A baseline that was never verified to run will fail from round 1.
+2. All other enabled VP layers passed (L0 if enabled)
+3. Base code runs under pressure conditions (VP L1 verified this)
+4. Pressure condition termination code exists and works (part of Fixed Conditions)
+5. Design doc contains "## Autoresearch Protocol" section
 </HARD-GATE>
 
 ## When to Use
@@ -31,9 +32,8 @@ Do NOT hand off without:
 2. **Verify pressure condition termination code** — base code has working time_limit / epoch_limit logic
 3. **Generate autoresearch-protocol.md** — extract 6 elements from design doc
 4. **Initialize experiences.md** — with Summary header and baseline record
-5. **Generate autoresearch-prompt.md** — startup prompt for new session
-6. **Verify git state** — base code committed as initial checkpoint
-7. **Present launch instructions** — show user how to start
+5. **Verify git state** — base code committed as initial checkpoint
+6. **Present launch instructions** — tell user to `run autoresearch at <experiment-dir>`
 
 ## Step 1: Verify VP L1 Completion
 
@@ -120,50 +120,31 @@ Write to `<experiment-dir>/experiences.md`:
 - Status: not_started
 ```
 
-## Step 6: Generate autoresearch-prompt.md
-
-Write to `<experiment-dir>/autoresearch-prompt.md`:
-
-```markdown
-I need you to run an automated research loop, iterating on ML code to optimize a target metric.
-
-## Setup
-1. Read `<experiment-dir>/autoresearch-protocol.md` for the full research protocol
-2. Read `<experiment-dir>/experiences.md` for the current state
-3. Verify git state: base code commit exists
-
-## Your Behavior
-Use the spml:autoresearch skill. It will guide you through:
-- Reading the protocol and verifying the worktree
-- Dispatching Agent A (designer/coder) and Agent B (evaluator/reviewer) each round
-- Managing git state: commit on improvement, rollback on failure
-- Tracking all experience in experiences.md
-- Terminating when target is reached or max rounds exhausted
-- Producing a final report
-```
-
-## Step 7: Verify Git State and Present Launch Instructions
+## Step 6: Verify Git State
 
 Confirm the base code is committed:
 ```bash
 git log --oneline -1  # should show a recent commit with base code
 ```
 
-Then show the artifact summary and **print the full autoresearch-prompt.md content** in the conversation so the user can copy-paste:
+## Step 7: Present Launch Instructions
+
+Show the artifact summary and a simple launch command:
 
 ```
 Handoff complete. All artifacts generated:
 - Base code: <experiment-dir>/ (VP L1 validated)
 - Protocol: <experiment-dir>/autoresearch-protocol.md
 - Experience log: <experiment-dir>/experiences.md
-- Startup prompt: <experiment-dir>/autoresearch-prompt.md
 - Baseline: {metric} = {value}
 - Max rounds: {N}, Target: {target or "none"}
 
-To start — copy the prompt below into a new agent session:
+To start — open a new session and say:
+
+  run autoresearch at <experiment-dir>
 ```
 
-Then output the full content of autoresearch-prompt.md in a fenced code block.
+The `spml:autoresearch-run` skill handles everything: locating the protocol, reading experiences, verifying git state, resume detection, and invoking the iteration loop. No verbose prompt needed — the skill knows its responsibilities.
 
 ## Integration
 
