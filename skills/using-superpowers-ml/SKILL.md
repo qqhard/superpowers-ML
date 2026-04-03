@@ -162,7 +162,7 @@ When multiple skills could apply, use this order:
 "Let's train X" -> `spml:ml-brainstorming` first, then `spml:experiment-planning`.
 "Training isn't converging" -> `spml:diagnostics` first, then validation skills.
 "MFU is too low" -> `spml:diagnostics` first, then `spml:ml-runtime-validator`.
-"Find the best X" / "auto research" / "optimize X automatically" -> `spml:ml-brainstorming` (which detects autoresearch scenarios and guides protocol definition), then after VP: `spml:autoresearch-handoff` → `spml:autoresearch`.
+"Find the best X" / "auto research" / "optimize X automatically" -> `spml:autoresearch-create` (create protocol + baseline) or `spml:ml-brainstorming` (keyword detection), then after VP: `spml:autoresearch-handoff` → `spml:autoresearch-run` (execute the loop).
 
 ## Skill Types
 

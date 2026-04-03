@@ -145,14 +145,16 @@ For experiment/ablation tasks, clarify:
 <HARD-GATE>
 ### Autoresearch Detection
 
-If the user mentions ANY of these keywords: **"auto research"**, **"autoresearch"**, **"automated research"**, **"automated experiment"**, **"auto optimize"**, **"自动研究"**, **"自动实验"** — you MUST immediately enter the autoresearch protocol definition flow below.
+If ANY of the following are true, you MUST immediately enter the autoresearch protocol definition flow below:
+
+1. **Upstream activation** — `spml:autoresearch-create` was invoked earlier in this conversation (autoresearch mode is already confirmed)
+2. **Keyword match** — the user mentions ANY of: **"auto research"**, **"autoresearch"**, **"automated research"**, **"automated experiment"**, **"auto optimize"**, **"自动研究"**, **"自动实验"**
+3. **Pattern match** — even without explicit keywords:
+   - Goal is to search/optimize rather than validate a single hypothesis
+   - Multiple iterative attempts expected
+   - "Find the best X" rather than "test whether X works"
 
 **Do NOT explore the project first.** Do NOT dispatch Explore agents or read code before asking the user. Ask the user questions first — they know what they want to research. Only explore specific directories AFTER the user tells you where the experiment is.
-
-Also detect these patterns even without explicit keywords:
-- Goal is to search/optimize rather than validate a single hypothesis
-- Multiple iterative attempts expected
-- "Find the best X" rather than "test whether X works"
 </HARD-GATE>
 
 When autoresearch is detected, ask the following questions **one at a time, in order**. Do NOT batch questions. Wait for each answer before asking the next.
