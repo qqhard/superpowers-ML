@@ -161,12 +161,10 @@ When autoresearch is detected, ask the following questions **one at a time, in o
 
 0. **Experiment directory** — "Do you already have an experiment directory with code, or do we need to create one from scratch? If existing, what's the path?"
 1. **Research question** — "What are you trying to optimize or find? Describe the research goal."
-2. **Fixed Conditions** — "What must NOT change between iterations?" (model architecture, dataset, specific code modules, etc.)
-3. **Pressure Conditions** — "What limits each iteration for fairness? (e.g., 5 minutes per round, 1 epoch per round)"
-4. **Variable Conditions** — "What can the agent freely adjust?" (learning rate, optimizer, augmentation, loss function, etc.)
-5. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
-6. **Termination** — "When should the loop stop?" (max rounds, target metric value)
-7. **Agent Boundary** — "Default: Agent A designs+codes+trains, Agent B evaluates+reviews+records. Want to adjust?" (has default, user can skip)
+2. **Fixed（不可变的代码 + 条件）** — "What code files and conditions must NOT change? Include time/epoch limits per round." (maps to Fixed.files + time_limit + epoch_limit)
+3. **Variable（可变的代码 + 条件）** — "Which files can the agent modify, and what can it adjust?" (maps to Variable.files + adjustable range)
+4. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
+5. **Termination** — "When should the loop stop?" (max rounds, target metric value)
 
 Only AFTER collecting these answers, explore the experiment directory (if existing) to understand the base code.
 
@@ -238,28 +236,23 @@ When autoresearch is detected, the design doc includes an additional section:
 ```markdown
 ## Autoresearch Protocol
 
-### Fixed Conditions
-<from user answers>
+research_question: <from user>
+max_rounds: <from user>
+target: <from user, or "none">
 
-### Pressure Conditions
+### Fixed（不可变：代码 + 条件）
+- files: <from user — framework code that must not change>
 - time_limit: <from user>
 - epoch_limit: <from user>
 
-### Variable Conditions
-<from user answers>
+### Variable（可变：代码 + 条件）
+- files: <from user — the only files Researcher may modify>
+- 可调范围: <from user>
 
-### Evaluation
+### Eval
 - metric: <from user>
 - direction: maximize / minimize
-- eval_command: <from user or derived from base code>
-
-### Termination
-- max_rounds: <from user>
-- target: <from user, optional>
-
-### Agent Boundary
-- agent_a: ["design", "code", "train"]
-- agent_b: ["evaluate", "review", "record"]
+- command: <from user or derived from base code>
 ```
 
 This section is the routing signal: downstream `ml-subagent-dev` will present the "Research" option at Post-Completion Gate when it detects this section.
