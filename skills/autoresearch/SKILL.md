@@ -56,17 +56,17 @@ Experience transfer happens through files (experiences.md, git history), not age
      - Verify git HEAD matches latest committed improvement (or baseline if no improvements yet)
    - If Status is `not_started`: fresh start, round = 1
 5. **Announce:** "Starting autoresearch: {research_question}. Round {current} / {max_rounds}. Baseline: {metric} = {baseline}. Worktree: {worktree_path}."
-6. **Set up watchdog cron** — create a durable recurring CronCreate that fires every 5 minutes:
+6. **Set up heartbeat reminder** — create a durable recurring CronCreate that fires every 30 minutes:
    ```
    CronCreate(
-     cron: "*/5 * * * *",
+     cron: "*/30 * * * *",
      durable: true,
-     prompt: "Autoresearch watchdog: read {experiences_path}. If Status is 'running' and Total rounds < {max_rounds}, resume the autoresearch loop — invoke spml:autoresearch-run for {experiment_dir}. If Status is 'completed' or 'target_reached', delete this cron job."
+     prompt: "Autoresearch heartbeat: you are running an autoresearch loop at {experiment_dir}. Check experiences.md — is the loop still progressing? If you have a background agent running, check on it. If the loop stalled, resume from where you left off."
    )
    ```
    Save the returned job ID — you need it for cleanup.
    
-   **Why:** The in-memory loop can die from session timeout, context overflow, or model error. The cron only fires when the REPL is idle — if the loop is running normally, the cron never triggers. If the loop dies for any reason, REPL becomes idle, cron fires, and resumes from where experiences.md left off.
+   **Why:** The Supervisor is a language model, not a persistent process. Periodic reminders keep it aware that a loop is active. When the reminder fires, the Supervisor checks its own state and re-activates the loop if needed. This is a simple ping, not complex state detection.
 7. **Enter main loop**
 
 <HARD-GATE>
