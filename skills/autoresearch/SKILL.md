@@ -77,12 +77,13 @@ The loop is autonomous. After each round, IMMEDIATELY proceed to the next round.
 for round in current_round..max_rounds:
 
   0. CREATE ROUND TASK LIST
-  1. DISPATCH RESEARCHER
+  1. DISPATCH RESEARCHER (design + code only)
   2. COMPLIANCE CHECK
-  3. EVALUATION
-  4. ACT ON RESULT
-  5. CHECK TERMINATION
-  6. REPORT PROGRESS
+  3. TRAIN (Supervisor executes)
+  4. EVALUATION
+  5. ACT ON RESULT
+  6. CHECK TERMINATION
+  7. REPORT PROGRESS
 ```
 
 <HARD-GATE>
@@ -92,30 +93,20 @@ You MUST create the task list BEFORE dispatching Researcher. This applies to EVE
 
 **First, clear previous round's tasks** (if any) — delete all tasks from the previous round so the list stays clean.
 
-**Then create 5 tasks for this round:**
+**Then create 6 tasks for this round:**
 ```
-TaskCreate: "R{round}: Researcher"          activeForm: "Researcher running"
+TaskCreate: "R{round}: Researcher"          activeForm: "Designing strategy + modifying code"
 TaskCreate: "R{round}: Compliance check"
+TaskCreate: "R{round}: Train"               activeForm: "Training"
 TaskCreate: "R{round}: Evaluation"
 TaskCreate: "R{round}: Git"
 TaskCreate: "R{round}: Termination check"
 ```
-
-Mark each task in_progress → completed as the corresponding step runs. Researcher stays as "Researcher running" until the subagent completes (no mid-task updates). The 4 Supervisor steps (compliance/eval/git/termination) update in quick succession after Researcher finishes.
 </HARD-GATE>
 
-### Step 1: Dispatch Researcher
+### Step 1: Dispatch Researcher (design + code only)
 
-Before dispatching, create a one-shot timeout timer:
-```
-CronCreate(
-  cron: <time_limit * 2 from now>,
-  recurring: false,
-  prompt: "Researcher timeout — Round {round} exceeded time limit. Record failure, reflect on why, proceed to next round from Step 0."
-)
-```
-
-Dispatch a fresh subagent with `run_in_background: true`. The Supervisor injects all protocol info directly into the prompt — **Researcher does NOT read the protocol file.**
+Dispatch a fresh subagent with `run_in_background: true`. Researcher designs the strategy and modifies code, but does NOT run training. Supervisor injects all protocol info directly — **Researcher does NOT read the protocol file.**
 
 ```
 You are an ML researcher. Your task is to improve {metric} ({direction}).
@@ -125,41 +116,55 @@ This is Round {round} of {max_rounds}.
 - **Fixed files (do NOT modify):** {fixed_files}
 - **Variable files (you may modify):** {variable_files}
 - **Variable range:** {variable_range}
-- **Time limit:** {time_limit} / **Epoch limit:** {epoch_limit}
 
 ## Your task
 1. Read {experiences_path} to learn from past rounds (table format — last {N} rounds shown)
-2. First, add a row to the experiences table with your strategy (leave Result/Verdict/Insight blank — Supervisor fills those)
+2. Add a row to the experiences table with your strategy (leave Result/Verdict/Insight blank — Supervisor fills those)
 3. Modify ONLY the variable files listed above
-4. Run training: {train_command}
-5. When training completes, report "Training complete" as your final message
+4. Report "Code ready" as your final message
 
-Do NOT modify any fixed files. Do NOT run evaluation. Do NOT touch git.
+Do NOT run training. Do NOT run evaluation. Do NOT modify fixed files. Do NOT touch git.
 ```
-
-When Researcher completes normally, delete the timeout timer with `CronDelete`.
 
 ### Step 2: Compliance Check
 
-Supervisor runs this directly — no subagent needed.
+Supervisor runs directly:
 
 ```bash
 git diff --name-only HEAD
 ```
 
-Check if ALL changed files are in the Variable.files list from the protocol. If any fixed file was modified → round is `not_improved`, skip evaluation, go directly to Step 4 (rollback). Record the violation in the experiences table.
+Check if ALL changed files are in Variable.files. If any fixed file was modified → round is `not_improved`, skip training and evaluation, go directly to Step 5 (rollback).
 
-### Step 3: Evaluation
+### Step 3: Train
 
-Supervisor runs this directly — no subagent needed.
+Supervisor runs training directly — stdout is visible to the user in real time.
+
+```bash
+{train_command}  # from protocol, e.g. "python run.sh" or "python train.py --time-limit 300"
+```
+
+Before running, create a one-shot timeout timer:
+```
+CronCreate(
+  cron: <time_limit * 2 from now>,
+  recurring: false,
+  prompt: "Training timeout — Round {round}. Kill training, record failure, next round Step 0."
+)
+```
+Delete the timer when training completes normally.
+
+### Step 4: Evaluation
+
+Supervisor runs directly:
 
 ```bash
 {eval_command}  # from protocol's Eval.command
 ```
 
-Parse the metric value from the output. Compare against current best in experiences.md.
+Parse the metric value from output. Compare against current best in experiences.md.
 
-### Step 4: Act on Result
+### Step 5: Act on Result
 
 **If improved:**
 ```bash
@@ -179,7 +184,7 @@ cp /tmp/experiences_backup.md experiences.md
 Update experiences.md: fill in Result/Verdict/Insight for this round.
 
 <HARD-GATE>
-### Step 5: Check Termination
+### Step 6: Check Termination
 
 The Supervisor terminates ONLY for these exact reasons. No exceptions, no early stops based on judgment.
 
@@ -190,7 +195,7 @@ The Supervisor terminates ONLY for these exact reasons. No exceptions, no early 
 The Supervisor does NOT decide "the metric can't improve further." The protocol said how many rounds to run — run them.
 </HARD-GATE>
 
-### Step 6: Report Progress
+### Step 7: Report Progress
 
 ```
 Round {round}/{max_rounds}: {metric}={value} — {verdict}

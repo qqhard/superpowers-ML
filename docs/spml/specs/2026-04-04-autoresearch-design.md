@@ -79,25 +79,25 @@ Brainstorming 阶段划分框架代码（Fixed.files）和可变代码（Variabl
 
 ```
 每轮：
-  1. Supervisor 创建 Task List
-  2. Supervisor 派发 Researcher（后台）+ 设置超时计时器
-  3. Researcher 完成训练
-  4. Supervisor 合规审查：git diff --name-only，只允许可变文件被修改
-  5. Supervisor 评测：Bash(eval_command)，拿到指标
-  6. Supervisor 判定：improved / not_improved → git commit / rollback
-  7. Supervisor 记录 experiences.md
-  8. Check termination → 下一轮
+  0. Supervisor 创建 Task List（6 项）
+  1. Researcher（subagent）设计策略 + 改代码（不跑训练）
+  2. Supervisor 合规审查：git diff --name-only
+  3. Supervisor 跑训练：Bash(train_command)  ← stdout 对用户可见
+  4. Supervisor 跑评测：Bash(eval_command)
+  5. Supervisor 判定 + git commit / rollback
+  6. Check termination → 下一轮
 ```
 
-**Researcher 职责：**
+**Researcher 职责（设计 + 编码，不跑训练）：**
 - 只改 protocol 指定的可变文件
-- 先写 strategy（写入 experiences.md 当前 round 的 strategy 列），再改代码
-- 不碰 Fixed（框架代码 + 终止逻辑 + 评测逻辑）
+- 先写 strategy（experiences.md 当前 round 的 strategy 列），再改代码
+- 不跑训练、不跑评测、不碰 Fixed
 
-**Supervisor 职责（评测 + 审查）：**
-- 合规：`git diff --name-only` 检查是否只改了可变文件。碰了固定层 → 直接 not_improved，不跑评测。
-- 评测：`Bash(eval_command)` 拿到指标值。客观指标，不需要 Agent 判断。
-- 记录：更新 experiences.md 表格。
+**Supervisor 职责（审查 + 执行 + 评测）：**
+- 合规：`git diff --name-only`，碰固定层 → 直接 not_improved，跳过训练和评测
+- 训练：`Bash(train_command)`，用户可直接看到 stdout
+- 评测：`Bash(eval_command)`，客观指标
+- 记录：更新 experiences.md 表格
 
 ### 5.5 Git 管理
 
@@ -117,12 +117,12 @@ Supervisor 不得判断"已达理论上限"。协议说跑多少轮就跑多少�
 **每轮必须以 Task List 开始（包括异常恢复后）。** 防止跳步。
 
 ```
-Round N/M
-  ☐ Researcher: design + code + train
-  ☐ Compliance check
-  ☐ Evaluation
-  ☐ Git: commit or rollback
-  ☐ Check termination
+R{N}: Researcher        — design + code
+R{N}: Compliance check
+R{N}: Train              — stdout visible to user
+R{N}: Evaluation
+R{N}: Git
+R{N}: Termination check
 ```
 
 ## 6. Supervisor Liveness
@@ -218,22 +218,22 @@ status: running
 - [ ] Baseline 进入循环前已跑通（VP L1）
 
 ### Per-Round Flow
-- [ ] 每轮以 Task List 开始（含异常恢复后）
-- [ ] Researcher 以 run_in_background 派发，附超时计时器
-- [ ] Supervisor 合规审查：git diff --name-only，只允许可变文件
-- [ ] Supervisor 评测：Bash(eval_command)
+- [ ] 每轮以 6 项 Task List 开始，清空上轮 tasks
+- [ ] Researcher 以 run_in_background 派发（设计 + 改代码，不跑训练）
+- [ ] Supervisor 合规审查：git diff --name-only
+- [ ] Supervisor 跑训练：Bash(train_command)，stdout 对用户可见
+- [ ] Supervisor 跑评测：Bash(eval_command)
 - [ ] 循环自治：轮间不等用户输入
 
 ### Researcher
-- [ ] 只改可变文件
-- [ ] 先写 strategy 到 experiences.md，再改代码
-- [ ] 不碰 Fixed（框架代码 + 终止逻辑 + 评测逻辑）
+- [ ] 只改可变文件，先写 strategy 到 experiences.md，再改代码
+- [ ] 不跑训练、不跑评测、不碰 Fixed
 
 ### Git & Termination
 - [ ] 只有 Supervisor 执行 git 写操作，在 worktree 中
 - [ ] Improved → commit，Not improved → rollback + 保留 experiences.md
 - [ ] 仅 target_reached 或 max_rounds 终止，无主观判断
-- [ ] 碰固定层 → 直接 not_improved，不跑评测
+- [ ] 碰固定层 → 直接 not_improved，跳过训练和评测
 
 ### Liveness
 - [ ] Researcher 通知 → Supervisor 评测 → 正常推进
