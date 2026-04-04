@@ -88,17 +88,13 @@ for round in current_round..max_rounds:
 <HARD-GATE>
 ### Step 0: Create Round Task List
 
-You MUST create the full task list BEFORE dispatching Researcher. This applies to EVERY round, including rounds following anomaly recovery. Create each task individually:
+You MUST create a task BEFORE dispatching Researcher. This applies to EVERY round, including rounds following anomaly recovery.
 
 ```
-TaskCreate: "R{round}: Researcher — design + code + train"
-TaskCreate: "R{round}: Compliance check"
-TaskCreate: "R{round}: Evaluation"
-TaskCreate: "R{round}: Git — commit or rollback"
-TaskCreate: "R{round}: Check termination"
+TaskCreate: "Round {round}/{max_rounds}"
 ```
 
-Mark each task completed (TaskUpdate) as the corresponding step finishes. This gives the user a live progress view of every step in the round — not just the Researcher.
+Update the task's `activeForm` as each step progresses (e.g., "Researcher training", "Compliance check", "Evaluating", "Git commit"). Mark completed when the round finishes.
 </HARD-GATE>
 
 ### Step 1: Dispatch Researcher
