@@ -56,7 +56,7 @@ Experience transfer happens through files (experiences.md, git history), not age
      - Verify git HEAD matches latest committed improvement (or baseline if no improvements yet)
    - If Status is `not_started`: fresh start, round = 1
 5. **Announce:** "Starting autoresearch: {research_question}. Round {current} / {max_rounds}. Baseline: {metric} = {baseline}. Worktree: {worktree_path}."
-6. **Set up heartbeat reminder** — create a durable recurring CronCreate that fires every 30 minutes:
+6. **Set up heartbeat reminder** — create a session-scoped recurring CronCreate that fires every 30 minutes:
    ```
    CronCreate(
      cron: "*/30 * * * *",
