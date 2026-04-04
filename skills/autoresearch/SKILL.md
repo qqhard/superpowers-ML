@@ -69,10 +69,10 @@ The Supervisor decides how long to sleep based on context — it knows the press
      - Verify git HEAD matches latest committed improvement (or baseline if no improvements yet)
    - If Status is `not_started`: fresh start, round = 1
 5. **Announce:** "Starting autoresearch: {research_question}. Round {current} / {max_rounds}. Baseline: {metric} = {baseline}. Worktree: {worktree_path}."
-6. **Set up heartbeat reminder** — create a session-scoped recurring CronCreate that fires every 30 minutes:
+6. **Set up heartbeat reminder** — create a session-scoped recurring CronCreate that fires every 5 minutes:
    ```
    CronCreate(
-     cron: "*/30 * * * *",
+     cron: "*/5 * * * *",
      prompt: "Autoresearch heartbeat — check your loop status."
    )
    ```
