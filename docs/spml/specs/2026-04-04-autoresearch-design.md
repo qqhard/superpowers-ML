@@ -92,15 +92,16 @@ Brainstorming 阶段划分框架代码（Fixed.files）和可变代码（Variabl
   6. Check termination → 下一轮
 ```
 
-**Researcher 职责（设计 + 编码，不跑训练）：**
-- 只改 protocol 指定的可变文件
+**Researcher 职责（设计 + 编码）：**
+- 设计策略，修改可变文件，可创建新文件，可跑冒烟测试
 - 先写 strategy（experiences.md 当前 round 的 strategy 列），再改代码
-- 不跑训练、不跑评测、不碰 Fixed
+- 不碰 Fixed files。训练和评测由 Supervisor 托管。
 
 **Supervisor 职责（审查 + 执行 + 评测）：**
-- 合规：`git diff --name-only`，碰固定层 → 直接 not_improved，跳过训练和评测
-- 训练：`Bash(train_command)`，用户可直接看到 stdout
-- 评测：`Bash(eval_command)`，客观指标
+- 合规：`git diff --name-only`，检查 Fixed files 未被修改（新文件允许）
+- 训练：`Bash(train_command, run_in_background)`
+- 评测：`Bash(eval_command)`
+- 产物清理：依赖 .gitignore，不硬编码路径
 - 记录：更新 experiences.md 表格
 
 ### 5.5 Git 管理
@@ -232,14 +233,15 @@ status: running
 - [ ] 循环自治：轮间不等用户输入
 
 ### Researcher
-- [ ] 只改可变文件，先写 strategy 到 experiences.md，再改代码
-- [ ] 不跑训练、不跑评测、不碰 Fixed
+- [ ] 改可变文件 + 可创建新文件，先写 strategy 再改代码
+- [ ] 不碰 Fixed files。训练/评测由 Supervisor 托管，可跑冒烟测试。
 
 ### Git & Termination
 - [ ] 只有 Supervisor 执行 git 写操作，在 worktree 中
+- [ ] .gitignore 覆盖训练产物，不硬编码清理路径
 - [ ] Improved → commit，Not improved → rollback + 保留 experiences.md
 - [ ] 仅 target_reached 或 max_rounds 终止，无主观判断
-- [ ] 碰固定层 → 直接 not_improved，跳过训练和评测
+- [ ] 修改 Fixed files → 直接 not_improved，跳过训练和评测
 
 ### Liveness
 - [ ] Researcher 通知 → Supervisor 评测 → 正常推进
@@ -248,9 +250,9 @@ status: running
 - [ ] Sleep-check 汇报模式（可选，默认关闭）
 
 ### Recovery
-- [ ] Researcher 崩溃：记录 + rollback + 重试一次
+- [ ] Researcher 崩溃：记录诊断 insight + rollback，Supervisor 判断是否重试
 - [ ] Session 中断：默认续跑，不清理
-- [ ] 5 轮连续失败：plateau 警告，继续运行
+- [ ] 连续失败：Supervisor 自行判断何时输出 plateau 警告，继续运行
 
 ### experiences.md
 - [ ] 表格格式，每轮一行，含 Note 列

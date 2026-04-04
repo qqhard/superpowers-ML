@@ -46,7 +46,7 @@ Use a sleep-check loop: dispatch → sleep (estimate from time_limit) → check 
 
 ## Startup
 
-1. **Read `autoresearch-protocol.md`** — extract all fields: research_question, max_rounds, target, baseline, Fixed (files + time_limit + epoch_limit), Variable (files + adjustable range), Eval (metric, direction, command), and artifact_patterns (cleanup targets, default: `outputs/ logs/ wandb/ *.pt *.ckpt __pycache__/`). You will inject these into Researcher's prompt — Researcher does NOT read the protocol file.
+1. **Read `autoresearch-protocol.md`** — extract all fields: research_question, max_rounds, target, baseline, Fixed (files + time_limit + epoch_limit), Variable (files + adjustable range), Eval (metric, direction, command). You will inject these into Researcher's prompt — Researcher does NOT read the protocol file.
 2. **Create or reuse worktree:**
    - **Fresh start:** `git worktree add ../autoresearch-{experiment_name} HEAD`
    - **Resume:** Check if worktree exists (`git worktree list`), reuse it.
@@ -114,18 +114,20 @@ Dispatch a fresh subagent with `run_in_background: true`. Researcher designs the
 You are an ML researcher. Your task is to improve {metric} ({direction}).
 This is Round {round} of {max_rounds}.
 
-## Constraints (from protocol — do NOT read the protocol file)
-- **Fixed files (do NOT modify):** {fixed_files}
+## Your role
+You design the strategy and write the code. Training and evaluation are handled by Supervisor after you finish — you don't need to run them. You may run quick smoke tests to verify your code works.
+
+## Constraints
+- **Fixed files (do not modify):** {fixed_files}
 - **Variable files (you may modify):** {variable_files}
 - **Variable range:** {variable_range}
+- You may create new files if needed.
 
 ## Your task
 1. Read {experiences_path} to learn from past rounds (table format — last {N} rounds shown)
 2. Add a row to the experiences table with your strategy (leave Result/Verdict/Insight blank — Supervisor fills those)
-3. Modify ONLY the variable files listed above
+3. Modify the variable files to implement your strategy
 4. Report "Code ready" as your final message
-
-Do NOT run training. Do NOT run evaluation. Do NOT modify fixed files. Do NOT touch git.
 ```
 
 ### Step 2: Compliance Check
@@ -136,7 +138,7 @@ Supervisor runs directly:
 git diff --name-only HEAD
 ```
 
-Check if ALL changed files are in Variable.files. If any fixed file was modified → round is `not_improved`, skip training and evaluation, go directly to Step 5 (rollback).
+Check that no Fixed.files were modified. New files are allowed. If any fixed file was modified → round is `not_improved`, skip training and evaluation, go directly to Step 5 (rollback).
 
 ### Step 3: Train
 
@@ -164,17 +166,12 @@ Parse the metric value from output. Compare against current best in experiences.
 
 ### Step 5: Act on Result
 
-**First, clean training artifacts** (both improved and not_improved):
-```bash
-# Remove logs, checkpoints, and other training outputs before any git operation
-# Use patterns from protocol or common defaults: outputs/, logs/, *.pt, *.ckpt, wandb/, etc.
-rm -rf outputs/ logs/ wandb/ *.pt *.ckpt __pycache__/
-```
+**First, ensure .gitignore covers training artifacts** (outputs, logs, checkpoints, etc.). Verify this once during Startup — if .gitignore is missing or incomplete, fix it before the loop starts. With a proper .gitignore, `git add -A` naturally skips artifacts.
 
 **If improved:**
 ```bash
 cp experiences.md /tmp/experiences_backup.md
-git add -A    # safe now — only code changes + experiences.md, no artifacts
+git add -A
 git commit -m "autoresearch: round {round} — {metric}={value} (improved)"
 ```
 Update experiences.md: fill in Result/Verdict, update best header. Insight: what worked and why.
@@ -216,7 +213,7 @@ Round {round}/{max_rounds}: {metric}={value} — {verdict}
    - **Crash**: strategy = Researcher's strategy if available, insight = "crash: [error message]. Likely cause: [diagnosis]"
    - **Compliance fail**: insight = "modified fixed file {filename} — [what the change was and why it violated protocol]"
 2. Rollback: `git checkout -- . && git clean -fd`, restore experiences.md
-3. Retry the round ONCE. If retry also fails, skip and continue.
+3. Decide whether to retry based on the failure mode. Transient errors (OOM, network) may warrant a retry; logic errors (wrong API, broken code) won't be fixed by retrying. Use judgment.
 4. **Return to Step 0** — always re-create the task list after anomaly recovery.
 
 These diagnostic insights guide the next round's Researcher — it reads the experiences table and should avoid repeating the same mistake.
@@ -230,7 +227,7 @@ On startup, if `experiences.md` shows `status: running` with rounds > 0:
 
 ### Consecutive Failures
 
-5 consecutive not_improved → plateau warning, continue running.
+If multiple consecutive rounds show no improvement, output a plateau warning with analysis of why (e.g., "variable space may be exhausted", "strategies are repeating"). Continue running — do not stop. The warning is informational, not a termination condition.
 
 ## Final Report
 
