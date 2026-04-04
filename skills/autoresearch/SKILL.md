@@ -117,13 +117,9 @@ TaskCreate: "R{round}: Termination"
 
 ### Step 1: Dispatch Researcher (design + code only)
 
-Dispatch a fresh subagent with `run_in_background: true`. **Supervisor pre-reads all context and injects it directly into the prompt** — Researcher should not need to Read any files at startup. This eliminates 5-8 tool call round trips.
+Dispatch a fresh subagent with `run_in_background: true`. **Supervisor injects lightweight context into the prompt** (constraints + recent experiences). File contents are NOT injected — Researcher reads them itself (one Read call, stays in Researcher's context, not Supervisor's).
 
-Before dispatching, Supervisor reads:
-- Variable files content (e.g., `train.py`)
-- experiences.md (extract last N rounds + summary)
-
-Then injects everything into the prompt:
+Before dispatching, Supervisor extracts from experiences.md: summary + last N rounds table.
 
 ```
 You are an ML researcher. Your task is to improve {metric} ({direction}).
@@ -141,17 +137,12 @@ You design the strategy and write the code. Training and evaluation are handled 
 ## Recent experiences (last {N} rounds)
 {experiences_table_snippet}
 
-## Current code
-### {variable_file_1}
-```{lang}
-{file_content}
-```
-
 ## Your task
-1. Based on past experiences above, design a strategy for this round
-2. Add a row to {experiences_path} with your strategy (leave Result/Verdict/Insight blank)
-3. Modify the variable files to implement your strategy
-4. Report "Code ready" as your final message
+1. Read the variable files listed above to understand current code
+2. Based on experiences above, design a strategy for this round
+3. Add a row to {experiences_path} with your strategy (leave Result/Verdict/Insight blank)
+4. Modify the variable files to implement your strategy
+5. Report "Code ready" as your final message
 ```
 
 ### Step 2: Compliance Check
