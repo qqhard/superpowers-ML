@@ -181,7 +181,7 @@ cp /tmp/backup experiences.md          # 恢复 experiences
 
 ### 5.7 Per-Round Task List
 
-每轮开始时创建 task list，用户可追踪进度：
+**每一轮都必须以 Task List 开始，无论是正常轮次还是异常恢复后的轮次。** Task List 是该轮的 checklist，防止跳步。
 
 ```
 Round N/M
@@ -190,6 +190,8 @@ Round N/M
   ☐ Git: commit or rollback based on verdict
   ☐ Check termination
 ```
+
+异常路径（agent 崩溃、手动 kill、protocol violation）会打断正常节奏。恢复完成后必须回到 Step 0 创建 Task List，而不是直接跳到 dispatch Agent A。
 
 ## 6. Supervisor Liveness（重点）
 

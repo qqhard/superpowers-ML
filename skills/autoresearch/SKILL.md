@@ -98,9 +98,10 @@ for round in current_round..max_rounds:
   5. REPORT PROGRESS
 ```
 
+<HARD-GATE>
 ### Step 0: Create Round Task List
 
-At the start of each round, create a task list so the user can track progress:
+You MUST create the full task list BEFORE dispatching any agent. This applies to EVERY round, including rounds following anomaly recovery. After handling any anomaly (agent failure, protocol violation, manual stop), return to Step 0 — do NOT skip directly to Step 1.
 
 ```
 TaskCreate: "Round {round}/{max_rounds}"
@@ -112,6 +113,7 @@ TaskCreate: "Round {round}/{max_rounds}"
 ```
 
 Mark each subtask as completed when the corresponding step finishes.
+</HARD-GATE>
 
 ### Step 1: Dispatch Agent A
 
@@ -259,6 +261,7 @@ If Agent A or Agent B fails (subagent returns error or times out):
 2. Rollback any partial code changes: `git checkout -- . && git clean -fd`
 3. Restore experiences.md (same backup/restore pattern as not_improved)
 4. Retry the round ONCE. If retry also fails, skip this round and continue to next.
+5. **Return to Step 0** of the next round — always re-create the task list after anomaly recovery.
 
 ### Session Interruption Recovery
 
