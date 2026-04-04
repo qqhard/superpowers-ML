@@ -46,7 +46,7 @@ Use a sleep-check loop: dispatch → sleep (estimate from time_limit) → check 
 
 ## Startup
 
-1. **Read `autoresearch-protocol.md`** — extract all fields: research_question, max_rounds, target, baseline, Fixed (files + time_limit + epoch_limit), Variable (files + adjustable range), Eval (metric, direction, command). You will inject these into Researcher's prompt — Researcher does NOT read the protocol file.
+1. **Read `autoresearch-protocol.md`** — extract all fields: research_question, max_rounds, target, baseline, Fixed (files + time_limit + epoch_limit), Variable (files + adjustable range), Eval (metric, direction, command), and artifact_patterns (cleanup targets, default: `outputs/ logs/ wandb/ *.pt *.ckpt __pycache__/`). You will inject these into Researcher's prompt — Researcher does NOT read the protocol file.
 2. **Create or reuse worktree:**
    - **Fresh start:** `git worktree add ../autoresearch-{experiment_name} HEAD`
    - **Resume:** Check if worktree exists (`git worktree list`), reuse it.
@@ -164,13 +164,20 @@ Parse the metric value from output. Compare against current best in experiences.
 
 ### Step 5: Act on Result
 
+**First, clean training artifacts** (both improved and not_improved):
+```bash
+# Remove logs, checkpoints, and other training outputs before any git operation
+# Use patterns from protocol or common defaults: outputs/, logs/, *.pt, *.ckpt, wandb/, etc.
+rm -rf outputs/ logs/ wandb/ *.pt *.ckpt __pycache__/
+```
+
 **If improved:**
 ```bash
 cp experiences.md /tmp/experiences_backup.md
-git add -A
+git add -A    # safe now — only code changes + experiences.md, no artifacts
 git commit -m "autoresearch: round {round} — {metric}={value} (improved)"
 ```
-Update experiences.md: fill in Result/Verdict, update best header. Insight: what worked and why (e.g., "lr decay improved convergence in later epochs").
+Update experiences.md: fill in Result/Verdict, update best header. Insight: what worked and why.
 
 **If not_improved (or compliance failed):**
 ```bash
@@ -179,7 +186,7 @@ git checkout -- .
 git clean -fd
 cp /tmp/experiences_backup.md experiences.md
 ```
-Update experiences.md: fill in Result/Verdict. Insight MUST explain why it failed — this is what guides the next round's Researcher (e.g., "mixup hurt convergence — loss oscillated after epoch 200", "model too large — OOM at batch 50").
+Update experiences.md: fill in Result/Verdict. Insight MUST explain why it failed — this guides the next round's Researcher.
 
 <HARD-GATE>
 ### Step 6: Check Termination
