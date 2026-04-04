@@ -74,7 +74,7 @@ The loop is autonomous. Never stop unless the user explicitly says to stop, or t
 
 **User input during the loop:** The user may send messages at any time. Handle based on intent:
 - **Stop command** ("停", "stop", "pause") → stop the loop after the current step completes
-- **Protocol change** ("model.py 也可以改", "加大 max_rounds") → apply the change to protocol, log it in Note column, continue the loop
+- **Protocol change** ("model.py 也可以改", "加大 max_rounds") → update autoresearch-protocol.md directly, continue the loop. Supervisor does not proactively modify protocol; Researcher cannot modify protocol. Only user-directed changes.
 - **Guidance / suggestion** → append to current round's Note column, continue the loop
 - **Question** → answer briefly, continue the loop
 
