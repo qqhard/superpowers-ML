@@ -168,7 +168,7 @@ cp experiences.md /tmp/experiences_backup.md
 git add -A
 git commit -m "autoresearch: round {round} — {metric}={value} (improved)"
 ```
-Update experiences.md: fill in Result/Verdict/Insight for this round, update best header.
+Update experiences.md: fill in Result/Verdict, update best header. Insight: what worked and why (e.g., "lr decay improved convergence in later epochs").
 
 **If not_improved (or compliance failed):**
 ```bash
@@ -177,7 +177,7 @@ git checkout -- .
 git clean -fd
 cp /tmp/experiences_backup.md experiences.md
 ```
-Update experiences.md: fill in Result/Verdict/Insight for this round.
+Update experiences.md: fill in Result/Verdict. Insight MUST explain why it failed — this is what guides the next round's Researcher (e.g., "mixup hurt convergence — loss oscillated after epoch 200", "model too large — OOM at batch 50").
 
 <HARD-GATE>
 ### Step 6: Check Termination
@@ -202,10 +202,15 @@ Round {round}/{max_rounds}: {metric}={value} — {verdict}
 
 ### Researcher Timeout / Crash
 
-1. Update experiences table: strategy = "agent_error", result = "—", verdict = "❌ error"
+1. Update experiences table with diagnostic Insight:
+   - **Timeout**: strategy = Researcher's last known action, insight = "timeout after Xs — likely cause: [Supervisor's diagnosis, e.g., training hung on data loading, infinite loop in augmentation]"
+   - **Crash**: strategy = Researcher's strategy if available, insight = "crash: [error message]. Likely cause: [diagnosis]"
+   - **Compliance fail**: insight = "modified fixed file {filename} — [what the change was and why it violated protocol]"
 2. Rollback: `git checkout -- . && git clean -fd`, restore experiences.md
 3. Retry the round ONCE. If retry also fails, skip and continue.
 4. **Return to Step 0** — always re-create the task list after anomaly recovery.
+
+These diagnostic insights guide the next round's Researcher — it reads the experiences table and should avoid repeating the same mistake.
 
 ### Session Interruption Recovery
 
