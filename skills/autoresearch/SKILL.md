@@ -60,7 +60,6 @@ Experience transfer happens through files (experiences.md, git history), not age
    ```
    CronCreate(
      cron: "*/30 * * * *",
-     durable: true,
      prompt: "Autoresearch heartbeat: you are running an autoresearch loop at {experiment_dir}. Check experiences.md — is the loop still progressing? If you have a background agent running, check on it. If the loop stalled, resume from where you left off."
    )
    ```
