@@ -4,6 +4,13 @@
 
 AutoResearch 是 SPML 的自动化实验迭代系统。定义研究协议（protocol），驱动自主循环：Researcher 修改代码并训练，Supervisor 评测、审查合规、管理 git 和调度。
 
+**核心理念：Human on the Loop。** 人不在循环内逐步审批，而是在循环上方监控。系统自主运行，人通过以下方式保持控制：
+- **Task List** — 实时看到每轮每步的状态和结果
+- **Note 列** — 随时插入指导方向，下一轮 Researcher 自然看到
+- **experiences.md** — 全量实验记录，随时可审查
+- **git history** — 每次 improve 有 commit，可回溯任何版本
+- **随时介入** — 暂停循环、调整 protocol、修改 Fixed/Variable 划分
+
 ## 2. End-to-End Flow
 
 ```

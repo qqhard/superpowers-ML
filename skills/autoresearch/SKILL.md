@@ -9,7 +9,7 @@ description: Use when running an automated research loop — reads protocol, dis
 
 Automated research supervisor. Reads a research protocol, then iterates: dispatch Researcher (design + code + train) → Supervisor runs compliance check + evaluation → commit or rollback → repeat until termination.
 
-**Core principle:** Keep the loop running. The Supervisor manages process, evaluation, and git — it does NOT design strategies or write code. Researcher does the creative work; the Supervisor controls everything else.
+**Core principle: Human on the Loop.** The loop runs autonomously — the human monitors, not approves. They see every round's result via Task List, inject guidance via Note column, review history via experiences.md and git. The Supervisor keeps the loop running; the human steers from above.
 
 <HARD-GATE>
 ## Git Control
