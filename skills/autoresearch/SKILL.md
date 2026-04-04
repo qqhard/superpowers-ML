@@ -138,21 +138,17 @@ Check if ALL changed files are in Variable.files. If any fixed file was modified
 
 ### Step 3: Train
 
-Supervisor runs training directly — stdout is visible to the user in real time.
+Supervisor runs training directly in background. User can `ctrl+o` to see stdout.
 
-```bash
-{train_command}  # from protocol, e.g. "python run.sh" or "python train.py --time-limit 300"
 ```
-
-Before running, create a one-shot timeout timer:
-```
-CronCreate(
-  cron: <time_limit * 2 from now>,
-  recurring: false,
-  prompt: "Training timeout — Round {round}. Kill training, record failure, next round Step 0."
+Bash(
+  command: "{train_command}",
+  run_in_background: true,
+  timeout: {time_limit_ms * 2}   // e.g., time_limit=5min → timeout=600000
 )
 ```
-Delete the timer when training completes normally.
+
+REPL stays idle while training runs — user can interact. Supervisor is notified when training completes (or times out). If timeout, handle as anomaly (record failure, next round Step 0).
 
 ### Step 4: Evaluation
 
