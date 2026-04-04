@@ -60,12 +60,12 @@ Experience transfer happens through files (experiences.md, git history), not age
    ```
    CronCreate(
      cron: "*/30 * * * *",
-     prompt: "Autoresearch heartbeat: you are running an autoresearch loop at {experiment_dir}. Check experiences.md — is the loop still progressing? If you have a background agent running, check on it. If the loop stalled, resume from where you left off."
+     prompt: "Autoresearch heartbeat — check your loop status."
    )
    ```
    Save the returned job ID — you need it for cleanup.
    
-   **Why:** The Supervisor is a language model, not a persistent process. Periodic reminders keep it aware that a loop is active. When the reminder fires, the Supervisor checks its own state and re-activates the loop if needed. This is a simple ping, not complex state detection.
+   **Why:** The heartbeat is just an anti-idle nudge. The Supervisor itself decides what to check and how long to wait between checks — it can estimate agent runtime and sleep accordingly. The cron is a safety net, not the primary scheduling mechanism.
 7. **Enter main loop**
 
 <HARD-GATE>
