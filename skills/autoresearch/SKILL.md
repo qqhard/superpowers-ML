@@ -27,7 +27,20 @@ You MUST use subagents (Agent tool) as the ONLY way to dispatch Agent A and Agen
 Each agent is a fresh subagent per round — no shared context between rounds.
 Experience transfer happens through files (experiences.md, git history), not agent memory.
 
-**Non-blocking dispatch:** Always use `run_in_background: true` for Agent A and Agent B. The Supervisor stays idle while agents work — this prevents session timeout during long training runs and keeps the REPL responsive. You will be automatically notified when each agent completes. Do NOT poll or sleep-wait for agents.
+**Active scheduling:** Dispatch Agent A and Agent B with `run_in_background: true`, then enter a sleep-check loop to monitor completion. The Supervisor stays active — it estimates wait time, sleeps, checks, and adapts. This is more reliable than passively waiting for automatic notifications.
+
+**Sleep-check pattern:**
+```
+1. Dispatch agent in background
+2. Estimate wait time from pressure conditions (e.g., time_limit = 5min → sleep 5min)
+3. Bash(sleep <seconds>)
+4. Check if agent completed (look for completion signals: output files, training logs, etc.)
+5. If done → proceed to next step
+6. If not done → sleep shorter (halve the interval), check again
+7. Repeat until done or timeout
+```
+
+The Supervisor decides how long to sleep based on context — it knows the pressure conditions and can estimate training duration. Start with a generous estimate, then tighten.
 </HARD-GATE>
 
 ## When to Use
@@ -125,7 +138,7 @@ This is Round {round} of {max_rounds}.
 - When training completes, report "Training complete" as your final message
 ```
 
-Dispatch with `run_in_background: true`. The Supervisor does NOT block — REPL stays idle until notified that Agent A has completed. If Agent A times out or crashes, see Anomaly Recovery.
+Dispatch with `run_in_background: true`, then enter a sleep-check loop. Estimate initial wait from pressure conditions (e.g., if `time_limit: 5min`, sleep ~5 minutes). After waking, check for Agent A's completion signal (training log output, "Training complete" in agent result). If not done, sleep half the previous interval and check again. If Agent A times out or crashes, see Anomaly Recovery.
 
 ### Step 2: Dispatch Agent B
 
@@ -169,7 +182,7 @@ You are an ML experiment evaluator and reviewer. Your task is to independently e
     VERDICT: not_improved {metric}={value}
 ```
 
-Dispatch with `run_in_background: true`. After receiving Agent B's completion notification, parse the VERDICT line from its response.
+Dispatch with `run_in_background: true`, then enter a sleep-check loop. Agent B typically runs faster than Agent A (evaluation vs training), so start with a shorter sleep estimate. After completion, parse the VERDICT line from its response.
 
 ### Step 3: Act on Verdict
 
