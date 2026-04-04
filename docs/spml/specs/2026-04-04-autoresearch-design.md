@@ -33,10 +33,11 @@ autoresearch 的特殊性：brainstorming 检测到意图后额外收集协议�
 | 1 | Research question | `research_question` |
 | 2 | Fixed（不可变的代码 + 条件） | `Fixed.files` + `time_limit` + `epoch_limit` |
 | 3 | Variable（可变的代码 + 条件） | `Variable.files` + 可调范围 |
-| 4 | Train command | `train_command` |
-| 5 | Evaluation | `Eval.metric` + `direction` + `command` |
-| 6 | Termination | `max_rounds` + `target` |
-| 7 | Initial hints（可选） | experiences.md R0 Note |
+| 4 | Evaluation | `Eval.metric` + `direction` + `command` |
+| 5 | Termination | `max_rounds` + `target` |
+| 6 | Initial hints（可选） | experiences.md R0 Note |
+
+`train_command` 和 `eval_command` 不问用户 — 在 build 阶段（VP L1）已确定，handoff 从 baseline 代码中提取写入 protocol。
 
 **检测触发：** `autoresearch-create` 已调用 / 关键词匹配 / 模式匹配（搜索优化而非验证假设）。
 

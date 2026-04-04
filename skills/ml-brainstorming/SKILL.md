@@ -163,10 +163,11 @@ When autoresearch is detected, ask the following questions **one at a time, in o
 1. **Research question** — "What are you trying to optimize or find? Describe the research goal."
 2. **Fixed（不可变的代码 + 条件）** — "What code files and conditions must NOT change? Include time/epoch limits per round." (maps to Fixed.files + time_limit + epoch_limit)
 3. **Variable（可变的代码 + 条件）** — "Which files can the agent modify, and what can it adjust?" (maps to Variable.files + adjustable range)
-4. **Train command** — "How to run training?" (e.g., `python train.py --epochs 500 --time-limit 300`)
-5. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
-6. **Termination** — "When should the loop stop?" (max rounds, target metric value)
-7. **Initial hints（可选）** — "Any known experiences, constraints, or directions to try? (e.g., 'lr > 1e-3 causes gradient explosion', 'try cosine annealing')" — skip if none. Maps to R0 Note in experiences.md.
+4. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
+5. **Termination** — "When should the loop stop?" (max rounds, target metric value)
+6. **Initial hints（可选）** — "Any known experiences, constraints, or directions to try? (e.g., 'lr > 1e-3 causes gradient explosion', 'try cosine annealing')" — skip if none. Maps to R0 Note in experiences.md.
+
+`train_command` and `eval_command` are NOT asked here — they are determined during the build phase (VP L1) and extracted by handoff into the protocol.
 
 Only AFTER collecting these answers, explore the experiment directory (if existing) to understand the base code.
 
@@ -241,7 +242,7 @@ When autoresearch is detected, the design doc includes an additional section:
 research_question: <from user>
 max_rounds: <from user>
 target: <from user, or "none">
-train_command: <from user>
+train_command: <from VP L1 baseline run — handoff extracts>
 initial_hints: <from user, or empty>
 
 ### Fixed（不可变：代码 + 条件）
