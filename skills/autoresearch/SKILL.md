@@ -144,11 +144,11 @@ Supervisor runs training directly in background. User can `ctrl+o` to see stdout
 Bash(
   command: "{train_command}",
   run_in_background: true,
-  timeout: {time_limit_ms * 2}   // e.g., time_limit=5min → timeout=600000
+  timeout: {time_limit_ms + 30000}   // time_limit + 30s buffer, e.g., 5min → 330000
 )
 ```
 
-REPL stays idle while training runs — user can interact. Supervisor is notified when training completes (or times out). If timeout, handle as anomaly (record failure, next round Step 0).
+Training code should self-terminate at `time_limit` (pressure condition). The Bash timeout is a safety net with 30s buffer for cleanup. REPL stays idle — user can interact. If Bash timeout fires, the training code's termination logic failed — handle as anomaly.
 
 ### Step 4: Evaluation
 
