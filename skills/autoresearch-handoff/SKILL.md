@@ -72,9 +72,9 @@ best: {metric} = {baseline_value} (R0)
 rounds: 0 / {max_rounds}
 status: not_started
 
-| Round | Strategy | Compliance | Result | Verdict | Insight |
-|-------|----------|------------|--------|---------|---------|
-| 0 | baseline | ✅ | {baseline_value} | — | initial |
+| Round | Strategy | Compliance | Result | Verdict | Insight | Note |
+|-------|----------|------------|--------|---------|---------|------|
+| 0 | baseline | ✅ | {baseline_value} | — | initial | {user hints if any} |
 ```
 
 ## Step 5: Verify Git State

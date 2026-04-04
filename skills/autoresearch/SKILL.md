@@ -70,7 +70,9 @@ Use a sleep-check loop: dispatch → sleep (estimate from time_limit) → check 
 <HARD-GATE>
 ## Main Loop
 
-The loop is autonomous. After each round, IMMEDIATELY proceed to the next round. Do NOT wait for user input. Do NOT ask the user questions. Do NOT stop to summarize or suggest options. The only reasons to exit the loop are the termination conditions in Step 4.
+The loop is autonomous. After each round, IMMEDIATELY proceed to the next round. Do NOT wait for user input. Do NOT ask the user questions. Do NOT stop to summarize or suggest options. The only reasons to exit the loop are the termination conditions in Step 6.
+
+**User input during the loop:** If the user sends a message while the loop is running (e.g., during REPL idle while Researcher or training is in background), treat it as a Note — append to the current round's Note column in experiences.md. Then continue the loop. Do NOT pause or ask follow-up questions.
 </HARD-GATE>
 
 ```

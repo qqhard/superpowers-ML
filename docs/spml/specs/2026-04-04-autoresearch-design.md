@@ -193,15 +193,17 @@ best: accuracy = 0.82 (R3)
 rounds: 5 / 10
 status: running
 
-| Round | Strategy | Compliance | Result | Verdict | Insight |
-|-------|----------|------------|--------|---------|---------|
-| 0 | baseline | ✅ | 0.31 | — | initial |
-| 1 | lr 1e-3→3e-4, cosine schedule | ✅ | 0.55 | ✅ commit | lr decay helped |
-| 2 | add mixup augmentation | ✅ | 0.49 | ❌ rollback | mixup hurt convergence |
-| 3 | AdamW + weight decay 0.01 | ✅ | 0.82 | ✅ commit | regularization key |
-| 4 | increase model width 2x | ❌ fixed | — | ❌ rollback | touched model.py (fixed) |
-| 5 | label smoothing 0.1 | ✅ | 0.78 | ❌ rollback | no improvement |
+| Round | Strategy | Compliance | Result | Verdict | Insight | Note |
+|-------|----------|------------|--------|---------|---------|------|
+| 0 | baseline | ✅ | 0.31 | — | initial | lr>1e-3 会爆 |
+| 1 | lr 1e-3→3e-4, cosine schedule | ✅ | 0.55 | ✅ commit | lr decay helped | |
+| 2 | add mixup augmentation | ✅ | 0.49 | ❌ rollback | mixup hurt convergence | 用户: 试试只在前半段 mixup |
+| 3 | early-stage mixup + AdamW | ✅ | 0.82 | ✅ commit | partial mixup + regularization | |
+| 4 | increase model width 2x | ❌ fixed | — | ❌ rollback | touched model.py (fixed) | |
+| 5 | label smoothing 0.1 | ✅ | 0.78 | ❌ rollback | no improvement | 用户: 参考 paper X 的方法 |
 ```
+
+**Note 列：** 用户随时可以插入指导，Supervisor 写到当前轮的 Note 列。实验开始前的先验知识放在 R0 的 Note。Researcher 读表格时自然看到。
 
 **窗口化：** Researcher 看到的 prompt 只包含 Summary + 最近 N 轮（默认 N=5）。旧轮的关键洞察由 Supervisor 浓缩进一句话追加到 Summary 下方。全量表格始终保留在文件中，但不注入 prompt。
 
@@ -248,6 +250,8 @@ status: running
 - [ ] 5 轮连续失败：plateau 警告，继续运行
 
 ### experiences.md
-- [ ] 表格格式，每轮一行
+- [ ] 表格格式，每轮一行，含 Note 列
 - [ ] Supervisor 维护，Researcher 只读
 - [ ] 窗口化：prompt 只注入 Summary + 最近 N 轮
+- [ ] 用户先验知识写入 R0 的 Note
+- [ ] 循环中用户输入追加到当前轮 Note，不暂停循环
