@@ -117,7 +117,13 @@ TaskCreate: "R{round}: Termination"
 
 ### Step 1: Dispatch Researcher (design + code only)
 
-Dispatch a fresh subagent with `run_in_background: true`. Researcher designs the strategy and modifies code, but does NOT run training. Supervisor injects all protocol info directly — **Researcher does NOT read the protocol file.**
+Dispatch a fresh subagent with `run_in_background: true`. **Supervisor pre-reads all context and injects it directly into the prompt** — Researcher should not need to Read any files at startup. This eliminates 5-8 tool call round trips.
+
+Before dispatching, Supervisor reads:
+- Variable files content (e.g., `train.py`)
+- experiences.md (extract last N rounds + summary)
+
+Then injects everything into the prompt:
 
 ```
 You are an ML researcher. Your task is to improve {metric} ({direction}).
@@ -132,9 +138,18 @@ You design the strategy and write the code. Training and evaluation are handled 
 - **Variable range:** {variable_range}
 - You may create new files if needed.
 
+## Recent experiences (last {N} rounds)
+{experiences_table_snippet}
+
+## Current code
+### {variable_file_1}
+```{lang}
+{file_content}
+```
+
 ## Your task
-1. Read {experiences_path} to learn from past rounds (table format — last {N} rounds shown)
-2. Add a row to the experiences table with your strategy (leave Result/Verdict/Insight blank — Supervisor fills those)
+1. Based on past experiences above, design a strategy for this round
+2. Add a row to {experiences_path} with your strategy (leave Result/Verdict/Insight blank)
 3. Modify the variable files to implement your strategy
 4. Report "Code ready" as your final message
 ```
