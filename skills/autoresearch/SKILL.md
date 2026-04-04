@@ -148,7 +148,7 @@ Bash(
 )
 ```
 
-Training code should self-terminate at `time_limit` (pressure condition). The Bash timeout is a safety net with 30s buffer for cleanup. REPL stays idle — user can interact. If Bash timeout fires, the training code's termination logic failed — handle as anomaly.
+The training script (framework code, Fixed layer) owns timeout: it saves checkpoint before `time_limit` and exits cleanly. The Bash timeout (+30s buffer) is a fallback — only fires if the script's termination logic fails. REPL stays idle — user can interact. If Bash timeout fires, handle as anomaly.
 
 ### Step 4: Evaluation
 
