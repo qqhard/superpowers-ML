@@ -88,13 +88,20 @@ for round in current_round..max_rounds:
 <HARD-GATE>
 ### Step 0: Create Round Task List
 
-You MUST create a task BEFORE dispatching Researcher. This applies to EVERY round, including rounds following anomaly recovery.
+You MUST create the task list BEFORE dispatching Researcher. This applies to EVERY round, including rounds following anomaly recovery.
 
+**First, clear previous round's tasks** (if any) — delete all tasks from the previous round so the list stays clean.
+
+**Then create 5 tasks for this round:**
 ```
-TaskCreate: "Round {round}/{max_rounds}"
+TaskCreate: "R{round}: Researcher"          activeForm: "Researcher running"
+TaskCreate: "R{round}: Compliance check"
+TaskCreate: "R{round}: Evaluation"
+TaskCreate: "R{round}: Git"
+TaskCreate: "R{round}: Termination check"
 ```
 
-Update the task's `activeForm` as each step progresses (e.g., "Researcher training", "Compliance check", "Evaluating", "Git commit"). Mark completed when the round finishes.
+Mark each task in_progress → completed as the corresponding step runs. Researcher stays as "Researcher running" until the subagent completes (no mid-task updates). The 4 Supervisor steps (compliance/eval/git/termination) update in quick succession after Researcher finishes.
 </HARD-GATE>
 
 ### Step 1: Dispatch Researcher
