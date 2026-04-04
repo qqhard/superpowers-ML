@@ -70,9 +70,15 @@ Use a sleep-check loop: dispatch → sleep (estimate from time_limit) → check 
 <HARD-GATE>
 ## Main Loop
 
-The loop is autonomous. After each round, IMMEDIATELY proceed to the next round. Do NOT wait for user input. Do NOT ask the user questions. Do NOT stop to summarize or suggest options. The only reasons to exit the loop are the termination conditions in Step 6.
+The loop is autonomous. Never stop unless the user explicitly says to stop, or termination conditions in Step 6 are met. Do NOT proactively pause, ask questions, or wait for approval.
 
-**User input during the loop:** If the user sends a message while the loop is running (e.g., during REPL idle while Researcher or training is in background), treat it as a Note — append to the current round's Note column in experiences.md. Then continue the loop. Do NOT pause or ask follow-up questions.
+**User input during the loop:** The user may send messages at any time. Handle based on intent:
+- **Stop command** ("停", "stop", "pause") → stop the loop after the current step completes
+- **Protocol change** ("model.py 也可以改", "加大 max_rounds") → apply the change to protocol, log it in Note column, continue the loop
+- **Guidance / suggestion** → append to current round's Note column, continue the loop
+- **Question** → answer briefly, continue the loop
+
+Never stop the loop for anything other than an explicit stop command or termination conditions.
 </HARD-GATE>
 
 ```
