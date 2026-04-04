@@ -8,7 +8,7 @@
     {
       "name": "spml",
       "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics",
-      "version": "0.18.0",
+      "version": "0.19.0",
       "source": "./"
     }
   ]
