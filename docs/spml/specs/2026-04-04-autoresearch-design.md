@@ -72,6 +72,7 @@ Brainstorming 阶段划分框架代码（Fixed.files）和可变代码（Variabl
 
 - 可变代码是 Researcher 唯一修改点（取决于研究目标）
 - 框架代码 Researcher 不碰（数据加载、评测、入口脚本、终止逻辑）
+- 训练脚本（框架层）自带超时控制：在 time_limit 到达前触发 checkpoint 保存，然后正常退出。Bash timeout 只是兜底。
 - Baseline 进入循环前必须跑通完整 pipeline（VP L1 保证）
 - Supervisor 读 protocol 一次，提取信息注入 Researcher prompt。**Researcher 不读 protocol 文件。**
 
