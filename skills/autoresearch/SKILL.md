@@ -103,12 +103,12 @@ You MUST create the task list BEFORE dispatching Researcher. This applies to EVE
 
 **Then create 6 tasks for this round:**
 ```
-TaskCreate: "R{round}: Researcher"
-TaskCreate: "R{round}: Compliance"
-TaskCreate: "R{round}: Train"
-TaskCreate: "R{round}: Eval"
-TaskCreate: "R{round}: Git"
-TaskCreate: "R{round}: Termination"
+TaskCreate: "R{round} S1: Researcher"
+TaskCreate: "R{round} S2: Compliance"
+TaskCreate: "R{round} S3: Train"
+TaskCreate: "R{round} S4: Eval"
+TaskCreate: "R{round} S5: Git"
+TaskCreate: "R{round} S6: Termination"
 ```
 
 **Update tasks with results as each step completes** — the task list is the user's primary status view. Use TaskUpdate to enrich subject with outcome:
