@@ -204,14 +204,14 @@ best: accuracy = 0.82 (R3)
 rounds: 5 / 10
 status: running
 
-| Round | Strategy | Compliance | Result | Verdict | Insight | Note |
-|-------|----------|------------|--------|---------|---------|------|
-| 0 | baseline | ✅ | 0.31 | — | initial | lr>1e-3 会爆 |
-| 1 | lr 1e-3→3e-4, cosine schedule | ✅ | 0.55 | ✅ commit | lr decay helped | |
-| 2 | add mixup augmentation | ✅ | 0.49 | ❌ rollback | mixup hurt convergence | 用户: 试试只在前半段 mixup |
-| 3 | early-stage mixup + AdamW | ✅ | 0.82 | ✅ commit | partial mixup + regularization | |
-| 4 | increase model width 2x | ❌ fixed | — | ❌ rollback | touched model.py (fixed) | |
-| 5 | label smoothing 0.1 | ✅ | 0.78 | ❌ rollback | no improvement | 用户: 参考 paper X 的方法 |
+| Round | Compliance | Result | Verdict | Strategy | Insight | Note |
+|-------|------------|--------|---------|----------|---------|------|
+| 0 | ✅ | 0.31 | — | baseline: SGD lr=1e-2, no schedule, no augmentation | initial baseline | lr>1e-3 会梯度爆炸 |
+| 1 | ✅ | 0.55 | ✅ commit | 降 lr 到 3e-4，加 cosine annealing schedule (T_max=500)，其余不变 | lr decay 让后半段收敛更稳定 | |
+| 2 | ✅ | 0.49 | ❌ rollback | 在 R1 基础上加 mixup (alpha=0.2)，全程启用 | mixup 导致前 100 epoch loss 震荡，最终收敛变慢 | 用户: 试试只在前半段用 mixup |
+| 3 | ✅ | 0.82 | ✅ commit | 只在前 50% epoch 启用 mixup + 换 AdamW (wd=0.01) 替代 SGD | partial mixup 不伤收敛，AdamW 正则化显著提升泛化 | |
+| 4 | ❌ fixed | — | ❌ rollback | 尝试把 hidden_dim 从 256 扩到 512 | 修改了 model.py 属于 fixed file，合规失败 | |
+| 5 | ✅ | 0.78 | ❌ rollback | 加 label smoothing=0.1 到 CE loss | 相比 R3 无提升，label smoothing 对该数据集效果不明显 | 用户: 参考 paper X 的 progressive augmentation 方法 |
 ```
 
 **Note 列：** 用户随时可以插入指导，Supervisor 写到当前轮的 Note 列。实验开始前的先验知识放在 R0 的 Note。Researcher 读表格时自然看到。
