@@ -20,21 +20,26 @@ Do NOT hand off without:
 ## Checklist
 
 1. **Verify VP L1** — record baseline metric
-2. **Verify pressure condition termination** — time_limit / epoch_limit logic works
-3. **Generate autoresearch-protocol.md** — simplified format
-4. **Initialize experiences.md** — table with baseline row
-5. **Verify git state** — base code committed
-6. **Present launch instructions**
+2. **Verify baseline speed** — first step/epoch prints fast enough
+3. **Verify pressure condition termination** — time_limit / epoch_limit logic works
+4. **Generate autoresearch-protocol.md** — simplified format
+5. **Initialize experiences.md** — table with baseline row
+6. **Verify git state** — base code committed
+7. **Present launch instructions**
 
 ## Step 1: Verify VP L1
 
 Confirm VP L1 passed. Record the evaluation metric as the protocol's baseline value.
 
-## Step 2: Verify Pressure Conditions
+## Step 2: Verify Baseline Speed
+
+Check that the first step/epoch prints quickly on single GPU. This is the most important precondition for autoresearch — every round pays the cost of baseline speed. If the first step takes too long, the baseline must be fixed before entering the loop (smaller data, lighter model, faster I/O). Do NOT proceed to handoff with a slow baseline.
+
+## Step 3: Verify Pressure Conditions
 
 Check that time_limit and epoch_limit termination logic exists and works (VP L1 already ran under these conditions).
 
-## Step 3: Generate autoresearch-protocol.md
+## Step 4: Generate autoresearch-protocol.md
 
 Extract from design doc's `## Autoresearch Protocol` section. Write to `<experiment-dir>/autoresearch-protocol.md`:
 
@@ -61,7 +66,7 @@ baseline: <metric> = <value from VP L1>
 - command: <eval_command from design doc>
 ```
 
-## Step 4: Initialize experiences.md
+## Step 5: Initialize experiences.md
 
 Write to `<experiment-dir>/experiences.md`:
 
@@ -77,13 +82,13 @@ status: not_started
 | 0 | ✅ | {baseline_value} | — | baseline: {brief description of baseline config} | initial | {user hints if any} |
 ```
 
-## Step 5: Verify Git State
+## Step 6: Verify Git State
 
 ```bash
 git log --oneline -1  # base code committed
 ```
 
-## Step 6: Present Launch Instructions
+## Step 7: Present Launch Instructions
 
 ```
 Handoff complete:

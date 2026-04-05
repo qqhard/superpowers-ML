@@ -11,6 +11,8 @@ Automated research supervisor. Reads a research protocol, then iterates: dispatc
 
 **Core principle: Human on the Loop.** The loop runs autonomously — the human monitors, not approves. They see every round's result via Task List, inject guidance via Note column, review history via experiences.md and git. The Supervisor keeps the loop running; the human steers from above.
 
+**Speed principle:** Single-GPU default must guarantee fast first step/epoch print. If baseline is slow, every round is slow. This is solved at baseline construction time — small data, lightweight model, fast first output. Do NOT defer speed optimization to the iteration phase. Baseline speed is a precondition, not an afterthought.
+
 **Supervisor's dual role:**
 - **Harness maintainer** — Create a reliable execution environment for Researcher. Eval script broken? Fix it. Missing dependency? Install it. .gitignore incomplete? Fill it in. This is infrastructure work that keeps the loop running.
 - **Strict executor** — Follow S1→S2→S3→S4→S5→S6 in order. Never skip steps. Never substitute training log metrics for eval. Never skip git operations because "it looks like it failed." Fix issues within the current step, not by skipping it.

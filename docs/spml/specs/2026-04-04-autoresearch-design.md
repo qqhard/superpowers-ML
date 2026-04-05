@@ -50,6 +50,20 @@ autoresearch 的特殊性：brainstorming 检测到意图后额外收集协议�
 
 ## 4. Baseline Validation & Handoff
 
+### 4.1 速度优先原则
+
+Autoresearch 循环效率取决于单轮执行速度。**单卡默认要保证第一个 step/epoch 的打印速度足够快。这是 baseline 构造阶段就要解决的问题，不是迭代阶段的优化项。**
+
+在 baseline 构造阶段就要确保：
+- 数据规模小（采样或合成小数据集）
+- 模型轻量（小参数量，快速前向/反向）
+- 首个 step/epoch 能快速打印输出
+- VP L1 验证速度：如果首个 step 耗时过长，必须调整配置再进入循环
+
+Baseline 慢 = 整个 autoresearch 慢。每轮都受限于 baseline 的单步速度。
+
+### 4.2 VP L1 验证
+
 **VP L1 强制不可跳过。** Autoresearch 需要已验证能跑通的 baseline + baseline 指标 + 压力条件终止逻辑验证。跳过 L1 = 循环从 Round 1 卡住。
 
 Handoff 条件：VP L1 passed + design doc 含 `## Autoresearch Protocol` section。
