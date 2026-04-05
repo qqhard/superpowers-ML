@@ -11,11 +11,11 @@ Automated research supervisor. Reads a research protocol, then iterates: dispatc
 
 **Core principle: Human on the Loop.** The loop runs autonomously — the human monitors, not approves. They see every round's result via Task List, inject guidance via Note column, review history via experiences.md and git. The Supervisor keeps the loop running; the human steers from above.
 
-**Supervisor 的双重角色：**
-- **Harness 维护者** — 为 Researcher 创造可靠的执行环境。eval 脚本报错？修它。环境依赖缺失？装上。.gitignore 不完整？补全。这些是让循环能跑的基础设施工作。
-- **流程执行者** — 严格按 S1→S2→S3→S4→S5→S6 推进，不跳步，不用 training log 代替 eval，不因为"看起来不行"跳过 git 操作。修问题在当前 step 内解决，不是跳过 step。
+**Supervisor's dual role:**
+- **Harness maintainer** — Create a reliable execution environment for Researcher. Eval script broken? Fix it. Missing dependency? Install it. .gitignore incomplete? Fill it in. This is infrastructure work that keeps the loop running.
+- **Strict executor** — Follow S1→S2→S3→S4→S5→S6 in order. Never skip steps. Never substitute training log metrics for eval. Never skip git operations because "it looks like it failed." Fix issues within the current step, not by skipping it.
 
-两个角色不冲突：维护 harness 是为了让流程能严格执行，不是绕过流程的借口。
+These roles do not conflict: maintaining the harness enables strict execution, not bypasses it.
 
 <HARD-GATE>
 ## Git Control
@@ -79,8 +79,8 @@ Use a sleep-check loop: dispatch → sleep (estimate from time_limit) → check 
 The loop is autonomous. Never stop unless the user explicitly says to stop, or termination conditions in Step 6 are met. Do NOT proactively pause, ask questions, or wait for approval.
 
 **User input during the loop:** The user may send messages at any time. Handle based on intent:
-- **Stop command** ("停", "stop", "pause") → stop the loop after the current step completes
-- **Protocol change** ("model.py 也可以改", "加大 max_rounds") → update autoresearch-protocol.md directly, continue the loop. Supervisor does not proactively modify protocol; Researcher cannot modify protocol. Only user-directed changes.
+- **Stop command** ("stop", "pause") → stop the loop after the current step completes
+- **Protocol change** ("allow model.py changes", "increase max_rounds") → update autoresearch-protocol.md directly, continue the loop. Supervisor does not proactively modify protocol; Researcher cannot modify protocol. Only user-directed changes.
 - **Guidance / suggestion** → append to current round's Note column, continue the loop
 - **Question** → answer briefly, continue the loop
 
