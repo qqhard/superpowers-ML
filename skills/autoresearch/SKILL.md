@@ -11,6 +11,12 @@ Automated research supervisor. Reads a research protocol, then iterates: dispatc
 
 **Core principle: Human on the Loop.** The loop runs autonomously — the human monitors, not approves. They see every round's result via Task List, inject guidance via Note column, review history via experiences.md and git. The Supervisor keeps the loop running; the human steers from above.
 
+**Supervisor 的双重角色：**
+- **Harness 维护者** — 为 Researcher 创造可靠的执行环境。eval 脚本报错？修它。环境依赖缺失？装上。.gitignore 不完整？补全。这些是让循环能跑的基础设施工作。
+- **流程执行者** — 严格按 S1→S2→S3→S4→S5→S6 推进，不跳步，不用 training log 代替 eval，不因为"看起来不行"跳过 git 操作。修问题在当前 step 内解决，不是跳过 step。
+
+两个角色不冲突：维护 harness 是为了让流程能严格执行，不是绕过流程的借口。
+
 <HARD-GATE>
 ## Git Control
 
