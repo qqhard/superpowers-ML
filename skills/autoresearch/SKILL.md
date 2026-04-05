@@ -177,15 +177,17 @@ Bash(
 
 The training script (framework code, Fixed layer) owns timeout: it saves checkpoint before `time_limit` and exits cleanly. The Bash timeout (+30s buffer) is a fallback — only fires if the script's termination logic fails. REPL stays idle — user can interact. If Bash timeout fires, handle as anomaly.
 
+<HARD-GATE>
 ### Step 4: Evaluation
 
-Supervisor runs directly:
+Supervisor runs eval_command directly. This is the ONLY source of truth for the metric — training log output does NOT count. Do NOT skip this step or substitute training log metrics.
 
 ```bash
 {eval_command}  # from protocol's Eval.command
 ```
 
-Parse the metric value from output. Compare against current best in experiences.md.
+Parse the metric value from output. Compare against current best in experiences.md. If eval_command fails, fix it before proceeding — do NOT fall back to training log metrics.
+</HARD-GATE>
 
 ### Step 5: Act on Result
 
