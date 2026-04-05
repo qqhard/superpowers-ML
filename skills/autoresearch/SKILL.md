@@ -102,23 +102,25 @@ You MUST create the task list BEFORE dispatching Researcher. This applies to EVE
 **First, clear previous round's tasks** (if any) — delete all tasks from the previous round so the list stays clean.
 
 **Then create 6 tasks for this round:**
+Create with protocol context, update with actual results:
+
 ```
-TaskCreate: "R{round} S1: Researcher"
-TaskCreate: "R{round} S2: Compliance"
-TaskCreate: "R{round} S3: Train"
-TaskCreate: "R{round} S4: Eval"
-TaskCreate: "R{round} S5: Git"
-TaskCreate: "R{round} S6: Termination"
+TaskCreate: "R{round} S1: Researcher — improve {metric} on {variable_files}"
+TaskCreate: "R{round} S2: Compliance — check {variable_files} only"
+TaskCreate: "R{round} S3: Train — {train_command} (limit: {time_limit})"
+TaskCreate: "R{round} S4: Eval — {eval_command} (current best: {best_value})"
+TaskCreate: "R{round} S5: Git — awaiting result"
+TaskCreate: "R{round} S6: Termination — {round}/{max_rounds}"
 ```
 
-**Update tasks with results as each step completes** — the task list is the user's primary status view. Use TaskUpdate to enrich subject with outcome:
+**Update with actual results on completion:**
 
-- Researcher done → subject: `"R{round}: Researcher — {strategy summary}"`
-- Compliance done → subject: `"R{round}: Compliance — ✅"` or `"❌ touched {file}"`
-- Train done → subject: `"R{round}: Train — {duration}"`
-- Eval done → subject: `"R{round}: Eval — {metric}={value} (best: {best} {'↑' or '—'})"`
-- Git done → subject: `"R{round}: Git — committed"` or `"rolled back"`
-- Termination → subject: `"R{round}: Termination — continue ({round}/{max})"` or `"done"`
+- S1 → `"R{round} S1: Researcher — {strategy summary, e.g. 'cosine lr + label smoothing'}"`
+- S2 → `"R{round} S2: Compliance — ✅"` or `"❌ touched {file}"`
+- S3 → `"R{round} S3: Train — done {duration}, final loss={value}"`
+- S4 → `"R{round} S4: Eval — {metric}={value} (best: {best} {'↑' or '—'})"`
+- S5 → `"R{round} S5: Git — committed"` or `"rolled back"`
+- S6 → `"R{round} S6: Termination — continue"` or `"done: {reason}"`
 </HARD-GATE>
 
 ### Step 1: Dispatch Researcher (design + code only)
