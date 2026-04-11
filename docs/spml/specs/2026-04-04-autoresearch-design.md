@@ -153,20 +153,23 @@ R{N}: Termination check
 
 ## 6. Supervisor Liveness
 
-Supervisor 是语言模型，不是持久进程。三层机制保障循环持续运行：
+Supervisor 是语言模型，不是持久进程。四层机制保障循环持续运行：
 
 | 层 | 触发条件 | 作用 |
 |----|---------|------|
 | Agent 通知 | Researcher 完成 | 正常推进（合规→评测→git→下一轮） |
+| Check-in reminder | 后台任务派发后 ~120s（one-shot CronCreate） | 唤醒 Supervisor 检查进度，未完成则续设 |
 | Per-round 超时计时器 | Researcher 超时（one-shot CronCreate, `time_limit * 2`） | 终止该轮，反思，下一轮 Step 0 |
 | Session heartbeat | 循环断了（recurring CronCreate */30） | 提醒 Supervisor 恢复循环 |
 
 ```
-正常：Researcher 完成 → 通知 → 取消计时器 → Supervisor 评测 → 下一轮
+正常：Researcher 完成 → 通知 → 取消 reminder + 计时器 → Supervisor 评测 → 下一轮
+等待中：~120s reminder 触发 → 检查进度 → 未完成则续设 reminder
 卡住：超时 → 计时器触发 → 终止该轮 → 反思 → 下一轮
 异常：循环断了 → 30min heartbeat → 恢复
 ```
 
+- **规则：说"等 N 分钟"就必须建定时器。** 派发后台任务后说"我等两分钟检查"但不建 CronCreate 是 bug — REPL idle 后没有内置机制唤醒你，只能等 30min heartbeat。Check-in reminder 填补这个空窗。
 - Heartbeat：session-scoped，REPL idle 时才触发，不积压。
 - **可选 sleep-check 汇报模式**：protocol 中设 `sleep_check: true` 开启。默认关闭。
 
@@ -266,6 +269,7 @@ status: running
 
 ### Liveness
 - [ ] Researcher 通知 → Supervisor 评测 → 正常推进
+- [ ] Check-in reminder → 后台任务派发后 ~120s 唤醒 → 检查进度 → 未完成则续设
 - [ ] Per-round 超时计时器 → 终止该轮 → 反思 → 下一轮 Step 0
 - [ ] Session heartbeat */30 → 恢复断裂的循环
 - [ ] Sleep-check 汇报模式（可选，默认关闭）

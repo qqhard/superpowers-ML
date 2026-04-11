@@ -36,11 +36,14 @@ Experience transfer happens through files (experiences.md, git history), not age
 
 **Scheduling (default — Claude Code):**
 
-Three-layer mechanism:
+Four-layer mechanism:
 
 1. **Researcher notification** — dispatch with `run_in_background: true`. When Researcher completes, the Supervisor is automatically notified and continues.
-2. **Per-round timeout timer** — before dispatching Researcher, create a one-shot CronCreate with timeout = `time_limit * 2`. If Researcher doesn't complete before the timer fires, the round is failed. Supervisor records failure, reflects, moves to next round. Delete the timer when Researcher completes normally.
-3. **Session heartbeat** — a recurring CronCreate (every 30 minutes) as the ultimate safety net. Only fires when REPL is idle and no task is running.
+2. **Check-in reminder** — after dispatching ANY background task (Researcher or training), immediately create a one-shot CronCreate to wake yourself up in ~120 seconds (adjust based on expected duration). When it fires: if the task completed, continue; if still running, create another reminder. Delete the reminder when the task completes normally.
+3. **Per-round timeout timer** — before dispatching Researcher, create a one-shot CronCreate with timeout = `time_limit * 2`. If Researcher doesn't complete before the timer fires, the round is failed. Supervisor records failure, reflects, moves to next round. Delete the timer when Researcher completes normally.
+4. **Session heartbeat** — a recurring CronCreate (every 30 minutes) as the ultimate safety net. Only fires when REPL is idle and no task is running.
+
+**Rule: Never say "I'll wait" without a timer.** If you dispatch a background task and intend to check back later, you MUST create a CronCreate one-shot immediately. Saying "I'll check in 2 minutes" without creating a timer is a bug — there is no built-in mechanism to wake you up at that time. The REPL goes idle and nothing happens until either the task completes (Layer 1) or the 30-minute heartbeat fires (Layer 4). The check-in reminder (Layer 2) fills this gap.
 
 **Scheduling (alternative — non-Claude-Code environments):**
 
@@ -137,6 +140,12 @@ Dispatch a fresh subagent with `run_in_background: true`. **Supervisor injects l
 
 Before dispatching, Supervisor extracts from experiences.md: summary + last N rounds table.
 
+**After dispatching, immediately create TWO timers:**
+1. Check-in reminder (~120s): `CronCreate(schedule: "120s", prompt: "Check-in: Researcher round {round} — verify completion or check progress.")`
+2. Per-round timeout (`time_limit * 2`): as described in Layer 3.
+
+Save both IDs. When Researcher completes normally, delete both timers before continuing to Step 2.
+
 ```
 You are an ML researcher. Your task is to improve {metric} ({direction}).
 This is Round {round} of {max_rounds}.
@@ -182,6 +191,10 @@ Bash(
   timeout: {time_limit_ms + 30000}   // time_limit + 30s buffer, e.g., 5min → 330000
 )
 ```
+
+**Immediately after starting training, create a check-in reminder:**
+`CronCreate(schedule: "{time_limit * 0.8}s", prompt: "Check-in: Training round {round} — verify completion or check progress.")`
+Use ~80% of time_limit as the first check-in interval (e.g., 5min limit → 240s reminder). Save the ID and delete it when training completes.
 
 The training script (framework code, Fixed layer) owns timeout: it saves checkpoint before `time_limit` and exits cleanly. The Bash timeout (+30s buffer) is a fallback — only fires if the script's termination logic fails. REPL stays idle — user can interact. If Bash timeout fires, handle as anomaly.
 
