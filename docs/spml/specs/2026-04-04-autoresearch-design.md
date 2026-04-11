@@ -2,14 +2,27 @@
 
 ## 1. Overview
 
-AutoResearch 是 SPML 的自动化实验迭代系统。定义研究协议（protocol），驱动自主循环：Researcher 修改代码并训练，Supervisor 评测、审查合规、管理 git 和调度。
+AutoResearch 是 SPML 的自动化实验迭代系统。定义研究协议（protocol），驱动自主循环：Researcher 修改代码，Supervisor 跑训练、评测、审查合规、管理 git 和调度。
 
-**核心理念：Human on the Loop。** 人不在循环内逐步审批，而是在循环上方监控。系统自主运行，人通过以下方式保持控制：
+### 核心理念
+
+**Human on the Loop。** 人不在循环内逐步审批，而是在循环上方监控。系统自主运行，人通过以下方式保持控制：
 - **Task List** — 实时看到每轮每步的状态和结果
 - **Note 列** — 随时插入指导方向，下一轮 Researcher 自然看到
 - **experiences.md** — 全量实验记录，随时可审查
 - **git history** — 每次 improve 有 commit，可回溯任何版本
 - **随时介入** — 暂停循环、调整 protocol、修改 Fixed/Variable 划分
+
+**程序化测评（Programmatic Eval）。** 测评必须是预先定义好的程序化脚本，不是 Agent 在循环中临时编写的代码。同一个脚本，人能跑，Agent 也能跑。这是防止 Agent 自欺欺人的核心机制：如果 Agent 能写自己的测评代码，它就能（有意或无意地）产生对自己有利的指标，导致整个研究循环结果不可信。
+
+具体约束：
+- eval 脚本在 brainstorming 阶段定义、VP L1 阶段验证、handoff 阶段提取写入 protocol
+- eval 脚本始终在 Fixed.files 中，Researcher 不能修改
+- Researcher 也不能创建替代的 eval 逻辑（即使是新文件）
+- Supervisor 运行 protocol 中的 eval_command 原样执行，不包装、不替换
+- eval_command 的输出是指标的唯一来源，训练日志不算
+
+**速度优先。** 单卡默认要保证第一个 step/epoch 的打印速度足够快。Baseline 慢 = 整个 autoresearch 慢。这是 baseline 构造阶段就要解决的问题，不是迭代阶段的优化项。
 
 ## 2. End-to-End Flow
 
@@ -50,21 +63,27 @@ autoresearch 的特殊性：brainstorming 检测到意图后额外收集协议�
 
 ## 4. Baseline Validation & Handoff
 
-### 4.1 速度优先原则
+### 4.1 VP L1 验证
 
-Autoresearch 循环效率取决于单轮执行速度。**单卡默认要保证第一个 step/epoch 的打印速度足够快。这是 baseline 构造阶段就要解决的问题，不是迭代阶段的优化项。**
+**VP L1 强制不可跳过。** Autoresearch 需要已验证能跑通的 baseline + baseline 指标 + 压力条件终止逻辑验证。跳过 L1 = 循环从 Round 1 卡住。
 
-在 baseline 构造阶段就要确保：
+在 baseline 构造阶段要确保：
 - 数据规模小（采样或合成小数据集）
 - 模型轻量（小参数量，快速前向/反向）
 - 首个 step/epoch 能快速打印输出
 - VP L1 验证速度：如果首个 step 耗时过长，必须调整配置再进入循环
 
-Baseline 慢 = 整个 autoresearch 慢。每轮都受限于 baseline 的单步速度。
+### 4.2 Eval 脚本验证
 
-### 4.2 VP L1 验证
+Handoff 阶段必须单独验证 eval 脚本的可运行性：
+1. 用 VP L1 产生的 checkpoint 独立运行 eval_command
+2. 输出可解析的指标值
+3. 确定性 — 跑两次结果一致
+4. 自包含 — 无需手动设置或交互输入
 
-**VP L1 强制不可跳过。** Autoresearch 需要已验证能跑通的 baseline + baseline 指标 + 压力条件终止逻辑验证。跳过 L1 = 循环从 Round 1 卡住。
+eval 脚本的文件必须在 Fixed.files 中。如果不在，handoff 时补上。
+
+### 4.3 Handoff 条件与产出
 
 Handoff 条件：VP L1 passed + design doc 含 `## Autoresearch Protocol` section。
 
@@ -108,20 +127,21 @@ Brainstorming 阶段划分框架代码（Fixed.files）和可变代码（Variabl
   1. Researcher（subagent）设计策略 + 改代码（不跑训练）
   2. Supervisor 合规审查：git diff --name-only
   3. Supervisor 跑训练：Bash(train_command)  ← stdout 对用户可见
-  4. Supervisor 跑评测：Bash(eval_command)
+  4. Supervisor 跑评测：Bash(eval_command) — 预定义脚本，原样执行
   5. Supervisor 判定 + git commit / rollback
   6. Check termination → 下一轮
 ```
 
 **Researcher 职责（设计 + 编码）：**
-- 设计策略，修改可变文件，可创建新文件，可跑冒烟测试
+- 设计策略，修改可变文件，可创建新辅助文件，可跑冒烟测试
 - 先写 strategy（experiences.md 当前 round 的 strategy 列），再改代码
 - 不碰 Fixed files。训练和评测由 Supervisor 托管。
+- **不得创建或修改任何 eval 逻辑** — 即使是新文件中的 eval 代码也禁止
 
 **Supervisor 职责（审查 + 执行 + 评测）：**
-- 合规：`git diff --name-only`，检查 Fixed files 未被修改（新文件允许）
+- 合规：`git diff --name-only`，检查 Fixed files 未被修改（新文件允许）；检查是否创建了替代 eval 逻辑
 - 训练：`Bash(train_command, run_in_background)`
-- 评测：`Bash(eval_command)`
+- 评测：`Bash(eval_command)` — 预定义脚本原样执行，不包装不替换，输出是指标唯一来源
 - 产物清理：依赖 .gitignore，不硬编码路径
 - 记录：更新 experiences.md 表格
 
@@ -239,14 +259,24 @@ status: running
 
 ### Protocol & Handoff
 - [ ] Brainstorming 检测 autoresearch 意图 → 协议问题流程
-- [ ] 划分 Fixed.files（框架）和 Variable.files（可变）
+- [ ] 划分 Fixed.files（框架）和 Variable.files（可变），eval 脚本必须在 Fixed.files 中
 - [ ] VP L1 强制不可跳过
+- [ ] Handoff 验证 eval 脚本可独立运行、输出可解析、结果确定性
 - [ ] 生成精简 protocol + 初始化 experiences.md
 
 ### Code Interface
 - [ ] Supervisor 读 protocol 一次，注入 Researcher prompt
 - [ ] Researcher 不读 protocol 文件，不读框架代码
 - [ ] Baseline 进入循环前已跑通（VP L1）
+
+### Programmatic Eval
+- [ ] eval 脚本在 brainstorming 阶段定义，要求用户提供具体可运行脚本
+- [ ] eval 脚本在 VP L1 阶段验证通过
+- [ ] eval 脚本在 handoff 阶段独立验证（可运行、确定性、可解析）
+- [ ] eval 脚本始终在 Fixed.files 中
+- [ ] Researcher prompt 明确禁止创建或修改 eval 逻辑
+- [ ] Supervisor 合规检查包括检测替代 eval 文件
+- [ ] Supervisor 跑 eval_command 原样执行，不包装不替换
 
 ### Per-Round Flow
 - [ ] 每轮以 6 项 Task List 开始，清空上轮 tasks
@@ -257,8 +287,9 @@ status: running
 - [ ] 循环自治：轮间不等用户输入
 
 ### Researcher
-- [ ] 改可变文件 + 可创建新文件，先写 strategy 再改代码
+- [ ] 改可变文件 + 可创建新辅助文件，先写 strategy 再改代码
 - [ ] 不碰 Fixed files。训练/评测由 Supervisor 托管，可跑冒烟测试。
+- [ ] 不得创建或修改任何 eval 逻辑（包括新文件中的）
 
 ### Git & Termination
 - [ ] 只有 Supervisor 执行 git 写操作，在 worktree 中
@@ -285,3 +316,72 @@ status: running
 - [ ] 窗口化：prompt 只注入 Summary + 最近 N 轮
 - [ ] 用户先验知识写入 R0 的 Note
 - [ ] 循环中用户输入追加到当前轮 Note，不暂停循环
+
+## 10. Integration Test
+
+验证完整调用链。最小伪数据场景，不需要 GPU，每轮秒级完成。
+
+### 测试场景：多项式拟合
+
+**Research question:** 找到最佳多项式配置来逼近 y = sin(x)（[-π, π] 区间）。
+
+**Base code:**
+- `train.py` — numpy 最小二乘拟合 sin(x) 采样点。接受 `--epochs 1` 和 `--time-limit 10` 压力条件参数。保存系数到 `result.json`。
+- `evaluate.py` — 加载 `result.json`，在测试集上计算 MSE，输出 `mse=<value>` 到 stdout。**这是预定义的 eval 脚本，循环中不可修改。**
+- 终止逻辑：epoch limit (1 epoch) 和 time limit (10s)，先触发的生效。
+
+**Protocol:**
+```
+Research Question: Find optimal polynomial fitting strategy for sin(x)
+Fixed Conditions: dataset (sin(x) on [-π, π], 100 train / 50 test), numpy only, evaluate.py
+Pressure Conditions: epoch_limit=1, time_limit=10s
+Variable Conditions: polynomial degree (any), feature engineering (any), regularization (any)
+Evaluation: metric=mse, direction=minimize, eval_command="python evaluate.py"
+Termination: max_rounds=5, target=0.01
+```
+
+**Baseline:** degree-2 polynomial, MSE ≈ 0.3（故意差，让 agent 有空间优化）。
+
+### 验证清单
+
+```
+1. Startup
+   [ ] 读 autoresearch-protocol.md
+   [ ] 验证 git state（base commit 存在）
+   [ ] 验证 experiences.md 已初始化
+
+2. Per-round（至少 2 轮）
+   [ ] Researcher 作为 subagent 派发
+   [ ] Researcher 修改代码（不碰 eval/termination 逻辑）
+   [ ] Researcher 未创建替代 eval 脚本
+   [ ] Supervisor 跑 train_command
+   [ ] Supervisor 跑 eval_command（原始脚本，非 Researcher 创建的）
+   [ ] experiences.md 更新
+
+3. Git 管理
+   [ ] Improved round: git commit
+   [ ] Not-improved round: code rolled back
+   [ ] experiences.md 跨 rollback 保留
+
+4. 终止
+   [ ] 循环终止（target 达到或 max_rounds=5）
+   [ ] Final report 输出
+   [ ] git HEAD = best-performing commit
+
+5. Programmatic eval 验证
+   [ ] evaluate.py 全程未被修改
+   [ ] 无替代 eval 脚本被创建
+   [ ] 所有指标值均来自 evaluate.py 输出
+```
+
+### 测试结构
+
+```
+tests/autoresearch/
+├── run-test.sh                    # 主测试运行器
+├── base-project/                  # 模板 base code
+│   ├── train.py
+│   ├── evaluate.py                # 预定义 eval 脚本
+│   └── autoresearch-protocol.md   # 预填 protocol
+└── verify.sh                      # 运行后验证检查
+```

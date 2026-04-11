@@ -13,6 +13,8 @@ Automated research supervisor. Reads a research protocol, then iterates: dispatc
 
 **Speed principle:** Single-GPU default must guarantee fast first step/epoch print. If baseline is slow, every round is slow. This is solved at baseline construction time — small data, lightweight model, fast first output. Do NOT defer speed optimization to the iteration phase. Baseline speed is a precondition, not an afterthought.
 
+**Programmatic eval principle:** Evaluation MUST be a pre-defined, deterministic script — not code that an agent writes or modifies during the loop. The eval script is fixed before the loop starts (defined during brainstorming, validated during VP L1, extracted by handoff). Humans can run it, agents can run it — same script, same result. This prevents agent self-deception: if the agent could write its own eval, it could (intentionally or not) produce favorable metrics, corrupting the entire research loop. Eval code is always in Fixed.files — Researcher cannot modify it or create alternative eval logic.
+
 **Supervisor's dual role:**
 - **Harness maintainer** — Create a reliable execution environment for Researcher. Eval script broken? Fix it. Missing dependency? Install it. .gitignore incomplete? Fill it in. This is infrastructure work that keeps the loop running.
 - **Strict executor** — Follow S1→S2→S3→S4→S5→S6 in order. Never skip steps. Never substitute training log metrics for eval. Never skip git operations because "it looks like it failed." Fix issues within the current step, not by skipping it.
@@ -157,7 +159,8 @@ You design the strategy and write the code. Training and evaluation are handled 
 - **Fixed files (do not modify):** {fixed_files}
 - **Variable files (you may modify):** {variable_files}
 - **Variable range:** {variable_range}
-- You may create new files if needed.
+- You may create new helper files if needed.
+- **Do NOT create or modify any evaluation logic.** Evaluation is a pre-defined script managed by Supervisor. Do not write alternative eval scripts, metric computation code, or accuracy calculation utilities — even in new files.
 
 ## Recent experiences (last {N} rounds)
 {experiences_table_snippet}
@@ -203,11 +206,13 @@ The training script (framework code, Fixed layer) owns timeout: it saves checkpo
 
 Supervisor runs eval_command directly. This is the ONLY source of truth for the metric — training log output does NOT count. Do NOT skip this step or substitute training log metrics.
 
+**Programmatic eval enforcement:** The eval_command is a fixed, pre-defined script from the protocol. Supervisor runs it as-is — no modification, no wrapping, no "improved" version. If Researcher created any new eval scripts or modified eval logic (even in new files), those are compliance violations — ignore them and use the original eval_command only.
+
 ```bash
-{eval_command}  # from protocol's Eval.command
+{eval_command}  # from protocol's Eval.command — NEVER substituted
 ```
 
-Parse the metric value from output. Compare against current best in experiences.md. If eval_command fails, fix it before proceeding — do NOT fall back to training log metrics.
+Parse the metric value from output. Compare against current best in experiences.md. If eval_command fails, fix the environment (missing deps, wrong paths) but NEVER change the eval logic itself — do NOT fall back to training log metrics.
 </HARD-GATE>
 
 ### Step 5: Act on Result

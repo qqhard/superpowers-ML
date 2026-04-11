@@ -163,7 +163,7 @@ When autoresearch is detected, ask the following questions **one at a time, in o
 1. **Research question** — "What are you trying to optimize or find? Describe the research goal."
 2. **Fixed（不可变的代码 + 条件）** — "What code files and conditions must NOT change? Include time/epoch limits per round." (maps to Fixed.files + time_limit + epoch_limit)
 3. **Variable（可变的代码 + 条件）** — "Which files can the agent modify, and what can it adjust?" (maps to Variable.files + adjustable range)
-4. **Evaluation** — "What metric determines success? How is it measured?" (metric name, direction, eval command)
+4. **Evaluation** — "What metric determines success? We need a concrete, runnable eval script (e.g., `python eval.py --checkpoint best.pt`) that outputs the metric value. This script will be fixed before the loop starts — the agent cannot modify it. Do you have one, or do we need to build it?" (metric name, direction, eval script/command)
 5. **Termination** — "When should the loop stop?" (max rounds, target metric value)
 6. **Initial hints（可选）** — "Any known experiences, constraints, or directions to try? (e.g., 'lr > 1e-3 causes gradient explosion', 'try cosine annealing')" — skip if none. Maps to R0 Note in experiences.md.
 

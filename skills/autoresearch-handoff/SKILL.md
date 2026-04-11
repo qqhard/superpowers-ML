@@ -22,10 +22,11 @@ Do NOT hand off without:
 1. **Verify VP L1** — record baseline metric
 2. **Verify baseline speed** — first step/epoch prints fast enough
 3. **Verify pressure condition termination** — time_limit / epoch_limit logic works
-4. **Generate autoresearch-protocol.md** — simplified format
-5. **Initialize experiences.md** — table with baseline row
-6. **Verify git state** — base code committed
-7. **Present launch instructions**
+4. **Verify eval script is programmatic** — eval_command runs independently and produces deterministic output
+5. **Generate autoresearch-protocol.md** — simplified format
+6. **Initialize experiences.md** — table with baseline row
+7. **Verify git state** — base code committed
+8. **Present launch instructions**
 
 ## Step 1: Verify VP L1
 
@@ -39,9 +40,23 @@ Check that the first step/epoch prints quickly on single GPU. This is the most i
 
 Check that time_limit and epoch_limit termination logic exists and works (VP L1 already ran under these conditions).
 
-## Step 4: Generate autoresearch-protocol.md
+## Step 4: Verify Eval Script is Programmatic
 
-Extract from design doc's `## Autoresearch Protocol` section. Write to `<experiment-dir>/autoresearch-protocol.md`:
+**Core principle: eval must be a pre-defined, deterministic script — not agent-generated code.**
+
+Run the eval_command independently (outside of any training context) to verify:
+1. It executes without errors (given a checkpoint from VP L1)
+2. It produces a parseable metric value on stdout
+3. It is deterministic — running twice gives the same result
+4. It is self-contained — no manual setup, no interactive prompts
+
+If the eval script doesn't meet these criteria, fix it NOW before entering the loop. The eval script is the source of truth for the entire autoresearch loop — if it's broken or ambiguous, every round's result is unreliable.
+
+Confirm the eval_command is listed in Fixed.files in the protocol. If not, add it.
+
+## Step 5: Generate autoresearch-protocol.md
+
+Extract from design doc's `## Autoresearch Protocol` section. Ensure eval_command's script file is included in Fixed.files. Write to `<experiment-dir>/autoresearch-protocol.md`:
 
 ```markdown
 # Autoresearch Protocol: <title>
@@ -66,7 +81,7 @@ baseline: <metric> = <value from VP L1>
 - command: <eval_command from design doc>
 ```
 
-## Step 5: Initialize experiences.md
+## Step 6: Initialize experiences.md
 
 Write to `<experiment-dir>/experiences.md`:
 
@@ -82,13 +97,13 @@ status: not_started
 | 0 | ✅ | {baseline_value} | — | baseline: {brief description of baseline config} | initial | {user hints if any} |
 ```
 
-## Step 6: Verify Git State
+## Step 7: Verify Git State
 
 ```bash
 git log --oneline -1  # base code committed
 ```
 
-## Step 7: Present Launch Instructions
+## Step 8: Present Launch Instructions
 
 ```
 Handoff complete:
