@@ -74,7 +74,7 @@ Use a sleep-check loop: dispatch → sleep (estimate from time_limit) → check 
    ```
    CronCreate(
      cron: "*/30 * * * *",
-     prompt: "Autoresearch heartbeat — self-audit:\n- Current round has S1–S6 task list? If no, you skipped Step 0 — rebuild now.\n- Writing code yourself? Stop — dispatch Researcher subagent.\n- A background task running or round just finished? If neither, you're stalled — resume.\nNever skip steps for \"simplicity\". Then continue."
+     prompt: "Autoresearch heartbeat — self-audit:\n- Current round has S1–S6 task list? If no, you skipped Step 0 — rebuild now.\n- Writing code yourself? Stop — dispatch Researcher subagent.\n- A background task running or round just finished? If neither, you're stalled — resume.\n- Waiting for user confirmation? Don't — advance autonomously, the human is on the loop, not in it.\nNever skip steps for \"simplicity\". Then continue."
    )
    ```
    Save the job ID for cleanup.
