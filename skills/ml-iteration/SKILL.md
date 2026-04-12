@@ -200,3 +200,111 @@ Run `eval_command` EXACTLY as recorded in `iteration-protocol.md`. Do not wrap, 
 </HARD-GATE>
 
 Parse the metric outputs. Collect each dimension's observable value (metrics from eval; speed/observability/stability from training log; custom from whatever the criterion says). Pass the full snapshot to Step 5.
+
+### Step 5: Compound Review and Verdict
+
+Walk each criterion against current best-commit's state:
+
+```
+for criterion in review_criteria:
+    current_value = observed this round
+    best_value    = state of current best commit
+    threshold     = criterion.threshold (if defined)
+
+    status =
+        "pass"       if criterion.threshold met
+        "improved"   if current_value is better than best_value and threshold not yet met
+        "regressed"  if current_value is worse than best_value (beyond noise)
+        "fail"       if no threshold, just missing
+```
+
+Emit the verdict:
+
+| Condition | Verdict |
+|-----------|---------|
+| All criteria pass | `commit` + terminate (target reached) |
+| No regression, at least one improvement | `commit` |
+| Any clear regression | `rollback` |
+| Ambiguous (small noise, mixed signal) | `accept_with_note` (commit, flagged) |
+
+Record the verdict, the per-criterion status map, and a short rationale in `experiences.md`.
+
+**LLM judgment, not rigid rule.** "Clearly regressed" is a judgment — small noise-scale movements are not regressions. When unsure, prefer `commit` and flag; the human can override.
+
+### Step 6: Act on Verdict
+
+**If commit or accept_with_note:**
+```bash
+cp experiences.md /tmp/experiences_backup.md
+git add -A
+git commit -m "ml-iteration: round {round} — {verdict summary}"
+```
+Update `experiences.md` header: best_commit, best_state (if improved), rounds += 1.
+
+**If rollback:**
+```bash
+cp experiences.md /tmp/experiences_backup.md
+git checkout -- .
+git clean -fd
+cp /tmp/experiences_backup.md experiences.md
+```
+Update `experiences.md`: fill in the current row's Verdict (`rolled_back`) and Insight (explain the regression so the next round's Researcher knows).
+
+### Step 7: Absorb User Input
+
+Check any user messages received during this round. Apply per the Main Loop's intent-routing table. Hints update the next round's prompt; overrides update git + experiences.
+
+### Step 8: Check Termination
+
+Terminate ONLY for:
+- All `review_criteria` pass → `target_reached`
+- `round == max_rounds` → `completed`
+- User stop command → `stopped_by_user`
+
+Otherwise continue to the next round. Do NOT stop on a judgment call like "the metric can't improve further."
+
+### Step 9: Report Progress
+
+```
+Round {round}/{max_rounds}: verdict={verdict}
+  Criteria status: metrics={p/f/i/r}, performance={...}, observability={...}, stability={...}, custom={...}
+  Best so far: commit={hash} (round {N})
+```
+
+## Anomaly Handling
+
+| Anomaly | Action |
+|---------|--------|
+| Researcher timeout / crash | Round fails; rollback; insight records cause; no auto-retry |
+| Training env crash (OOM, NCCL) | Round fails; if persistent, stop and re-handoff into `watchdog` mode |
+| Training exceeds time_limit | Backstop fires; treat as env crash |
+| eval_command failure | Fix environment/paths only; never modify eval logic; unfixable → pause + notify |
+| Locked files modified | rollback + experiences flag; does not count as a valid round |
+| N consecutive rollbacks | Plateau warning to user; continue (not a termination condition) |
+
+### Session Interruption Recovery
+
+On startup, if `experiences.md` shows `status: running` with rounds > 0:
+1. Verify git HEAD matches latest committed improvement.
+2. Last row has no verdict → mid-round interruption; rollback, restart that round.
+3. Last row has verdict → continue from next round.
+
+## Final Report
+
+On termination:
+1. Delete heartbeat cron (by saved ID).
+2. Update `experiences.md` status.
+3. Present worktree options: merge / keep / remove.
+
+```
+# ml-iteration Complete
+
+## Result
+- Status: {target_reached | completed | stopped_by_user}
+- Rounds: {completed} / {max_rounds}
+- Best commit: {hash} (round {N})
+- Criteria status: {summary per dimension}
+
+## Key Insights
+<Distill top insights from experiences.md>
+```
