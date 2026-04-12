@@ -113,6 +113,8 @@ TaskCreate: "R{round} S5: Review — compound verdict vs review_criteria"
 TaskCreate: "R{round} S6: Termination — {round}/{max_rounds}"
 ```
 
+**Mapping to the detailed step sections below:** S1→Step 1, S2→Step 2, S3→Step 3, S4→Step 4, S5→Step 5, S6→Step 8. Steps 6 (act on verdict), 7 (absorb user input), and 9 (report progress) are handled inline as part of the round and do not require separate task entries.
+
 Update with actual results on completion (strategy summary, verdict, metric snapshot).
 </HARD-GATE>
 

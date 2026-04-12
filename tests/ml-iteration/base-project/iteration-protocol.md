@@ -20,8 +20,8 @@ stability:
   - "no NaN"
 
 ## Modification boundary (soft)
-- Focused_files: [train.py]
-- Locked_files: [evaluate.py]
+- focused_files: [train.py]
+- locked_files: [evaluate.py]
 - Other: soft
 
 ## Initial hints

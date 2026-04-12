@@ -161,11 +161,6 @@ For the full evaluation requirements (observability, failure handling, mode-awar
 - Key hyperparameters: [lr, batch_size, etc.]
 - Eval command: [command with {checkpoint_path} placeholder, e.g., python eval.py --checkpoint={checkpoint_path}; leave empty if no evaluation]
 
-## Watchdog Configuration
-- watchdog_mode: guardian
-  (Options: monitor | guardian | autonomous)
-  (monitor = report only; guardian = auto-restart + auto-fix simple issues + report complex; autonomous = handle everything including complex issues via sub-agent)
-
 ## Code State
 - Git commit: [hash]
 - Branch: [name]
@@ -193,11 +188,12 @@ I need you to act as a Watchdog Agent, monitoring and shepherding a long-running
 
 ## Your Behavior
 Use the spml:watchdog skill. It will guide you through:
-- Operating mode selection (Monitor/Guardian/Autonomous — preset in experiment-context.md, you can ask to override)
 - Launching the training script
 - Monitoring the training log for anomalies
-- Taking action based on the operating mode and problem classification (Tier 1/2/3)
-- Recording all interventions in experiment-context.md
+- Restarting from checkpoint on environment failures
+- Running async evaluation when new checkpoints appear
+- Reporting any non-environment anomaly to the user with a diagnosis (no auto-fix)
+- Recording interventions in experiment-context.md
 - Notifying you when training finishes or encounters issues
 ```
 
@@ -253,8 +249,8 @@ eval_command: {eval_command from VP L1}
 {copied verbatim from design doc}
 
 ## Modification boundary (soft)
-- Focused_files: {focused_files}
-- Locked_files: {locked_files}
+- focused_files: {focused_files}
+- locked_files: {locked_files}
 - Other: soft — Researcher may modify; will be recorded in experiences.md
 
 ## Initial hints
