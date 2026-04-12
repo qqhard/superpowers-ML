@@ -119,15 +119,14 @@ Each subtask passes through 2 levels of validation before claiming correctness:
 
 L0 runs as a subagent (code review style). L1 runs as a skill invoked by the orchestrator. L0 must pass before L1.
 
-### Watchdog Agent
+### Watchdog
 
-Long-running training is monitored by an independent agent session with three operating modes:
+Single-run training supervision. An independent agent session keeps one training run healthy — nothing more. Two outcomes:
 
-- **Monitor** — report only, no intervention
-- **Guardian** (default) — auto-restart on environment failures, auto-fix simple parameter problems, report complex issues
-- **Autonomous** — handle everything including complex issues via sub-agent spawning
+- **Environment problem** (OOM killer, NCCL timeout, hardware error, disk full, SIGKILL, hang) → restart from latest checkpoint, no retry limit.
+- **Anything else** (code bug, wrong metric trend, NaN in inputs, plateau past VP baseline) → report to the user with a diagnosis written to `experiment-context.md`, no auto-fix.
 
-Problems are classified into 3 tiers: environment problems (restart), simple parameter problems (fix + restart), and complex problems (sub-agent or report). When training completes, the user starts a new session on the experiment directory to analyze results.
+Watchdog also runs async evaluation when new checkpoints appear and surfaces baseline-deviation alerts. It does not change parameters, fix code, or iterate — those belong in `ml-iteration` or `autoresearch`.
 
 ### ml-iteration
 
