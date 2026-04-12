@@ -94,3 +94,109 @@ for round in current_round..max_rounds:
   8. CHECK TERMINATION            (all criteria met / max_rounds / user stop)
   9. REPORT PROGRESS
 ```
+
+<HARD-GATE>
+### Step 0: Create Round Task List
+
+Create the task list BEFORE dispatching Researcher, for EVERY round.
+
+**Self-check (anti-laziness):** if mid-loop you notice you dispatched Researcher without an S1–S6 list, that is a protocol violation. Stop, build the list now, record the violation in `experiences.md` Insight, continue.
+
+Clear previous round's tasks, then create:
+
+```
+TaskCreate: "R{round} S1: Researcher — {task_description from user hint or default}"
+TaskCreate: "R{round} S2: Compliance — verify locked_files untouched"
+TaskCreate: "R{round} S3: Train — {train_command} (limit: {time_limit})"
+TaskCreate: "R{round} S4: Eval — {eval_command}"
+TaskCreate: "R{round} S5: Review — compound verdict vs review_criteria"
+TaskCreate: "R{round} S6: Termination — {round}/{max_rounds}"
+```
+
+Update with actual results on completion (strategy summary, verdict, metric snapshot).
+</HARD-GATE>
+
+### Step 1: Dispatch Researcher
+
+Assemble the prompt per `researcher-dispatch.md`, injecting:
+
+- `review_criteria` (full block).
+- Current best-commit's state across each dimension (from `experiences.md` header).
+- Last M rounds of experiences table (include rolled-back rounds as negative examples; default M = 5).
+- Latest user hint (from the User Hint column of the current round's placeholder row, or empty).
+- `focused_files`, `locked_files`, and "other files are soft — you may modify them but doing so will be recorded."
+
+Prompt body:
+
+```
+You are an ML researcher. Your task is to improve this training against the
+compound review_criteria below. This is Round {round} of {max_rounds}.
+
+## Your role
+Design a strategy and modify code. Supervisor runs training and evaluation.
+
+## Review criteria
+{review_criteria full yaml}
+
+## Current best state
+{best_commit state per criterion}
+
+## Recent experiences (last {M} rounds)
+{experiences table snippet}
+
+## User hint for this round
+{user_hint or "none"}
+
+## Boundaries
+- Locked files (do NOT modify): {locked_files}
+- Focused files (primary target): {focused_files}
+- Other files: soft boundary — modifying them is allowed but will be recorded.
+- Do NOT create or modify any evaluation logic. Eval is owned by Supervisor.
+
+## Task
+1. Read relevant files.
+2. Design a strategy for this round.
+3. Append a row to {experiences_path} with Strategy filled; leave Verdict and Insight blank.
+4. Modify code accordingly. You may run quick smoke tests.
+5. Report "Code ready" as your final message.
+```
+
+Dispatch with `run_in_background: true`. Create two timers (check-in + per-round timeout). Save their IDs.
+
+When the subagent returns, delete both timers and proceed to Step 2.
+
+### Step 2: Compliance Check
+
+```bash
+git diff --name-only HEAD
+```
+
+Check that no `locked_files` were modified. If any was → this round is a violation: roll back, record in `experiences.md` Insight ("modified locked file {path}"), skip to Step 7.
+
+Also grep newly-created files for eval-like function names (`evaluate`, `compute_metrics`, `accuracy`, `score`) and flag matches for user review; this is advisory, not a hard block.
+
+### Step 3: Train
+
+```
+Bash(
+  command: "{train_command}",
+  run_in_background: true,
+  timeout: {time_limit_ms + 30000}
+)
+```
+
+Immediately create a check-in reminder at ~80% of `time_limit`. Save the ID, delete on completion.
+
+If Bash timeout fires → round fails with "training exceeded time_limit"; insight in experiences. Skip to Step 7 with rollback verdict.
+
+### Step 4: Evaluate
+
+<HARD-GATE>
+Run `eval_command` EXACTLY as recorded in `iteration-protocol.md`. Do not wrap, modify, or substitute with training-log metrics. If the command fails:
+
+1. Check if the failure is environment (missing dep, wrong path) — fix those.
+2. Do NOT modify eval logic, even in new files.
+3. If unfixable → pause the loop, notify the user, wait for instruction.
+</HARD-GATE>
+
+Parse the metric outputs. Collect each dimension's observable value (metrics from eval; speed/observability/stability from training log; custom from whatever the criterion says). Pass the full snapshot to Step 5.
