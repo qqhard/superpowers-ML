@@ -1,6 +1,6 @@
 # SPML — ML SuperPowers
 
-SPML is an addon plugin for [Superpowers](https://github.com/obra/superpowers) that extends it with ML experiment workflows: Validation Pyramid, experiment-driven development, Watchdog-based training monitoring, and Auto Research — an autonomous iteration loop where a Supervisor dispatches Researcher subagents, runs evaluation, manages git, and accumulates experience across rounds.
+SPML is an addon plugin for [Superpowers](https://github.com/obra/superpowers) that extends it with ML experiment workflows: Validation Pyramid, experiment-driven development, Watchdog-based single-run supervision, ml-iteration (N-round human-on-the-loop iteration against compound criteria), and Auto Research (protocol-driven metric search).
 
 Superpowers provides the foundation — TDD, code review, subagent architecture, verification. SPML adds the ML domain knowledge on top: what to validate, how to monitor training, how to draw evidence-based conclusions, and how to run a research loop autonomously while a human stays on the loop.
 
@@ -12,7 +12,8 @@ In traditional software, code runs = result correct. In ML, code runs without er
 
 SPML addresses this with:
 - **Validation Pyramid** — 2-level verification (static analysis, runtime + pipeline validation) that separates "implementation bug" from "strategy doesn't work"
-- **Watchdog Agent** — active monitoring of long-running training with auto-restart, parameter fixing, and sub-agent spawning for complex issues
+- **Watchdog** — single-run training supervision: restarts from checkpoint on environment failures, async evaluation on new checkpoints, baseline-deviation alerts
+- **ml-iteration** — N-round Supervisor-driven iteration against compound review criteria: Researcher subagents modify code each round, Supervisor reviews and commits or rolls back, human on the loop can interject
 - **Auto Research** — protocol-driven autonomous iteration: Supervisor dispatches fresh Researcher subagents each round, runs the fixed eval script, commits improvements and rolls back regressions, and passes lessons between rounds through an experiences log
 - **Experiment-driven workflow** — hypothesis, independent/dependent/control variables, conclusion recording with metric evidence
 
@@ -85,8 +86,8 @@ SPML skills reference Superpowers skills where needed (e.g., `superpowers:finish
 ## The ML Workflow
 
 ```
-brainstorming
-    Refine hypothesis, collect context, confirm validation scope
+ml-brainstorming
+    Refine hypothesis, collect context, define review_criteria (compound)
     |
 experiment-planning
     Break into atomic subtasks with validation criteria
@@ -94,23 +95,17 @@ experiment-planning
 ml-subagent-dev
     Execute each subtask: unit test → implement → Validation Pyramid
     |
-    ├── training-handoff (single long-running task)
-    │   Generate training script + Watchdog prompt + experiment context
-    │   |
-    │   watchdog (independent session)
-    │   Active monitoring: auto-restart, parameter fixing, anomaly diagnosis
-    │
-    └── autoresearch-handoff (automated iteration)
-        Generate research protocol + startup prompt + experience log
-        |
-        autoresearch-run → autoresearch (independent session, Supervisor)
-        Each round: dispatch fresh Researcher subagent (design + code) →
-        compliance check → Supervisor trains → runs fixed eval script →
-        commit on improvement / rollback on regression → accumulate
-        experience. Human stays on the loop, not in it.
+training-handoff
+    Route between:
+    ├── watchdog         (single-run supervision; env restart + async eval)
+    └── ml-iteration     (N-round Supervisor-driven iteration against review_criteria)
     |
 verification
     Evidence-based conclusion: effective / ineffective / inconclusive
+
+Auto Research (parallel entry for metric search):
+    autoresearch-create → ml-brainstorming(autoresearch) → experiment-planning
+                       → ml-subagent-dev → autoresearch-handoff → autoresearch
 ```
 
 ### Validation Pyramid
@@ -133,6 +128,22 @@ Long-running training is monitored by an independent agent session with three op
 - **Autonomous** — handle everything including complex issues via sub-agent spawning
 
 Problems are classified into 3 tiers: environment problems (restart), simple parameter problems (fix + restart), and complex problems (sub-agent or report). When training completes, the user starts a new session on the experiment directory to analyze results.
+
+### ml-iteration
+
+`ml-iteration` is the default post-handoff path for "training runs but isn't finished yet." Each round a Researcher subagent modifies code (speed, logging, metric, whatever the user aims it at); the Supervisor runs training + eval, produces a compound review against `review_criteria`, and commits or rolls back. The human stays on the loop — they watch, interject, override, re-aim — but do not gate each round.
+
+**Compound criteria.** Review runs across multiple dimensions collected at brainstorming time:
+
+| Dimension | Examples |
+|---|---|
+| `metrics` | accuracy ≥ 0.85, loss ≤ 0.3 |
+| `performance` | first_step_time ≤ 30s, MFU ≥ 0.30 |
+| `observability` | per-step logs include loss/grad_norm/step_time |
+| `stability` | no NaN, no torch autograd warnings |
+| `custom` | checkpoint format compatible with HF AutoModel |
+
+**Differs from Auto Research.** Auto Research optimizes a single metric against a rigid Fixed/Variable file partition; ml-iteration reviews multi-dimensional criteria with LLM judgment and keeps the human able to override anything. When the experiment is a genuine metric search, pick Auto Research; when it's general iteration-to-ship, pick ml-iteration.
 
 ### Auto Research
 
@@ -182,7 +193,8 @@ Auto Research turns a VP-validated baseline into an autonomous iteration loop. I
 | **diagnostics** | Systematic diagnosis: why not converging, early anomalies, efficiency bottlenecks |
 | **verification** | Evidence-based conclusion with experiment summary |
 | **training-handoff** | Generate training script + Watchdog prompt + experiment context |
-| **watchdog** | Active monitoring of long-running tasks with 3 operating modes |
+| **watchdog** | Single-run training supervision: checkpoint-restart on env failures, async eval, baseline-deviation alerts |
+| **ml-iteration** | N-round Supervisor-driven iteration against compound review_criteria; Researcher subagent each round; human on the loop |
 | **autoresearch-create** | Explicit entry point that activates Auto Research mode and routes into protocol-driven brainstorming |
 | **autoresearch-handoff** | After VP passes, verify base code, extract the research protocol, and produce the run prompt |
 | **autoresearch-run** | Explicit entry point that locates the protocol and starts the autonomous iteration |
