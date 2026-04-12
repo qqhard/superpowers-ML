@@ -74,7 +74,7 @@ Use a sleep-check loop: dispatch → sleep (estimate from time_limit) → check 
    ```
    CronCreate(
      cron: "*/30 * * * *",
-     prompt: "Autoresearch heartbeat — check your loop status."
+     prompt: "Autoresearch heartbeat — self-audit:\n- Current round has S1–S6 task list? If no, you skipped Step 0 — rebuild now.\n- Writing code yourself? Stop — dispatch Researcher subagent.\n- A background task running or round just finished? If neither, you're stalled — resume.\nNever skip steps for \"simplicity\". Then continue."
    )
    ```
    Save the job ID for cleanup.
@@ -111,6 +111,8 @@ for round in current_round..max_rounds:
 ### Step 0: Create Round Task List
 
 You MUST create the task list BEFORE dispatching Researcher. This applies to EVERY round, including rounds following anomaly recovery.
+
+**Self-check (anti-laziness):** If mid-loop you notice you dispatched Researcher without building the S1–S6 task list, that is a protocol violation — not a shortcut. Stop the current round, build the task list now, record the violation in this round's experiences.md Insight, then continue. "Context got long so I simplified" is not a valid reason to skip steps.
 
 **First, clear previous round's tasks** (if any) — delete all tasks from the previous round so the list stays clean.
 
