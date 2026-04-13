@@ -1,5 +1,37 @@
 # Superpowers Release Notes
 
+## v0.31.0 (2026-04-13)
+
+### Added
+
+**`ml-iteration` skill — N-round human-on-the-loop iteration**
+
+New post-handoff path for training that runs but isn't finished yet. Each round a Researcher subagent modifies code; Supervisor runs training + eval and produces a compound review against the design-doc's `review_criteria` (metrics, performance, observability, stability, custom). Default commit; rollback on clear regression; human can interject any time.
+
+**`ml-brainstorming` now collects `review_criteria`**
+
+Experiment design docs get a required `review_criteria` block. Fields cover eval metrics, speed expectations, log quality, stability, and anything else discussed. Consumed by `ml-iteration` and (optionally) by `verification`.
+
+**`training-handoff` routes between watchdog and ml-iteration**
+
+After VP, the skill asks the user which path to take. Default suggestion depends on whether VP already satisfies `review_criteria`.
+
+**Shared primitive reference docs at `skills/_ml-loop-primitives/`**
+
+Five small documents (`researcher-dispatch`, `scheduling-safety-net`, `git-control`, `experiences-log`, `eval-lock`) capture patterns shared by `ml-iteration`, `autoresearch`, and (partially) `watchdog`. Not user-invokable; cited by skills.
+
+### Changed
+
+**`watchdog` narrowed to single-run stability**
+
+Removed Tier 2 (parameter auto-fix), Tier 3 (code-fix sub-agent), and the three-mode system (Monitor / Guardian / Autonomous). Kept Tier 1 (env restart from checkpoint), async evaluation, and baseline-deviation alerts. Users who relied on the removed behavior should choose `ml-iteration` at handoff time instead.
+
+### Unchanged
+
+`autoresearch`, `autoresearch-create`, `autoresearch-handoff` are unchanged. Metric-search workflows are not affected.
+
+---
+
 ## v0.5.3 (2026-03-18)
 
 ### Changed

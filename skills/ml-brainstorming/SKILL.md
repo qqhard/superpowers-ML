@@ -210,6 +210,37 @@ When the task includes validation or evaluation beyond a trivial final metric, c
   - non-finite metrics
   - long silent gaps or stalled evaluation
 
+### Review Criteria (compound)
+
+After defining the eval metric, collect the full set of acceptance dimensions for this experiment. These are used by `verification` to judge overall success, and by `ml-iteration` as the Supervisor's review rubric.
+
+Ask:
+
+> "Beyond the metric, what does a 'good-enough' version of this training look like? Consider speed (first-step time, MFU), log quality (what fields, what cadence), stability (no NaN, no crashes), and anything else we discussed. I'll record these as review_criteria."
+
+Record the response as a structured block in the design doc:
+
+```yaml
+review_criteria:
+  metrics:
+    - name: <eval metric name>
+      direction: ">=" | "<=" | "=="
+      threshold: <value>
+  performance:
+    - <constraint, e.g., "first_step_time <= 30s">
+    - <constraint, e.g., "mfu >= 0.30">
+  observability:
+    - <expectation, e.g., "per-step loss / grad_norm / step_time">
+  stability:
+    - <expectation, e.g., "no NaN / Inf">
+  custom:
+    - <any other expectation raised in the conversation>
+```
+
+Any sub-section may be empty if not discussed. `metrics` is strongly recommended; others are context-dependent.
+
+**This field is required in the design doc** — `training-handoff` will prompt the user to add it if missing.
+
 ### Dataset preparation (when applicable)
 If the task involves constructing or transforming datasets:
 - Invoke **spml:data-preparation** for TDD-first dataset processing
@@ -233,6 +264,13 @@ If the task involves constructing or transforming datasets:
 - Write the validated design to `<experiment_dir>/plans/YYYY-MM-DD-<topic>-design.md`
 - Include validation scope decisions in the doc
 - Commit the design document to git
+
+**Required design doc contents:**
+- [ ] Hypothesis, independent/dependent/control variables (for experiment/ablation tasks)
+- [ ] Model/data architecture and scale
+- [ ] Evaluation structure (metric, cadence, scope, failure handling)
+- [ ] Validation scope decisions (which VP levels apply)
+- [ ] `review_criteria` block with at least `metrics` populated
 
 When autoresearch is detected, the design doc includes an additional section:
 

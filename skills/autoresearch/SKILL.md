@@ -21,6 +21,15 @@ Automated research supervisor. Reads a research protocol, then iterates: dispatc
 
 These roles do not conflict: maintaining the harness enables strict execution, not bypasses it.
 
+## Shared Patterns
+
+This skill uses the following primitive patterns — see `skills/_ml-loop-primitives/` for details:
+- `researcher-dispatch.md` — subagent prompt structure and timer pairing.
+- `scheduling-safety-net.md` — four-layer CronCreate discipline.
+- `git-control.md` — Supervisor-only git writes, worktree discipline, experiences backup.
+- `experiences-log.md` — `experiences.md` header and row conventions.
+- `eval-lock.md` — eval script immutability and self-deception prevention.
+
 <HARD-GATE>
 ## Git Control
 

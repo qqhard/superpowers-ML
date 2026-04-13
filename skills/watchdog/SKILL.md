@@ -1,15 +1,20 @@
 ---
 name: watchdog
-description: Use when monitoring a long-running ML task — active shepherd with three operating modes, automatic restart, parameter fixing, and sub-agent spawning for complex issues
+description: Use when monitoring a single long-running ML training run — restarts from checkpoint on environment failures, runs async evaluation on new checkpoints, and surfaces anomalies for the user to handle
 ---
 
 # ML Watchdog
 
 ## Overview
 
-Active shepherd for long-running ML tasks. Periodically reads training logs, detects anomalies through trend analysis and pattern recognition, and takes action based on the configured operating mode — from reporting only (Monitor) to fully autonomous recovery (Autonomous).
+Active shepherd for a single long-running ML training run. Periodically reads training logs, detects anomalies through trend analysis and pattern recognition, and restarts from the latest checkpoint when the environment fails.
 
-**Core principle:** Keep training running. The Watchdog classifies problems into three tiers and responds with the minimum intervention needed — restart for environment crashes, parameter adjustment for simple issues, and sub-agent delegation for complex problems.
+**Core principle:** Keep one training run healthy. Watchdog's only intervention is restart-from-checkpoint on environment failures. Everything else (parameter tuning, code fixes, multi-round iteration) is out of scope — surface it to the user or hand off to `ml-iteration`.
+
+## Shared Patterns
+
+This skill uses the following primitive patterns — see `skills/_ml-loop-primitives/` for details:
+- `scheduling-safety-net.md` — monitoring loop timer discipline.
 
 <HARD-GATE>
 ## Monitoring Loop Mechanism
@@ -28,40 +33,39 @@ After each sleep returns, immediately proceed to the next check — do NOT wait 
 1. Bash tool: `sleep <interval>`  (see Monitoring Loop step 1 for interval values)
 2. Bash tool: `tail -20 <log_file>`  (read latest log lines)
 3. Analyze output, report status
-4. If anomaly → diagnose and act per operating mode
+4. If anomaly → diagnose and act (restart on environment failure, otherwise surface to user)
 5. Go to step 1
 </HARD-GATE>
 
+## Scope
+
+Watchdog keeps a single training run healthy. Its only intervention is restarting from the latest checkpoint after an environment failure. It does not change parameters, fix code, or decide what to do next — those belong in `ml-iteration` or `autoresearch`.
+
+If you need iterative parameter or code changes, stop watchdog and re-run `training-handoff` to pick `ml-iteration` instead.
+
 ## When to Use
 
-- User has pasted a Watchdog prompt from training-handoff
-- A long-running ML task needs monitoring (training, data processing, evaluation)
+- User has pasted a Watchdog prompt from `training-handoff` (watchdog branch).
+- A single long-running training run needs supervision, and the user does not want N-round iteration.
 
-## Operating Modes
+## When Not to Use
 
-Three modes control Watchdog's intervention authority. Mode is read from `experiment-context.md` (`watchdog_mode` field), overridable at startup.
-
-| Mode | Environment crash | Simple parameter issue | Complex issue |
-|------|------------------|----------------------|---------------|
-| **Monitor** | Report only | Report only | Report only |
-| **Guardian** (default) | Auto-restart | Auto-fix + restart | Report to user |
-| **Autonomous** | Auto-restart | Auto-fix + restart | Spawn sub-agent to fix + restart |
-
-At startup, read the mode from experiment-context.md. Ask the user if they want to override it. If the user doesn't respond or just pastes the watchdog-prompt.md, use the preset value.
+- User wants parameter tuning, code fixes, or multiple training rounds → use `ml-iteration`.
+- User wants metric-driven search with Fixed/Variable file partitions → use `autoresearch`.
 
 ## Startup
 
-1. **Read experiment-context.md** — understand experiment design, VP baseline, expected behavior, training config, watchdog mode
+1. **Read experiment-context.md** — understand experiment design, VP baseline, expected behavior, training config
 2. **Verify log file exists** — check that the training log file is at the expected path
-3. **Confirm mode** — read `watchdog_mode` from experiment-context.md, offer user override
-4. **Locate training script** — confirm the training script path and launch command from experiment-context.md
-5. **Launch training** — run the training script via Bash tool (all modes, including Monitor), then enter monitoring loop
+3. **Locate training script** — confirm the training script path and launch command from experiment-context.md
+4. **Launch training** — run the training script via Bash tool, then enter monitoring loop
 
 ## Problem Classification
 
-Watchdog is an LLM — use judgment, not rigid rules. The following are guiding examples, not exhaustive lists.
+Two outcomes only:
 
-**Classification principle:** When uncertain, escalate upward (treat simple as complex). Never downgrade ambiguous problems.
+- **Environment problem** (OOM killer, NCCL timeout, hardware error, disk full, SIGKILL, hang past baseline × 10) → restart from latest checkpoint. No retry limit; if crashes persist (e.g., 5+ within 30 minutes), surface a warning but keep retrying.
+- **Anything else** (code bug, wrong metric trend, NaN in inputs, plateau past VP baseline) → report to the user, do not auto-fix. Write a diagnosis to `experiment-context.md` and notify the user.
 
 ### Tier 1: Environment Problems
 
@@ -75,49 +79,7 @@ Examples:
 - SIGKILL / SIGTERM from external source
 - Deadlock / hang (process alive but no output for significantly longer than baseline step interval)
 
-**Action (Guardian/Autonomous):** Restart training script from latest checkpoint. No code changes. No retry limit — keep restarting. After repeated crashes (e.g., 5+ within 30 minutes), notify the user that environment instability is persisting but continue retrying.
-
-**Action (Monitor):** Write diagnosis to experiment-context.md. Notify user: "Training issue: [description]. Start a new session on the experiment directory to continue."
-
-### Tier 2: Simple Parameter Problems
-
-Needs numeric/config adjustment but no logic change.
-
-Examples:
-- CUDA OOM → reduce batch size or increase gradient accumulation steps
-- Loss explosion (gradient explosion) → lower learning rate or add gradient clipping
-- Extended plateau → adjust lr schedule
-- Any numeric parameter that is clearly misconfigured
-
-**Action (Guardian/Autonomous):**
-1. Record current parameter value in experiment-context.md (before)
-2. Modify the parameter in the training script or config file
-3. Record new value and rationale in experiment-context.md (after)
-4. Restart from checkpoint
-
-**Action (Monitor):** Write diagnosis to experiment-context.md. Notify user: "Training issue: [description]. Start a new session on the experiment directory to continue."
-
-### Tier 3: Complex Problems
-
-Requires logic changes or root cause is unclear.
-
-Examples:
-- Everything not in Tier 1 or 2
-- Data issues (NaN in inputs, data loading errors)
-- Model architecture problems (attention collapse, expert collapse)
-- Code bugs
-
-**Action (Autonomous):**
-1. Write diagnosis to experiment-context.md
-2. Spawn sub-agent using Claude Code's Agent tool with instructions: read experiment-context.md diagnosis, fix the identified issue, restart training
-3. Sub-agent does NOT run VP — trusts that initial VP validation covers code correctness
-5. Wait for Agent tool call to return, then resume monitoring loop
-
-**Action (Guardian):** Write diagnosis to experiment-context.md. Notify user: "Training issue: [description]. Start a new session on the experiment directory to continue." Wait for user to handle the issue.
-
-**Action (Monitor):** Same as Guardian.
-
-Note: Autonomous mode's sub-agent spawn introduces a Claude Code dependency. Monitor and Guardian modes remain framework-agnostic (only require bash access).
+**Action:** Restart training script from latest checkpoint. No code changes. No retry limit — keep restarting. After repeated crashes (e.g., 5+ within 30 minutes), notify the user that environment instability is persisting but continue retrying.
 
 ## Monitoring Loop
 
@@ -130,11 +92,11 @@ loop {
     3. Check for new lines since last check:
        a. New lines → parse metrics, go to step 4
        b. No new lines → Bash tool: `ps aux | grep <training_script>`
-          - Process dead → read exit code → classify problem tier → act
+          - Process dead → read exit code → classify (environment → restart; otherwise → surface to user)
           - Process alive → compare silence duration vs step baseline
             - Startup grace period (first 15 min or until 3 logged steps): do not classify silence as hang
             - Within baseline → continue (go to step 1)
-            - Exceeds 10x baseline → kill process → classify problem tier (environment hang → Tier 1; possible code issue → Tier 2/3)
+            - Exceeds 10x baseline → kill process → classify (environment hang → restart; suspected code issue → surface to user)
     3.5. Async evaluation check (skip entirely if no eval_command in experiment-context.md):
          a. Check if background eval subagent has returned:
             - Returned → read summary, append to experiment-context.md Evaluation History
@@ -155,7 +117,7 @@ loop {
        d. Anomaly patterns: spike, plateau, divergence, sudden shift
     5. Classify:
        - NORMAL → update step time baseline, output one-line progress, go to step 1
-       - ANOMALY → diagnose, classify tier, act per operating mode, record in experiment-context.md
+       - ANOMALY → diagnose, act (restart on environment failure, otherwise surface to user), record in experiment-context.md
        - COMPLETE → enter completion mode
     6. After any restart → enter intensive observation (60s interval, 5 cycles)
 }
@@ -218,7 +180,7 @@ During normal monitoring, output periodic progress:
 
 ## Diagnosis Mode
 
-Triggered by ANOMALY classification (any tier).
+Triggered by ANOMALY classification.
 
 ### Step 1: Collect Evidence
 
@@ -237,7 +199,7 @@ Compare against experiment-context.md:
 
 ### Step 3: Classify and Act
 
-Based on evidence, classify the problem as Tier 1, 2, or 3, then execute the corresponding action for the current operating mode (see Problem Classification section above).
+Based on evidence, classify the problem as environment failure or other. Environment failures → restart from latest checkpoint. Everything else → surface to the user with a written diagnosis (see Problem Classification section above).
 
 ### Step 4: Record
 
@@ -246,11 +208,10 @@ Append to experiment-context.md Diagnosis History:
 ```markdown
 ### Issue #N — step [step_number]
 - Symptom: [what happened, with numbers]
-- Classification: Tier [1/2/3] — [environment/simple parameter/complex]
+- Classification: [environment / other]
 - Context: [what was expected at this training phase]
 - Co-occurring signals: [other metrics that moved]
-- Action taken: [restart / parameter change / sub-agent spawned / reported to user]
-- Changes made: [if any, with before/after values]
+- Action taken: [restart / reported to user]
 - Checkpoint reference: [nearest checkpoint before/after anomaly]
 ```
 
@@ -265,7 +226,7 @@ Read the training log and summarize:
 - Training trajectory (was convergence smooth?)
 - Total training time
 - Any anomalies that occurred and resolved during training
-- All interventions taken (restarts, parameter changes, sub-agent fixes)
+- All interventions taken (restarts)
 - Evaluation results summary (from Evaluation History in experiment-context.md)
 
 ### Step 2: Compare Against Expectations
@@ -283,7 +244,7 @@ Read the training log and summarize:
 - Total time: [duration]
 - Final metrics: loss=[val], ...
 - Anomalies during training: [count, brief summary]
-- Interventions: [count and types — restarts, parameter changes, sub-agent fixes]
+- Interventions: [count of restarts]
 ```
 
 ### Step 4: Notify User
@@ -291,42 +252,44 @@ Read the training log and summarize:
 ```
 Training complete. [total_steps] steps in [duration].
 Final loss: [val].
-Interventions: [N restarts, N parameter changes, N sub-agent fixes].
+Interventions: [N restarts].
 
 Start a new session on the experiment directory to analyze results and conclude the experiment.
 ```
 
 ## Common Anomaly Patterns
 
-| Pattern | Indicators | Typical Tier |
-|---------|-----------|-------------|
-| Loss spike | Sudden loss increase > 3x recent average | Tier 2 (lower LR) or Tier 1 (if process crashes) |
-| Loss plateau | Loss unchanged for > 5% of total steps | Tier 2 (adjust LR schedule) |
-| Gradient explosion | grad_norm > 10x VP baseline | Tier 2 (lower LR or add clipping) |
-| Gradient vanishing | grad_norm < 0.01x VP baseline | Tier 3 (architecture issue) |
-| NaN/Inf | Any NaN or Inf in metrics | Tier 3 (numerical instability) |
-| MFU drop | MFU drops > 20% from VP baseline | Tier 1 (thermal throttle, I/O) |
-| Stale log | No new entries for > 10x baseline step time | Tier 1 (hang/deadlock) |
-| CUDA OOM | RuntimeError: CUDA out of memory | Tier 2 (reduce batch size) |
-| Process exit 137 | Killed by OOM killer | Tier 1 (restart) |
-| NCCL error | NCCL timeout or connection reset | Tier 1 (restart) |
+| Pattern | Indicators | Response |
+|---------|-----------|---------|
+| Loss spike | Sudden loss increase > 3x recent average | Surface to user (process crash → restart) |
+| Loss plateau | Loss unchanged for > 5% of total steps | Surface to user |
+| Gradient explosion | grad_norm > 10x VP baseline | Surface to user |
+| Gradient vanishing | grad_norm < 0.01x VP baseline | Surface to user |
+| NaN/Inf | Any NaN or Inf in metrics | Surface to user |
+| MFU drop | MFU drops > 20% from VP baseline | Environment (thermal/I/O) → surface; if process crashes, restart |
+| Stale log | No new entries for > 10x baseline step time | Environment hang → restart |
+| CUDA OOM | RuntimeError: CUDA out of memory | Surface to user (parameter change needed) |
+| Process exit 137 | Killed by OOM killer | Environment → restart |
+| NCCL error | NCCL timeout or connection reset | Environment → restart |
 
 ## Red Flags
 
 **Never:**
-- Modify training logic (only numeric parameters in Tier 2)
+- Modify training code, configuration, or parameters
 - Delete or modify checkpoints
+- Spawn sub-agents to fix issues
 - Ignore Diagnosis History from previous interventions
 
 **Always:**
 - Base analysis on VP baseline from experiment-context.md
 - Include actual numbers in diagnosis (not just "loss spiked")
-- Record ALL interventions in experiment-context.md with before/after values
-- Escalate upward when uncertain about problem classification
-- Stay responsive to user commands ("check now", "change frequency", "what's the status", "switch to autonomous mode")
+- Record ALL interventions (restarts) in experiment-context.md
+- When uncertain whether a problem is environmental, surface to the user rather than restarting blindly
+- Stay responsive to user commands ("check now", "change frequency", "what's the status")
 - Respond to evaluation commands ("pause eval", "resume eval", "eval status") — pause/resume sets eval_paused flag; status reports last evaluated checkpoint, whether eval is running, and skipped checkpoint count
 
 ## Integration
 
 - **spml:training-handoff** — Produces the context and prompt that starts this skill
-- **spml:diagnostics** — Sub-agents in Autonomous mode may invoke this for deeper analysis
+- **spml:ml-iteration** — Use this instead when parameter tuning, code fixes, or multi-round iteration is needed
+- **spml:diagnostics** — Users can invoke this directly for deeper analysis when watchdog surfaces an anomaly
