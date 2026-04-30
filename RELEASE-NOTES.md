@@ -1,5 +1,25 @@
 # Superpowers Release Notes
 
+## v0.32.0 (2026-05-01)
+
+### Changed
+
+**Validation Pyramid now fires once per experiment, on the integration subtask only**
+
+Previous behavior ran the full L0 + L1 Validation Pyramid on every subtask in `ml-subagent-dev`. For complex plans that decompose into many components (model class, dataset, evaluator core, etc.) and one final training pipeline, this meant L1 (5–15 minutes per run) repeated multiple times even though only the assembled training pipeline could meaningfully validate the experiment.
+
+New behavior:
+- **Code subtasks** (model class, dataset, loss, custom layer, evaluator core, etc.) — standard superpowers flow only: TDD + Spec Review + Quality Review. **No L0, no L1.**
+- **Integration subtask** — every plan must mark **exactly one** subtask `[INTEGRATION]` (the assembled training pipeline). Standard reviews still run; **L0 + L1 fire once on this subtask** after Spec/Quality Review pass.
+
+Iterative orchestrators (`ml-iteration`, `autoresearch`) are unchanged — each round is itself an integration delivery and re-runs VP per round.
+
+Files updated: `ml-subagent-dev`, `validation-pyramid`, `experiment-planning`, `ml-brainstorming`, `ml-static-checks`, `ml-runtime-validator`. `data-preparation` is unchanged.
+
+`experiment-planning`'s Plan Gate now rejects plans missing the `[INTEGRATION]` marker (or with multiple) for any experiment that ends in a training run.
+
+---
+
 ## v0.31.0 (2026-04-13)
 
 ### Added

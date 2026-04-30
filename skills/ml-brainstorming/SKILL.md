@@ -172,15 +172,16 @@ When autoresearch is detected, ask the following questions **one at a time, in o
 Only AFTER collecting these answers, explore the experiment directory (if existing) to understand the base code.
 
 ### Confirming validation scope
-Walk through the Validation Pyramid levels. For each, ask: needed / skip / already covered by existing infra?
 
-**L0: ML Static Checks (spml:ml-static-checks)**
-- Always enabled for ML code tasks
+The Validation Pyramid runs **once** per experiment, on the single `[INTEGRATION]` subtask (the assembled training pipeline). Code subtasks (model class, dataset, evaluator core, etc.) are validated by standard TDD + spec/quality review and do NOT run VP. Walk through what L0 and L1 should check on the integration subtask.
+
+**L0: ML Static Checks (spml:ml-static-checks)** — runs on the `[INTEGRATION]` subtask
+- Always enabled for the integration subtask
 - Checks: device consistency, precision, FA, optimizer, scheduler, DataLoader, loss/speed file output, visualization tool (mandatory); plus 15 advisory checks
 - Ask: "Do you need visualization metrics output (e.g., WandB, TensorBoard, MLflow)? If yes, which tool?"
 - Ask: "Any project-specific checks to add?"
 
-**L1: ML Runtime Validation (spml:ml-runtime-validator)**
+**L1: ML Runtime Validation (spml:ml-runtime-validator)** — runs on the `[INTEGRATION]` subtask after L0 passes
 - Default: enabled
 - Ask: "Real data flow or mock overfit data flow?"
 - Ask: "Training volume estimate? (default ~5 minutes — I'll estimate the step count to yield roughly this duration)"
@@ -188,7 +189,7 @@ Walk through the Validation Pyramid levels. For each, ask: needed / skip / alrea
   - If user provides baselines, record them in the design doc
   - If not, L1 uses anomaly detection only
 
-**User can skip any level — EXCEPT when autoresearch is detected.** Autoresearch requires a verified baseline before the iteration loop can start; skipping L1 means the baseline code was never proven to run, and the autonomous loop will fail from round 1. When autoresearch is detected, L1 is mandatory and non-negotiable regardless of task simplicity. Record decisions in natural language in the design doc.
+**User can skip L1 on the integration subtask — EXCEPT when autoresearch is detected.** Autoresearch requires a verified baseline before the iteration loop can start; skipping L1 means the assembled baseline code was never proven to run, and the autonomous loop will fail from round 1. When autoresearch is detected, L1 is mandatory and non-negotiable regardless of task simplicity. L0 cannot be skipped on the integration subtask — it is cheap (seconds) and gates L1. Record decisions in natural language in the design doc.
 
 ### Confirming evaluation structure
 When the task includes validation or evaluation beyond a trivial final metric, confirm the evaluation design explicitly:

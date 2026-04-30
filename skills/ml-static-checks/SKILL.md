@@ -13,8 +13,9 @@ A specialized static-analysis subagent that checks ML code correctness and train
 
 ## When to Use
 
-- Automatically dispatched by the orchestrator in `spml:ml-subagent-dev` after code quality review passes
-- Only for tasks that involve ML code (model, training loop, data pipeline, optimizer config)
+- Automatically dispatched by the orchestrator in `spml:ml-subagent-dev` **only on the single `[INTEGRATION]` subtask**, after Spec Review and Code Quality Review pass
+- Code subtasks (model class, dataset, loss, custom layer, evaluator core, etc.) do NOT run L0 — standard superpowers reviews cover them
+- Re-invoked per round inside iterative orchestrators (`spml:ml-iteration`, `spml:autoresearch`) since each round is itself an integration delivery
 - Skip for pure infrastructure tasks (CI, docs, config files)
 
 ## How It Works

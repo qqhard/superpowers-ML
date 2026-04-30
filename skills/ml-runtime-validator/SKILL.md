@@ -15,9 +15,11 @@ Run a sequential 6-stage pipeline: load data, instantiate model, train for an es
 
 ## When to Use
 
-- After L0 (spml:ml-static-checks) passes
-- Invoked by the orchestrator in `spml:ml-subagent-dev`, not by the Implementer directly
-- Skip only if explicitly marked "skip L1" in the experiment design doc
+- **Only on the single `[INTEGRATION]` subtask** in `spml:ml-subagent-dev`, after L0 (spml:ml-static-checks) passes
+- Code subtasks (model class, dataset, loss, evaluator core, etc.) do NOT run L1 — standard superpowers reviews cover them
+- Invoked by the orchestrator, not by the Implementer directly
+- Re-invoked per round inside iterative orchestrators (`spml:ml-iteration`, `spml:autoresearch`) since each round is itself an integration delivery
+- Skip only if explicitly marked "skip L1" in the experiment design doc (autoresearch makes L1 non-skippable)
 
 ## Data Flow Selection
 
