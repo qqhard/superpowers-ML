@@ -1,10 +1,20 @@
 {
   "name": "spml",
   "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics, and proven ML development patterns",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "author": {
     "name": "spml contributors"
   },
   "license": "MIT",
-  "keywords": ["ml", "machine-learning", "recsys", "llm", "validation-pyramid", "experiment", "training", "skills", "workflows"]
+  "keywords": [
+    "ml",
+    "machine-learning",
+    "recsys",
+    "llm",
+    "validation-pyramid",
+    "experiment",
+    "training",
+    "skills",
+    "workflows"
+  ]
 }

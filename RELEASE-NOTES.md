@@ -1,5 +1,34 @@
 # Superpowers Release Notes
 
+## v0.33.0 (2026-05-17)
+
+### Changed
+
+**Synced reused-from-upstream surface with superpowers v5.1.0.** SPML's ML-specific skills are untouched; this release pulls evolutions on the shared infrastructure and the three skills SPML had originally adapted from upstream.
+
+**Infrastructure**
+- `hooks/session-start` now emits platform-specific JSON (Cursor / Claude Code / Copilot CLI) via `printf` instead of a dual-shape heredoc — avoids the bash 5.3+ heredoc hang and the Claude Code double-injection issue. SPML banner and `using-superpowers-ml` skill path preserved.
+- `hooks/hooks.json` drops the `resume` matcher and double-quotes `${CLAUDE_PLUGIN_ROOT}` so paths with spaces work on Windows.
+- `.opencode/plugins/superpowers.js` gains a module-level bootstrap cache, switches from system-prompt to first-user-message transform (avoids per-turn token bloat and Qwen multi-system-message breakage), and auto-registers the SPML skills directory via the `config` hook so manual skill symlinks are no longer required. Latent SPML bugs fixed at the same time: the plugin now loads `using-superpowers-ml/SKILL.md` (was `using-superpowers/`, which does not exist in SPML) and the banner says "You have SPML".
+- `.opencode/INSTALL.md` drops the now-redundant skills-symlink step.
+
+**Added from upstream**
+- `CODE_OF_CONDUCT.md` (Contributor Covenant; SPML maintainer contact).
+- `GEMINI.md` + `gemini-extension.json` — Gemini CLI extension manifest pointing at `using-superpowers-ml`.
+- `hooks/hooks-cursor.json` — Cursor session-start routing.
+- `scripts/bump-version.sh` + `.version-bump.json` — version-drift detection and synced bumps across `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and `gemini-extension.json`. This release also resolves a pre-existing drift across those files.
+
+**Shared-skill grafts**
+- `using-superpowers-ml` — adds `<SUBAGENT-STOP>` tag (subagents skip the bootstrap), Instruction Priority section (user instructions > skills > defaults), Copilot CLI and Gemini CLI loading instructions, and a Platform Adaptation pointer to the upstream `superpowers` plugin's tool-mapping references.
+- `ml-brainstorming` — adds Spec Self-Review and User Review Gate after writing the design doc, in both the main checklist and revision-mode checklist; process-flow diagram and After-the-Design section updated accordingly.
+- `ml-subagent-dev` — adds an explicit Continuous Execution directive (no pausing between subtasks) and a Handling Implementer Status section that splits `DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` into distinct handling paths.
+
+### Unchanged
+
+The 14 net-new SPML skills (autoresearch family, validation-pyramid, ml-iteration, ml-runtime-validator, ml-static-checks, watchdog, verification, training-handoff, experiment-planning, data-preparation, diagnostics, and the `_ml-loop-primitives` references) are unchanged.
+
+---
+
 ## v0.32.0 (2026-05-01)
 
 ### Changed
