@@ -62,6 +62,8 @@ Execute ML experiment plans by dispatching a fresh subagent per subtask. Code su
 
 **Core principle:** Standard review for components + one full VP at integration = correct implementations with trustworthy training results, without wasting compute on per-component runtime validation.
 
+**Continuous execution:** Do not pause to check in with your human partner between subtasks. Execute all subtasks from the plan without stopping. The only reasons to stop are: BLOCKED status you cannot resolve, ambiguity that genuinely prevents progress, all subtasks complete (then hit the Post-Completion Gate), or a failing gate that already exhausted its retry budget. "Should I continue?" prompts and progress summaries waste the user's time — they asked you to execute the plan, so execute it.
+
 **Adapted from:** `superpowers:subagent-driven-development`. Key differences:
 - Code subtask: standard TDD → Spec Review → Quality Review (matches superpowers, with ML-aware spec criteria)
 - Integration subtask: standard reviews + L0 (`spml:ml-static-checks`) + L1 (`spml:ml-runtime-validator`)
@@ -195,6 +197,24 @@ digraph process {
     "More subtasks?" -> "Post-Completion Gate:\nAsk user Train / Research / Done" [label="no"];
 }
 ```
+
+## Handling Implementer Status
+
+Implementer subagents report one of four statuses. Handle each appropriately — do not bucket them all into the same fix loop:
+
+**DONE:** Proceed to spec compliance review (code subtask) or to the next review/VP stage (integration subtask).
+
+**DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness, ML invariants (data leakage, seed handling, gradient detach), or experiment-design compliance, address them before review. If they're observations (e.g., "this evaluator file is getting large"), note them and proceed to review.
+
+**NEEDS_CONTEXT:** The implementer needs information that wasn't provided. Provide the missing context — typically the upstream design doc, a component's interface, or an existing infra detail — and re-dispatch.
+
+**BLOCKED:** The implementer cannot complete the subtask. Assess the blocker:
+1. If it's a context problem, provide more context and re-dispatch with the same model
+2. If the subtask requires more reasoning (subtle ML invariant, complex integration), re-dispatch with a more capable model
+3. If the subtask is too large, break it into smaller pieces and send back to `spml:experiment-planning` if the plan structure needs revision
+4. If the plan itself is wrong (e.g., the experiment design is internally inconsistent), escalate to the human — do not silently rewrite the plan
+
+**Never** ignore an escalation or force the same model to retry without changes. If the implementer said it's stuck, something needs to change.
 
 ## Progress Reporting
 

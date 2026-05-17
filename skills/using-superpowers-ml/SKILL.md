@@ -3,6 +3,10 @@ name: using-spml
 description: Use when starting any conversation - establishes how to find and use ML skills, requiring host-appropriate skill loading before ANY response including clarifying questions
 ---
 
+<SUBAGENT-STOP>
+If you were dispatched as a subagent to execute a specific task, skip this skill.
+</SUBAGENT-STOP>
+
 <EXTREMELY-IMPORTANT>
 If you think there is even a 1% chance a skill might apply to what you are doing, you ABSOLUTELY MUST invoke the skill.
 
@@ -11,17 +15,38 @@ IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
 This is not negotiable. This is not optional. You cannot rationalize your way out of this.
 </EXTREMELY-IMPORTANT>
 
+## Instruction Priority
+
+SPML skills override default system prompt behavior, but **user instructions always take precedence**:
+
+1. **User's explicit instructions** (CLAUDE.md, GEMINI.md, AGENTS.md, direct requests) — highest priority
+2. **SPML skills** (and `superpowers:*` skills they delegate to) — override default system behavior where they conflict
+3. **Default system prompt** — lowest priority
+
+If CLAUDE.md, GEMINI.md, or AGENTS.md says "don't use TDD" and a skill says "always use TDD," follow the user's instructions. The user is in control.
+
 ## How to Access Skills
 
 Use the mechanism that matches your host:
 
-- In Claude Code: use the `Skill` tool to load skills, `TodoWrite` to track
+- **In Claude Code:** Use the `Skill` tool to load skills, `TodoWrite` to track
   checklist items, and `Task` for subagents when a skill asks for them.
-- In Codex: rely on native skill discovery from the configured skills
+- **In Codex:** Rely on native skill discovery from the configured skills
   directory, use `update_plan` to track checklist items, and use native
   subagents.
-- In any host: once a skill is loaded, follow it directly and do not treat
+- **In Copilot CLI:** Use the `skill` tool. Skills are auto-discovered from
+  installed plugins. The `skill` tool works the same as Claude Code's `Skill` tool.
+- **In Gemini CLI:** Skills activate via the `activate_skill` tool. Gemini loads
+  skill metadata at session start and activates the full content on demand.
+- **In any host:** Once a skill is loaded, follow it directly and do not treat
   `SKILL.md` like an ordinary project file.
+
+## Platform Adaptation
+
+SPML skills use Claude Code tool names. Non-CC platforms: see the upstream
+`superpowers` plugin's `references/copilot-tools.md` (Copilot CLI) and
+`references/codex-tools.md` (Codex) for tool equivalents. Gemini CLI users get
+the tool mapping loaded automatically via GEMINI.md.
 
 # Using Skills
 

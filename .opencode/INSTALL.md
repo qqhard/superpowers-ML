@@ -23,21 +23,15 @@ rm -f ~/.config/opencode/plugins/superpowers.js
 ln -s ~/.config/opencode/spml/.opencode/plugins/superpowers.js ~/.config/opencode/plugins/superpowers.js
 ```
 
-### 3. Symlink Skills
+The plugin auto-registers the SPML skills directory at startup, so no separate
+skills symlink is required.
 
-Create a symlink so OpenCode's native skill tool discovers SPML skills:
+### 3. Restart OpenCode
 
-```bash
-mkdir -p ~/.config/opencode/skills
-rm -rf ~/.config/opencode/skills/spml
-ln -s ~/.config/opencode/spml/skills ~/.config/opencode/skills/spml
-```
+Restart OpenCode. The plugin will automatically inject the SPML bootstrap
+context and register the skills directory.
 
-### 4. Restart OpenCode
-
-Restart OpenCode. The plugin will automatically inject superpowers context.
-
-Verify by asking: "do you have superpowers?"
+Verify by asking: "do you have SPML?"
 
 ## Usage
 
@@ -54,7 +48,7 @@ use skill tool to list skills
 Use OpenCode's native `skill` tool to load a specific skill:
 
 ```
-use skill tool to load spml/brainstorming
+use skill tool to load spml/ml-brainstorming
 ```
 
 ### Personal Skills
@@ -101,14 +95,14 @@ git pull
 
 ### Skills not found
 
-1. Check skills symlink: `ls -l ~/.config/opencode/skills/spml`
-2. Verify it points to: `~/.config/opencode/spml/skills`
-3. Use `skill` tool to list what's discovered
+1. Use `skill` tool to list what's discovered
+2. Verify the plugin is loading (see above) — the plugin auto-registers
+   `~/.config/opencode/spml/skills` at startup
 
 ### Tool mapping
 
 When skills reference Claude Code tools:
-- `TodoWrite` → `update_plan`
+- `TodoWrite` → `todowrite`
 - `Task` with subagents → `@mention` syntax
 - `Skill` tool → OpenCode's native `skill` tool
 - File operations → your native tools

@@ -32,7 +32,9 @@ You MUST create a task for each of these items and complete them in order:
 5. **Propose 2-3 approaches** — with trade-offs and your recommendation
 6. **Present design** — in sections scaled to their complexity, get user approval after each section
 7. **Write design doc** — save to `<experiment_dir>/plans/YYYY-MM-DD-<topic>-design.md` and commit
-8. **Transition to implementation** — invoke `spml:experiment-planning` skill to create implementation plan
+8. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
+9. **User reviews written spec** — ask user to review the spec file before proceeding
+10. **Transition to implementation** — invoke `spml:experiment-planning` skill to create implementation plan
 
 ## Revision Mode
 
@@ -73,7 +75,9 @@ This Impact section guides downstream plan revision.
 3. **Confirm validation scope changes** — if any VP levels need re-evaluation
 4. **Present revised design sections** — only changed sections, get approval
 5. **Edit design doc in place** — with Impact on Plan section
-6. **Transition** — invoke `spml:experiment-planning` (revision mode)
+6. **Spec self-review** — placeholder/consistency/scope/ambiguity pass on the revised doc
+7. **User reviews revised spec** — confirm changes look right before transition
+8. **Transition** — invoke `spml:experiment-planning` (revision mode)
 
 ## Process Flow
 
@@ -90,6 +94,8 @@ digraph ml_brainstorming {
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
     "Write/edit design doc" [shape=box];
+    "Spec self-review\n(fix inline)" [shape=box];
+    "User reviews spec?" [shape=diamond];
     "Invoke spml:experiment-planning" [shape=doublecircle];
 
     "Revision mode?" -> "Read existing design\nPresent summary" [label="yes"];
@@ -104,7 +110,10 @@ digraph ml_brainstorming {
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
     "User approves design?" -> "Write/edit design doc" [label="yes"];
-    "Write/edit design doc" -> "Invoke spml:experiment-planning";
+    "Write/edit design doc" -> "Spec self-review\n(fix inline)";
+    "Spec self-review\n(fix inline)" -> "User reviews spec?";
+    "User reviews spec?" -> "Write/edit design doc" [label="changes requested"];
+    "User reviews spec?" -> "Invoke spml:experiment-planning" [label="approved"];
 }
 ```
 
@@ -265,6 +274,23 @@ If the task involves constructing or transforming datasets:
 - Write the validated design to `<experiment_dir>/plans/YYYY-MM-DD-<topic>-design.md`
 - Include validation scope decisions in the doc
 - Commit the design document to git
+
+**Spec Self-Review:**
+After writing the spec document, look at it with fresh eyes:
+
+1. **Placeholder scan:** Any "TBD", "TODO", incomplete sections, or vague requirements? Fix them.
+2. **Internal consistency:** Do any sections contradict each other? Does the validation scope match the experiment design? Does the `review_criteria` align with the stated hypothesis?
+3. **Scope check:** Is this focused enough for a single implementation plan, or does it need decomposition into multiple experiments?
+4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
+
+Fix any issues inline. No need to re-review — just fix and move on.
+
+**User Review Gate:**
+After the spec review pass, ask the user to review the written spec before proceeding:
+
+> "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start the implementation plan."
+
+Wait for the user's response. If they request changes, make them and re-run the spec review. Only proceed once the user approves.
 
 **Required design doc contents:**
 - [ ] Hypothesis, independent/dependent/control variables (for experiment/ablation tasks)
