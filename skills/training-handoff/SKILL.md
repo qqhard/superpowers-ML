@@ -228,6 +228,20 @@ Then output the **full content** of the generated watchdog-prompt.md in a fenced
    - `focused_files` — "which files do you expect to change most this iteration?" (soft boundary hint, can be empty).
    - `locked_files` — auto-populated: `eval_command` script path + core data loader path.
    - `initial_hints` — optional first-round Researcher hint.
+3.5. **Profile dry-run** — if the design doc has `profile_command` (set when `metric_category == performance` or when `review_criteria.performance` is populated):
+
+   ```bash
+   cd <experiment_dir>
+   <profile_command>
+   ```
+
+   Require: exit 0 + non-empty stdout. If the design doc recorded `profile_command: TODO`, STOP and ask the user to provide one before re-running handoff. Mirror the message from `autoresearch-handoff` Step 4.5.
+
+3.6. **Kernel parity dry-run** — if the design doc has `kernel_targets` non-empty:
+
+   For each target: check the `new_module` file exists. If absent, STOP and tell the user to create it as a re-export of the baseline module so baseline parity is trivially passable, then re-run handoff. When all targets resolve, for each target execute the inline Python heredoc from `ml-iteration/SKILL.md` Step 2 (the parity check block), substituting the target's values and `$experiment_dir` for the placeholders.
+
+   Trivial-pass expected. Failure → STOP with the PARITY_FAIL line. Same semantics as `autoresearch-handoff` Step 4.6.
 4. **Generate `iteration-protocol.md`** at the experiment directory — template below.
 5. **Generate `experiences.md`** with initial header (mode: iteration, status: not_started, rounds: 0).
 6. **Generate `iteration-prompt.md`** — a startup prompt the user pastes into a new session to launch `ml-iteration`.
@@ -235,7 +249,7 @@ Then output the **full content** of the generated watchdog-prompt.md in a fenced
 
 ### iteration-protocol.md Template
 
-```yaml
+````markdown
 ---
 mode: iteration
 experiment: {experiment_name}
@@ -255,7 +269,26 @@ eval_command: {eval_command from VP L1}
 
 ## Initial hints
 {initial_hints or "(none)"}
+
+<!-- Include only if design doc has profile_command -->
+## Profile
+- command: {profile_command from design doc}
+<!-- end Profile -->
+
+<!-- Include only if design doc has kernel_targets non-empty. The yaml fence below is intentional — Supervisor parses kernel_targets from the first ```yaml fence in the file. -->
+## Kernel Targets
+
+```yaml
+kernel_targets:
+  - name: {readable name}
+    new_module: {module:attr}
+    baseline_module: {module:attr}
+    fixture: {module:attr}
+    tolerance: { atol: {float}, rtol: {float} }
+  # repeat per target
 ```
+<!-- end Kernel Targets -->
+````
 
 ### iteration-prompt.md Template
 

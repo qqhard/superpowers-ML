@@ -106,7 +106,8 @@ Clear previous round's tasks, then create:
 
 ```
 TaskCreate: "R{round} S1: Researcher — {task_description from user hint or default}"
-TaskCreate: "R{round} S2: Compliance — verify locked_files untouched"
+TaskCreate: "R{round} S2: Compliance — files + parity ({N} kernels)" if protocol has kernel_targets,
+            else "R{round} S2: Compliance — verify locked_files untouched"
 TaskCreate: "R{round} S3: Train — {train_command} (limit: {time_limit})"
 TaskCreate: "R{round} S4: Eval — {eval_command}"
 TaskCreate: "R{round} S5: Review — compound verdict vs review_criteria"
@@ -115,7 +116,11 @@ TaskCreate: "R{round} S6: Termination — {round}/{max_rounds}"
 
 **Mapping to the detailed step sections below:** S1→Step 1, S2→Step 2, S3→Step 3, S4→Step 4, S5→Step 5, S6→Step 8. Steps 6 (act on verdict), 7 (absorb user input), and 9 (report progress) are handled inline as part of the round and do not require separate task entries.
 
-Update with actual results on completion (strategy summary, verdict, metric snapshot).
+Update with actual results on completion. S2 completion forms when `kernel_targets` is non-empty:
+
+- S2 → `"R{round} S2: Compliance — ✅"`, `"❌ files: touched {file}"`, or `"❌ parity({target_name}): {kind} {detail snippet}"`
+
+Other rows: strategy summary (S1), verdict (S5), metric snapshot (S4).
 </HARD-GATE>
 
 ### Step 1: Dispatch Researcher
@@ -133,6 +138,20 @@ Prompt body:
 ```
 You are an ML researcher. Your task is to improve this training against the
 compound review_criteria below. This is Round {round} of {max_rounds}.
+
+## Profile-first discipline (only include this section if `Profile.command` is set in the protocol)
+Before designing any strategy, you MUST:
+1. Run `{profile_command}` and capture stdout.
+2. Save raw profile to `profiles/round-{round}-before.md`.
+3. Identify the top hotspot ops/kernels. Save your analysis to
+   `profiles/round-{round}-analysis.md` (2-3 sentences: which op
+   dominates, by how much, what you suspect).
+4. The Strategy you append to experiences.md MUST cite a specific
+   hotspot from the analysis. Skipping profile artifacts will be
+   flagged by Supervisor and visible to next round's Researcher.
+
+"It's obvious what's slow" is exactly the blind guessing this
+discipline prevents.
 
 ## Your role
 Design a strategy and modify code. Supervisor runs training and evaluation.
@@ -156,11 +175,13 @@ Design a strategy and modify code. Supervisor runs training and evaluation.
 - Do NOT create or modify any evaluation logic. Eval is owned by Supervisor.
 
 ## Task
-1. Read relevant files.
-2. Design a strategy for this round.
-3. Append a row to {experiences_path} with Strategy filled; leave Verdict and Insight blank.
-4. Modify code accordingly. You may run quick smoke tests.
-5. Report "Code ready" as your final message.
+(If perf-mode is off, drop step 1 and renumber.)
+1. Run `{profile_command}`, save profile + analysis (see Profile-first discipline above).
+2. Read relevant files.
+3. Design a strategy for this round (cite a specific hotspot from your profile analysis if in perf mode).
+4. Append a row to {experiences_path} with Strategy filled; leave Verdict and Insight blank.
+5. Modify code accordingly. You may run quick smoke tests.
+6. Report "Code ready" as your final message.
 ```
 
 Dispatch with `run_in_background: true`. Create two timers (check-in + per-round timeout). Save their IDs.
@@ -169,13 +190,74 @@ When the subagent returns, delete both timers and proceed to Step 2.
 
 ### Step 2: Compliance Check
 
+Supervisor runs:
+
 ```bash
 git diff --name-only HEAD
 ```
 
-Check that no `locked_files` were modified. If any was → this round is a violation: roll back, record in `experiences.md` Insight ("modified locked file {path}"), skip to Step 7.
+Any `locked_files` modified → round is a violation: record in `experiences.md` Insight ("modified locked file {path}"), skip Step 3, Step 4, and Step 5, go to Step 6 with rollback verdict.
 
 Also grep newly-created files for eval-like function names (`evaluate`, `compute_metrics`, `accuracy`, `score`) and flag matches for user review; this is advisory, not a hard block.
+
+If the protocol has a non-empty `kernel_targets` block, run a parity check for each target. For each target's fields from the protocol, execute this Python (substituting the `{{...}}` placeholders with the target's `name`, `new_module`, `baseline_module`, `fixture`, `tolerance.atol`, `tolerance.rtol`, and the experiment directory):
+
+```bash
+python3 <<'PY'
+import importlib, inspect, sys, torch
+
+NAME = "{{name}}"
+NEW = "{{new_module}}"
+BASE = "{{baseline_module}}"
+FIX = "{{fixture}}"
+ATOL, RTOL = {{atol}}, {{rtol}}
+SEARCH = "{{experiment_dir}}"
+
+sys.path.insert(0, SEARCH)
+
+def load(spec):
+    mod, attr = spec.split(":", 1)
+    return getattr(importlib.import_module(mod), attr)
+
+new_fn, base_fn, fixture = load(NEW), load(BASE), load(FIX)
+
+if str(inspect.signature(new_fn)) != str(inspect.signature(base_fn)):
+    print(f"PARITY_FAIL target={NAME} kind=signature detail=new{inspect.signature(new_fn)} vs baseline{inspect.signature(base_fn)}", file=sys.stderr); sys.exit(1)
+
+args, kwargs = fixture()
+out_new, out_base = new_fn(*args, **kwargs), base_fn(*args, **kwargs)
+
+if not (isinstance(out_new, torch.Tensor) and isinstance(out_base, torch.Tensor)):
+    print(f"PARITY_FAIL target={NAME} kind=shape detail=non-tensor output", file=sys.stderr); sys.exit(1)
+if out_new.shape != out_base.shape:
+    print(f"PARITY_FAIL target={NAME} kind=shape detail=shape {tuple(out_new.shape)} vs {tuple(out_base.shape)}", file=sys.stderr); sys.exit(1)
+if out_new.dtype != out_base.dtype:
+    print(f"PARITY_FAIL target={NAME} kind=shape detail=dtype {out_new.dtype} vs {out_base.dtype}", file=sys.stderr); sys.exit(1)
+
+try:
+    torch.testing.assert_close(out_new, out_base, atol=ATOL, rtol=RTOL)
+except AssertionError as e:
+    print(f"PARITY_FAIL target={NAME} kind=numerical detail={str(e).splitlines()[0][:200]}", file=sys.stderr); sys.exit(1)
+
+print(f"PARITY_OK target={NAME}")
+PY
+```
+
+Exit 1 from any target → round is `parity_violation`: record the stderr line in this round's experiences.md Insight, skip Step 3, Step 4, and Step 5; go to Step 6 with rollback verdict. Exit 0 from all targets → proceed.
+
+### Step 2.5: Profile-Discipline Check (advisory)
+
+Only when perf-mode is active (`Profile.command` non-empty in protocol):
+
+```bash
+ls profiles/round-{round}-before.md profiles/round-{round}-analysis.md
+```
+
+If either file is missing, append to this round's `experiences.md` Insight (do NOT rollback):
+
+> `perf mode but no profile artifacts found — Researcher skipped discipline`
+
+This flag is visible to next round's Researcher when they read the experiences table snippet. It is advisory, not a compliance failure.
 
 ### Step 3: Train
 

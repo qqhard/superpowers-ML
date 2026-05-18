@@ -173,8 +173,17 @@ When autoresearch is detected, ask the following questions **one at a time, in o
 2. **Fixed（不可变的代码 + 条件）** — "What code files and conditions must NOT change? Include time/epoch limits per round." (maps to Fixed.files + time_limit + epoch_limit)
 3. **Variable（可变的代码 + 条件）** — "Which files can the agent modify, and what can it adjust?" (maps to Variable.files + adjustable range)
 4. **Evaluation** — "What metric determines success? We need a concrete, runnable eval script (e.g., `python eval.py --checkpoint best.pt`) that outputs the metric value. This script will be fixed before the loop starts — the agent cannot modify it. Do you have one, or do we need to build it?" (metric name, direction, eval script/command)
-5. **Termination** — "When should the loop stop?" (max rounds, target metric value)
-6. **Initial hints（可选）** — "Any known experiences, constraints, or directions to try? (e.g., 'lr > 1e-3 causes gradient explosion', 'try cosine annealing')" — skip if none. Maps to R0 Note in experiences.md.
+5. **Metric category** — "Does this metric measure **performance** (throughput / step time / latency / memory / MFU / TFLOPS / bandwidth), **accuracy** (loss / accuracy / BLEU / F1 / etc.), or **other**? This decides whether we enable profile-first discipline for the iteration loop." (maps to `metric_category`)
+6. **Profile command** — only ask if Q5 = `performance`. "We need a `profile_command` that produces kernel/op-level timing to stdout each round, so the Researcher targets real hotspots instead of guessing. Provide a runnable command (e.g., `python profile.py --steps 50` running `torch.profiler` and printing a top-N table). If you don't have one yet, we'll record it as a VP-L1 build TODO — handoff will validate it before the loop starts." (maps to `profile_command`)
+7. **Kernel R&D?** — "Will this research introduce a **custom kernel** replacing a baseline implementation (custom CUDA / Triton / fused op)? If yes, we'll add an I/O parity guardrail: every round, your new kernel will be compared to the baseline on the same fixture inputs for signature + numerical equivalence; out-of-tolerance auto-rollbacks the round before training spends time on it." (yes/no)
+8. **Kernel targets** — only ask if Q7 = yes. Loop, collecting per target until user says "no more":
+   - `name` — readable label.
+   - `new_module` — `module:attr` import path. **Must be inside the Variable.files declared in Q3.** If not, push back: "this module lives outside the Variable file set — either add its file to Variable, or relocate the kernel."
+   - `baseline_module` — `module:attr` import path. **Must be inside the Fixed.files declared in Q2.** If not, push back: "the baseline must be locked — add its file to Fixed, or this guardrail can't preserve the contract."
+   - `fixture` — `module:attr` of a zero-arg callable returning `(args, kwargs)`.
+   - `tolerance` — default `{atol: 1e-3, rtol: 1e-3}`; user can override.
+9. **Termination** — "When should the loop stop?" (max rounds, target metric value)
+10. **Initial hints（可选）** — "Any known experiences, constraints, or directions to try? (e.g., 'lr > 1e-3 causes gradient explosion', 'try cosine annealing')" — skip if none. Maps to R0 Note in experiences.md.
 
 `train_command` and `eval_command` are NOT asked here — they are determined during the build phase (VP L1) and extracted by handoff into the protocol.
 
@@ -323,6 +332,18 @@ initial_hints: <from user, or empty>
 - metric: <from user>
 - direction: maximize / minimize
 - command: <from user or derived from base code>
+- metric_category: <performance | accuracy | other — from Q5>
+
+### Profile  (omit this block iff metric_category != performance)
+- command: <profile_command — from Q6, or "TODO: build in VP L1" if user has none yet>
+
+### Kernel Targets  (omit this block iff Q7 = no)
+- name: <readable label>
+  new_module: <module:attr>
+  baseline_module: <module:attr>
+  fixture: <module:attr>
+  tolerance: { atol: <float>, rtol: <float> }
+# repeat for each target
 ```
 
 This section is the routing signal: downstream `ml-subagent-dev` will present the "Research" option at Post-Completion Gate when it detects this section.

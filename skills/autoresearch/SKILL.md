@@ -130,7 +130,8 @@ Create with protocol context, update with actual results:
 
 ```
 TaskCreate: "R{round} S1: Researcher — improve {metric} on {variable_files}"
-TaskCreate: "R{round} S2: Compliance — check {variable_files} only"
+TaskCreate: "R{round} S2: Compliance — files + parity ({N} kernels)" if protocol has kernel_targets,
+            else "R{round} S2: Compliance — check {variable_files} only"
 TaskCreate: "R{round} S3: Train — {train_command} (limit: {time_limit})"
 TaskCreate: "R{round} S4: Eval — {eval_command} (current best: {best_value})"
 TaskCreate: "R{round} S5: Git — awaiting result"
@@ -140,7 +141,7 @@ TaskCreate: "R{round} S6: Termination — {round}/{max_rounds}"
 **Update with actual results on completion:**
 
 - S1 → `"R{round} S1: Researcher — {strategy summary, e.g. 'cosine lr + label smoothing'}"`
-- S2 → `"R{round} S2: Compliance — ✅"` or `"❌ touched {file}"`
+- S2 → `"R{round} S2: Compliance — ✅"`, `"❌ files: touched {file}"`, or `"❌ parity({target_name}): {kind} {detail snippet}"`
 - S3 → `"R{round} S3: Train — done {duration}, final loss={value}"`
 - S4 → `"R{round} S4: Eval — {metric}={value} (best: {best} {'↑' or '—'})"`
 - S5 → `"R{round} S5: Git — committed"` or `"rolled back"`
@@ -163,6 +164,20 @@ Save both IDs. When Researcher completes normally, delete both timers before con
 You are an ML researcher. Your task is to improve {metric} ({direction}).
 This is Round {round} of {max_rounds}.
 
+## Profile-first discipline (only include this section if `Profile.command` is set in the protocol)
+Before designing any strategy, you MUST:
+1. Run `{profile_command}` and capture stdout.
+2. Save raw profile to `profiles/round-{round}-before.md`.
+3. Identify the top hotspot ops/kernels. Save your analysis to
+   `profiles/round-{round}-analysis.md` (2-3 sentences: which op
+   dominates, by how much, what you suspect).
+4. The Strategy you append to experiences.md MUST cite a specific
+   hotspot from the analysis. Skipping profile artifacts will be
+   flagged by Supervisor and visible to next round's Researcher.
+
+"It's obvious what's slow" is exactly the blind guessing this
+discipline prevents.
+
 ## Your role
 You design the strategy and write the code. Training and evaluation are handled by Supervisor after you finish — you don't need to run them. You may run quick smoke tests to verify your code works.
 
@@ -177,22 +192,83 @@ You design the strategy and write the code. Training and evaluation are handled 
 {experiences_table_snippet}
 
 ## Your task
-1. Read the variable files listed above to understand current code
-2. Based on experiences above, design a strategy for this round
-3. Add a row to {experiences_path} with your strategy (leave Result/Verdict/Insight blank)
-4. Modify the variable files to implement your strategy
-5. Report "Code ready" as your final message
+(If perf-mode is off, drop step 1 and renumber.)
+1. Run `{profile_command}`, save profile + analysis (see Profile-first discipline above).
+2. Read the variable files listed above to understand current code
+3. Based on experiences and profile analysis, design a strategy for this round
+4. Add a row to {experiences_path} with your strategy (leave Result/Verdict/Insight blank)
+5. Modify the variable files to implement your strategy
+6. Report "Code ready" as your final message
 ```
 
 ### Step 2: Compliance Check
 
-Supervisor runs directly:
+Supervisor runs:
 
 ```bash
 git diff --name-only HEAD
 ```
 
-Check that no Fixed.files were modified. New files are allowed. If any fixed file was modified → round is `not_improved`, skip training and evaluation, go directly to Step 5 (rollback).
+Any Fixed.files modified → round is `not_improved`, skip Step 3 and Step 4, go to Step 5 (rollback).
+
+If the protocol has a non-empty `kernel_targets` block, run a parity check for each target. For each target's fields from the protocol, execute this Python (substituting the `{{...}}` placeholders with the target's `name`, `new_module`, `baseline_module`, `fixture`, `tolerance.atol`, `tolerance.rtol`, and the experiment directory):
+
+```bash
+python3 <<'PY'
+import importlib, inspect, sys, torch
+
+NAME = "{{name}}"
+NEW = "{{new_module}}"
+BASE = "{{baseline_module}}"
+FIX = "{{fixture}}"
+ATOL, RTOL = {{atol}}, {{rtol}}
+SEARCH = "{{experiment_dir}}"
+
+sys.path.insert(0, SEARCH)
+
+def load(spec):
+    mod, attr = spec.split(":", 1)
+    return getattr(importlib.import_module(mod), attr)
+
+new_fn, base_fn, fixture = load(NEW), load(BASE), load(FIX)
+
+if str(inspect.signature(new_fn)) != str(inspect.signature(base_fn)):
+    print(f"PARITY_FAIL target={NAME} kind=signature detail=new{inspect.signature(new_fn)} vs baseline{inspect.signature(base_fn)}", file=sys.stderr); sys.exit(1)
+
+args, kwargs = fixture()
+out_new, out_base = new_fn(*args, **kwargs), base_fn(*args, **kwargs)
+
+if not (isinstance(out_new, torch.Tensor) and isinstance(out_base, torch.Tensor)):
+    print(f"PARITY_FAIL target={NAME} kind=shape detail=non-tensor output", file=sys.stderr); sys.exit(1)
+if out_new.shape != out_base.shape:
+    print(f"PARITY_FAIL target={NAME} kind=shape detail=shape {tuple(out_new.shape)} vs {tuple(out_base.shape)}", file=sys.stderr); sys.exit(1)
+if out_new.dtype != out_base.dtype:
+    print(f"PARITY_FAIL target={NAME} kind=shape detail=dtype {out_new.dtype} vs {out_base.dtype}", file=sys.stderr); sys.exit(1)
+
+try:
+    torch.testing.assert_close(out_new, out_base, atol=ATOL, rtol=RTOL)
+except AssertionError as e:
+    print(f"PARITY_FAIL target={NAME} kind=numerical detail={str(e).splitlines()[0][:200]}", file=sys.stderr); sys.exit(1)
+
+print(f"PARITY_OK target={NAME}")
+PY
+```
+
+Exit 1 from any target → round is `parity_violation`: record the stderr `PARITY_FAIL target=<name> kind=<...> detail=<...>` line in this round's experiences.md Insight, skip Step 3 and Step 4, go to Step 5 (rollback). Exit 0 from all targets → proceed.
+
+### Step 2.5: Profile-Discipline Check (advisory)
+
+Only when perf-mode is active (`Profile.command` non-empty in protocol):
+
+```bash
+ls profiles/round-{round}-before.md profiles/round-{round}-analysis.md
+```
+
+If either file is missing, append to this round's `experiences.md` Insight (do NOT rollback):
+
+> `perf mode but no profile artifacts found — Researcher skipped discipline`
+
+This flag is visible to next round's Researcher when they read the experiences table snippet. It is advisory, not a compliance failure.
 
 ### Step 3: Train
 

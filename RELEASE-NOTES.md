@@ -1,5 +1,25 @@
 # Superpowers Release Notes
 
+## v0.34.0 (2026-05-18)
+
+### Added
+
+**Profile-first discipline for perf-mode research.** When `ml-brainstorming` records `metric_category: performance`, the design doc and protocol carry a `profile_command`; the Researcher prompt in `autoresearch` and `ml-iteration` mandates running it each round and writing analysis to `profiles/round-N-analysis.md` before designing strategy. Supervisor logs an advisory flag to `experiences.md` when artifacts are missing.
+
+**Kernel I/O parity guardrail.** When `kernel_targets` is declared in the protocol, Supervisor Step 2 (Compliance) runs `_ml-loop-primitives/kernel_parity.py` to compare each new kernel's `inspect.signature`, output pytree structure, and numerics (within user-declared atol/rtol) against the baseline. Mismatch auto-rollbacks the round before training spends time on it.
+
+**Handoff pre-checks.** `autoresearch-handoff` and `training-handoff` validate `profile_command` (runs on baseline) and the parity machinery (trivial-pass dry-run on baseline-re-exporting stub) before writing the protocol — configuration errors are caught at handoff rather than Round 1.
+
+**New primitives.** `skills/_ml-loop-primitives/profile-first.md`, `kernel-parity.md`, and `kernel_parity.py` (carrier script) — referenced by both `autoresearch` and `ml-iteration`.
+
+### Changed
+
+- `ml-brainstorming` autoresearch flow gains four questions (metric category, profile command, kernel R&D yes/no, kernel target details) before the existing termination question. Renumbered accordingly.
+- `autoresearch/SKILL.md` Step 2 splits into 2a (file boundary) + 2b (parity); new Step 2.5 logs an advisory insight when profile artifacts are missing.
+- `ml-iteration/SKILL.md` Step 2 splits the same way; advisory profile-discipline check lives as Step 2.5 (mirrors autoresearch — flag before train/eval).
+- `autoresearch-handoff` adds steps 4.5 (profile dry-run) and 4.6 (parity dry-run); protocol template emits Profile and Kernel Targets blocks.
+- `training-handoff` adds steps 3.5 and 3.6 on the iteration branch with the same semantics; iteration-protocol.md template gains Profile and Kernel Targets blocks.
+
 ## v0.33.0 (2026-05-17)
 
 ### Changed

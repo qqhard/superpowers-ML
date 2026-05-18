@@ -1,6 +1,6 @@
 {
   "name": "spml",
   "description": "ML/RecSys/LLM training workflow for AI agents: Validation Pyramid, experiment planning, process metrics, and proven ML development patterns",
-  "version": "0.33.0",
+  "version": "0.34.0",
   "contextFileName": "GEMINI.md"
 }
